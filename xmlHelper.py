@@ -97,17 +97,17 @@ class XmlHelper:
     #
     # get list of nodes by name
     #
-    def getNodeByName(self, node=None, name=None):
-        # get root node by default
+    def getNodeChildrenByName(self, node=None, name=None):
         if node == None:
-            node = self.domDoc.firstChild
-        nodeList = node.childNodes
+            raise Exception("node can not be None")
         result = []
+        nodeList = node.childNodes
         for node in nodeList:
             if node.localName == name:
                 result.append(node)
         if self.DEBUG!=0:
-            print "  getNodeByName() return: %s items" % len(result)
+            print "  getNodeChildrenByName() return: %s items" % len(result)
+        return result
 
 
     #
@@ -132,20 +132,28 @@ class XmlHelper:
     #
     def getNodeByPath(self, node=None, path=None, attr=None, result=None):
         if result==None:
-            raise Exception("result list is None")
+            raise Exception("result list can not be None")
         
         if self.DEBUG==1:
             print ""
         if self.domDoc==None:
             raise Exception("dom document is None, is data parsed?")
-        # get root node by default
-        if node == None:
-            node = self.getRootNode()
         # need that path starts with /
         if len(path)>0 and path[0] != "/":
             path = "/" + path
         if self.DEBUG!=0:
             print "  getNodeByPath: current path:%s" % path
+
+        # get root node by default
+        if node == None:
+            node = self.getRootNode()
+            # already good?
+            if self.DEBUG!=0:
+                print "  getNodeByPath() test root node.localName:%s VS %s" % (node.localName, path)
+            if "/"+node.localName==path:
+                result.append(node)
+                return
+            
         # get current level name, build next iteration path
         toks=path.split("/")
         if self.DEBUG!=0:

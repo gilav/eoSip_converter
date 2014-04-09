@@ -192,9 +192,8 @@ class Dimap_Tropforest_Product(Directory_Product):
     # - build type code
     #
     def refineMetadata(self):
+        #raise Exception("STOP")
 
-        # set or verify per mission info
-        self.metadata.setMetadataPair('METADATA_SENSOR_TYPE', 'OPTICAL')
         #
         if self.metadata.getMetadataValue(metadata.METADATA_PLATFORM)=='ALOS':
             self.metadata.setMetadataPair(metadata.METADATA_PLATFORM_ID, '1')

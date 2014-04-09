@@ -30,6 +30,9 @@ class Dimap_Spot_Product(Directory_Product):
     xmlMapping={metadata.METADATA_START_DATE:'Dataset_Sources/Source_Information/Scene_Source/IMAGING_DATE',
                 metadata.METADATA_START_TIME:'Dataset_Sources/Source_Information/Scene_Source/IMAGING_TIME',
                 metadata.METADATA_PROCESSING_TIME:'Production/DATASET_PRODUCTION_DATE',
+                metadata.METADATA_PROCESSING_CENTER:'Production/Production_Facility/PROCESSING_CENTER',
+                metadata.METADATA_SOFTWARE_NAME:'Production/Production_Facility/SOFTWARE_NAME',
+                metadata.METADATA_SOFTWARE_VERSION:'Production/Production_Facility/SOFTWARE_VERSION',
                 metadata.METADATA_DATASET_NAME:'Dataset_Id/DATASET_NAME',
                 metadata.METADATA_PLATFORM:'Dataset_Sources/Source_Information/Scene_Source/MISSION',
                 metadata.METADATA_PLATFORM_ID:'Dataset_Sources/Source_Information/Scene_Source/MISSION_INDEX',
@@ -111,38 +114,37 @@ class Dimap_Spot_Product(Directory_Product):
         self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,my_product_type)
 
     def buildTypeCode(self):
-        print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
         if (self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)=='HRV'):
-            print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ HRV"
-            if self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)==1 and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='P':
+            #print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ HRV"
+            if self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)=='1' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='P':
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRV1_P__1P')
-            elif self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)==2 and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='P':
+            elif self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)=='2' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='P':
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRV2_P__1P')
-            elif self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)==1 and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='X':
+            elif self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)=='1' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='X':
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRV1_X__1P')
-            elif self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)==2 and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='X':
+            elif self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)=='2' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='X':
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRV_X__1P')
             else:
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRV#_#_##')
                         
         elif (self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)=='HRVIR'):
-            print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ HRVIR"
-            if self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)==1 and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='M':
+            #print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ HRVIR"
+            if self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)=='1' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='M':
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRV1_P__1P')
-            elif self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)==2 and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='M':
+            elif self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)=='2' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='M':
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRV2_P__1P')
-            elif self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)==1 and (self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='I' or self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='X'):
+            elif self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)=='1' and (self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='I' or self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='X'):
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRI1_X__1P')
-            elif self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)==2 and (self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='I' or self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='X'):
+            elif self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)=='2' and (self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='I' or self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='X'):
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRI2_X__1P')
             else:
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRVI_#_##')
 
         elif (self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)=='HRG'):
-            print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ HRG"
-            if self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)==1 and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='J':
+            #print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ HRG"
+            if self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)=='1' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='J':
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRG1_X__1P')
-            elif self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)==2 and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='J':
+            elif self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)=='2' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='J':
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRG2_X__1P')
             else:
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRG#_#_##')
@@ -211,11 +213,17 @@ class Dimap_Spot_Product(Directory_Product):
     # - build type code
     #
     def refineMetadata(self):
-        # set or verify per mission info
-        self.metadata.setMetadataPair('METADATA_SENSOR_TYPE', 'OPTICAL')
-                    
+        #raise Exception("STOP")
+
+        # convert sun azimut from EEE format
+        tmp = self.metadata.getMetadataValue(metadata.METADATA_SUN_AZIMUTH)
+        self.metadata.setMetadataPair(metadata.METADATA_SUN_AZIMUTH, formatUtils.EEEtoNumber(tmp))
+
+        tmp = self.metadata.getMetadataValue(metadata.METADATA_SUN_ELEVATION)
+        self.metadata.setMetadataPair(metadata.METADATA_SUN_ELEVATION, formatUtils.EEEtoNumber(tmp))
+        
         # 
-        self.buildTypeCode() 
+        self.buildTypeCode()
 
 
     def extractQuality(self, helper, met):
@@ -251,27 +259,43 @@ class Dimap_Spot_Product(Directory_Product):
     # extract the footprint posList point, ccw, lat lon
     #
     def extractFootprint(self, helper, met):
+        result=""
         nodes=[]
-        helper.getNodeByPath(None, 'Geoposition/Geoposition_Insert', None, nodes)
+        helper.setDebug(1)
+        helper.getNodeByPath(None, 'Dataset_Frame', None, nodes)
         if len(nodes)==1:
-            ulx = helper.getNodeText(helper.getFirstNodeByPath(nodes[0], 'ULXMAP', None))
-            uly = helper.getNodeText(helper.getFirstNodeByPath(nodes[0], 'ULYMAP', None))
-            brx = helper.getNodeText(helper.getFirstNodeByPath(nodes[0], 'BRXMAP', None))
-            bry = helper.getNodeText(helper.getFirstNodeByPath(nodes[0], 'BRYMAP', None))
-            if self.debug!=0:
-                print " ulx:%s  uly:%s  brx:%s  bry:%s" % (ulx, uly, brx, bry)
+            vertexList=helper.getNodeChildrenByName(nodes[0], 'Vertex')
+            if len(vertexList)==0:
+                raise Exception("can not find footprint vertex")
+
+            n=0
+            closePoint=""
+            for node in vertexList:
+                lon = helper.getNodeText(helper.getFirstNodeByPath(node, 'FRAME_LON', None))
+                lat = helper.getNodeText(helper.getFirstNodeByPath(node, 'FRAME_LAT', None))
+                if self.debug!=0:
+                    print "  ############# vertex %d: lon:%s  lat:%s" % (n, lon, lat)
+                if len(result)>0:
+                    result="%s " % (result)
+                result="%s%s %s" % (result, formatUtils.EEEtoNumber(lat), formatUtils.EEEtoNumber(lon))
+                if n==0:
+                    closePoint = "%s %s" % (formatUtils.EEEtoNumber(lat), formatUtils.EEEtoNumber(lon))
+                n=n+1
+            result="%s %s" % (result,closePoint)
+                
+            #raise Exception("STOP")
+
             # store it for browse report in rectified browse
             # should be in lower left lat/lon + upper right lat/lon.
-            met.setMetadataPair(browse_metadata.BROWSE_METADATA_RECT_COORDLIST, "%s %s %s %s" % (bry, ulx, uly , brx))
-
-            # make the product metadata report footprint in ccw order
-            ccw="%s %s %s %s %s %s %s %s %s %s" % (uly, ulx,   bry, ulx,   bry, brx,   uly, brx,   uly, ulx)
+            #met.setMetadataPair(browse_metadata.BROWSE_METADATA_RECT_COORDLIST, "%s %s %s %s" % (bry, ulx, uly , brx))
             if self.debug!=0:
-                print " posList:%s" % ccw
-            met.setMetadataPair(metadata.METADATA_FOOTPRINT, ccw)
-        else:
-            print " ERROR: Geoposition/Geoposition_Insert has not 4 subnodes:%d" % len(nodes)
-        return
+                print "  ############# footprint:%s" % (result)
+            if self.debug!=0:
+                print "  ############# ccw:%s" % (formatUtils.reverseFootprint(result))
+            met.setMetadataPair(metadata.METADATA_FOOTPRINT, formatUtils.reverseFootprint(result))
+            
+            #raise Exception("STOP")
+        return result
         
 
     def toString(self):
