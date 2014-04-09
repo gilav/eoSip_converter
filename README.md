@@ -1,4 +1,4 @@
 eoSip_converter
 ===============
 
-Eo-Sip converter
+This converter can read various Eo-Products and convert them in Eo-Sip format.
