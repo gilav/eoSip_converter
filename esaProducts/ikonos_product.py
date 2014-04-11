@@ -14,6 +14,7 @@ from directory_product import Directory_Product
 import metadata
 import browse_metadata
 import formatUtils
+from sectionIndentedDocument import SectionDocument
 
 class Ikonos_Product(Directory_Product):
 
@@ -23,23 +24,20 @@ class Ikonos_Product(Directory_Product):
     debug=0
     #
 
-    xmlMapping={metadata.METADATA_START_DATE:'Dataset_Sources/Source_Information/Scene_Source/IMAGING_DATE',
-                metadata.METADATA_START_TIME:'Dataset_Sources/Source_Information/Scene_Source/IMAGING_TIME',
-                metadata.METADATA_PROCESSING_TIME:'Production/DATASET_PRODUCTION_DATE',
-                metadata.METADATA_DATASET_NAME:'Dataset_Id/DATASET_NAME',
-                metadata.METADATA_PLATFORM:'Dataset_Sources/Source_Information/Scene_Source/MISSION',
-                metadata.METADATA_PLATFORM_ID:'Dataset_Sources/Source_Information/Scene_Source/MISSION_INDEX',
-                metadata.METADATA_INSTRUMENT:'Dataset_Sources/Source_Information/Scene_Source/INSTRUMENT',
-                metadata.METADATA_INSTRUMENT_ID:'Dataset_Sources/Source_Information/Scene_Source/INSTRUMENT_INDEX',
-                metadata.METADATA_SENSOR_NAME:'Dataset_Sources/Source_Information/Scene_Source/INSTRUMENT',
-                metadata.METADATA_SENSOR_CODE:'Dataset_Sources/Source_Information/Scene_Source/INSTRUMENT_INDEX',
-                metadata.METADATA_DATA_FILE_PATH:'Data_Access/Data_File/DATA_FILE_PATH@href',
-                metadata.METADATA_DATASET_PRODUCTION_DATE:'Production/DATASET_PRODUCTION_DATE',
-                metadata.METADATA_INCIDENCE_ANGLE:'Dataset_Sources/Source_Information/Scene_Source/INCIDENCE_ANGLE',
-                metadata.METADATA_VIEWING_ANGLE:'Dataset_Sources/Source_Information/Scene_Source/VIEWING_ANGLE',
-                metadata.METADATA_SUN_AZIMUTH:'Dataset_Sources/Source_Information/Scene_Source/SUN_AZIMUTH',
-                metadata.METADATA_SUN_ELEVATION:'Dataset_Sources/Source_Information/Scene_Source/SUN_ELEVATION',
-                metadata.METADATA_REFERENCE_SYSTEM_IDENTIFIER:'Coordinate_Reference_System/Horizontal_CS/HORIZONTAL_CS_CODE'
+    #
+    # syntax is: sectionName|[key][+nLine,+nLine...]
+    #
+    xmlMapping={metadata.METADATA_START_DATE:'Acquisition Date/Time:*|0',
+                metadata.METADATA_SUN_ELEVATION:'Sun Angle Elevation:*|0',
+                metadata.METADATA_SUN_AZIMUTH:'Sun Angle Azimuth:*|0',
+                metadata.METADATA_IMAGE_NUM_COLUMNS:'Columns:*|0',
+                metadata.METADATA_IMAGE_NUM_ROWS:'Rows:*|0',
+                metadata.METADATA_COUNTRY:'Country Code:*|0',
+                metadata.METADATA_ACQUISITION_CENTER:'Ground Station ID:*|0',
+                metadata.METADATA_REFERENCE_SYSTEM_IDENTIFIER:'Map Projection:*|0,2,3',
+                metadata.METADATA_CLOUD_COVERAGE:'Percent Cloud Cover:*|0',
+                metadata.METADATA_FOOTPRINT:'Component Geographic Corner Coordinates*|3,4,6,7,9,10,12,13,3,4'
+                
                 }
 
     def myInit(self):
@@ -65,6 +63,13 @@ class Ikonos_Product(Directory_Product):
             print " will exttact product to path:%s" % folder
         fh = open(self.path, 'rb')
         z = zipfile.ZipFile(fh)
+
+        #for DEBUG:
+        #self.preview_path='C:/Users/glavaux/Shared/LITE/testData/spaceTmp/workfolder_0/20090721222747_po_2627437_0000000/po_2627437_rgb_0000000_ovr.jpg'
+        #self.metadata_path='C:/Users/glavaux/Shared/LITE/testData/spaceTmp/workfolder_0/20090721222747_po_2627437_0000000/po_2627437_metadata.txt'
+        #self.EXTRACTED_PATH=folder
+        #return
+
         
         n=0
         d=0
@@ -116,44 +121,43 @@ class Ikonos_Product(Directory_Product):
         # use what contains the metadata file
         metContent=self.getMetadataInfo()
         
-        # extact metadata
-        helper=xmlHelper.XmlHelper()
-        helper.setData(metContent);
-        helper.parseData()
+        # extact metadata, not xml data but 'text section indented'
+        sectionDoc = SectionDocument()
+        sectionDoc.loadDocument(self.metadata_path)
 
         #get fields
-        resultList=[]
-        op_element = helper.getRootNode()
         num_added=0
         
         for field in self.xmlMapping:
-            if self.xmlMapping[field].find("@")>=0:
-                attr=self.xmlMapping[field].split('@')[1]
-                path=self.xmlMapping[field].split('@')[0]
-            else:
-                attr=None
-                path=self.xmlMapping[field]
+            rule=self.xmlMapping[field]
+            aValue=None
+            if self.debug==0:
+                print " ##### handle metadata:%s" % field
 
-            aData = helper.getFirstNodeByPath(None, path, None)
-            if aData==None:
-                aValue=None
+            
+            toks=rule.split('|')
+            if len(toks)!=2:
+                raise Exception("malformed metadata rule:%s" % field)
+            # wildcard used?
+            if toks[0][-1]=='*':
+                line=sectionDoc.getSectionLine(toks[0])
+                # line offset(s) list are in second token
+                offsets=toks[1].split(',')
+                aValue=''
+                for offset in offsets:
+                    nLine=line+int(offset)
+                    if len(aValue)>0:
+                        aValue="%s|" % aValue
+                    aValue="%s%s" % (aValue,sectionDoc.getLineValue(nLine))
+                if self.debug==0:
+                    print "  metadata:%s='%s'" % (field, aValue)
             else:
-                if attr==None:
-                    aValue=helper.getNodeText(aData)
-                else:
-                    aValue=helper.getNodeAttributeText(aData,attr)        
-
-            if self.debug!=0:
-                print "  -->%s=%s" % (field, aValue)
+                aValue=sectionDoc.getValue(toks[0], toks[1])
             met.setMetadataPair(field, aValue)
             num_added=num_added+1
             
         self.metadata=met
-
-        self.extractQuality(helper, met)
-
-        self.extractFootprint(helper, met)
-                            
+   
         return num_added
 
 
@@ -166,9 +170,28 @@ class Ikonos_Product(Directory_Product):
     def refineMetadata(self):
         # set or verify per mission info
         self.metadata.setMetadataPair('METADATA_SENSOR_TYPE', 'OPTICAL')
-            
+
+        # '2008-08-06 10:51 GMT' into: date + time
+        toks=self.metadata.getMetadataValue(metadata.METADATA_START_DATE).strip().split(" ")
+        self.metadata.setMetadataPair(metadata.METADATA_START_DATE, toks[0])
+        self.metadata.setMetadataPair(metadata.METADATA_START_TIME, "%s:00" % toks[1])
+        self.metadata.setMetadataPair(metadata.METADATA_STOP_DATE, toks[0])
+        self.metadata.setMetadataPair(metadata.METADATA_STOP_TIME, "%s:00" % toks[1])
+
+        tmp=self.metadata.getMetadataValue(metadata.METADATA_FOOTPRINT).replace(" degrees","").replace("|","").strip()
+        self.metadata.setMetadataPair(metadata.METADATA_FOOTPRINT, formatUtils.reverseFootprint(tmp))
+
+        tmp=self.metadata.getMetadataValue(metadata.METADATA_SUN_ELEVATION).replace(" degrees","").strip()
+        self.metadata.setMetadataPair(metadata.METADATA_SUN_ELEVATION, tmp)
+
+        tmp=self.metadata.getMetadataValue(metadata.METADATA_SUN_AZIMUTH).replace(" degrees","").strip()
+        self.metadata.setMetadataPair(metadata.METADATA_SUN_AZIMUTH, tmp)
+
+        tmp=self.metadata.getMetadataValue(metadata.METADATA_CLOUD_COVERAGE).strip()
+        self.metadata.setMetadataPair(metadata.METADATA_CLOUD_COVERAGE, tmp)
+        
         # 
-        self.buildTypeCode()
+        #self.buildTypeCode()
         return 1
 
 
@@ -184,14 +207,12 @@ class Ikonos_Product(Directory_Product):
         
 
     def toString(self):
-        res="tif file:%s" % self.TIF_FILE_NAME
-        res="%s\nxml file:%s" % (res, self.XML_FILE_NAME)
+        res="preview file:%s" % self.preview_path
+        res="%s\nmetadata file:%s" % (res, self.metadata_path)
         return res
 
 
     def dump(self):
-        res="tif file:%s" % self.TIF_FILE_NAME
-        res="%s\nxml file:%s" % (res, self.XML_FILE_NAME)
-        print res
+        print self.toString()
 
 

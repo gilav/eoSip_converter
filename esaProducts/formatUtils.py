@@ -8,10 +8,20 @@ import os
 import sys
 import xml.dom.minidom
 import StringIO
+import time
+import datetime
 import traceback
 
 
 debug=0
+
+def dateFromSec(t, pattern="%y-%m-%d %H:%M:%S"):
+        d=datetime.datetime.fromtimestamp(t)
+        return d.strftime(pattern)
+
+def dateNow(pattern="%y-%m-%d %H:%M:%S"):
+        d=datetime.datetime.fromtimestamp(time.time())
+        return d.strftime(pattern)
 
 def normaliseDate(s=None, max=-1, pad='#'):
         if s != None:
@@ -104,6 +114,8 @@ if __name__ == '__main__':
         ccw=reverseFootprint(cwFootprint)
         print "footprint:%s" % cwFootprint
         print "ccw:%s" % ccw
+
+        print "dateNow:%s" % dateNow()
             
     except Exception, e:
         print " Error"

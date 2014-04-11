@@ -14,6 +14,7 @@ import os, sys
 import time
 import zipfile
 import traceback
+import shutil
 from base import ingester
 from esaProducts import ikonos_product, eosip_product
 from esaProducts import metadata
@@ -48,6 +49,7 @@ class ingester_ikonos(ingester.Ingester):
         # Override
         #
         def verifySourceProduct(self, processInfo):
+                return
                 processInfo.addLog(" verifying product:%s" % (processInfo.srcPath))
                 self.logger.info(" verifying product");
                 fh = open(processInfo.srcPath, 'rb')
@@ -97,10 +99,12 @@ class ingester_ikonos(ingester.Ingester):
         #
         def makeBrowses(self,processInfo):
             try:
-                    browseSrcPath="%s/%s" % (processInfo.workFolder , processInfo.srcProduct.TIF_FILE_NAME)
+                    #browseSrcPath="%s/%s" % (processInfo.workFolder , processInfo.srcProduct.PREVIEW_NAME)
+                    browseSrcPath=processInfo.srcProduct.preview_path
                     browseExtension=definitions_EoSip.getBrowseExtension(0, definitions_EoSip.getDefinition('BROWSE_JPEG_EXT'))
                     browseDestPath="%s/%s.%s" % (processInfo.eosipTmpFolder, processInfo.destProduct.productShortName, browseExtension)
-                    imageUtil.makeJpeg(browseSrcPath, browseDestPath, 50 )
+                    #imageUtil.makeJpeg(browseSrcPath, browseDestPath, 50 )
+                    shutil.copyfile(browseSrcPath, browseDestPath)
                     processInfo.destProduct.addSourceBrowse(browseDestPath, [])
                     processInfo.addLog("  browse image created:%s" %  (browseDestPath))
                     self.logger.info("  browse image created:%s" % browseDestPath)

@@ -10,17 +10,18 @@
 #
 #
 # -*- coding: cp1252 -*-
+
+    
 from abc import ABCMeta, abstractmethod
 import os,sys,inspect
 import logging
 from logging.handlers import RotatingFileHandler
-import time
+import time,datetime
 import sys
 import zipfile
 import re
 import string
 import traceback
-import ConfigParser
 
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
@@ -28,6 +29,8 @@ try:
     sys.path.index(parentdir)
 except:
     sys.path.insert(0,parentdir)
+import ConfigParser
+
     
 #
 from esaProducts import dimap_tropforest_product
@@ -37,7 +40,7 @@ import fileHelper
 from esaProducts import metadata
 from esaProducts import definitions_EoSip
 import imageUtil
-
+from esaProducts import formatUtils
 
 
 #
@@ -104,6 +107,7 @@ num_done=0
 num_error=0
 list_done=[]
 list_error=[]
+description_error=[]
 
 # the eoSip final path list
 FINAL_PATH_LIST=[]
@@ -113,6 +117,9 @@ mission_metadatas={}
 
 # debug stuff
 DEBUG=0
+
+# fixed
+LOG_FOLDER="./log"
 
 
 class Ingester():
@@ -142,6 +149,9 @@ class Ingester():
                 self.logger.addHandler(steam_handler)
                 # instance vars
                 self.productList=None
+                #
+                self.runStartTime=None
+                self.runStopTime=None
 
 
         #
@@ -293,8 +303,8 @@ class Ingester():
         #
         def makeWorkingFolders(self, processInfo):
                 global TMPSPACE
-                # /make working folder
-                tmpPath=TMPSPACE+"/workfolder_%s" % processInfo.num
+                # make working folder
+                tmpPath=TMPSPACE+"/%s_workfolder_%s" % (self.batchName, processInfo.num)
                 processInfo.addLog("  working folder:%s\n" % (tmpPath))
                 if not os.path.exists(tmpPath):
                     self.logger.info("  will make working folder:%s" % tmpPath)
@@ -384,13 +394,16 @@ class Ingester():
         #
         #
         def processProducts(self):
-                global num,num_total,num_done,num_error,list_done,list_error
+                global CONFIG_NAME, num,num_total,num_done,num_error,list_done,list_error,description_error
+                self.batchName="batch_%s_%s" % (CONFIG_NAME, formatUtils.dateNow(pattern="%m%d-%H%M%S"))
+                #
                 num=0
                 num_total=0
                 num_done=0
                 num_error=0
                 list_done=[]
                 list_error=[]
+                self.runStartTime=time.time()
                 num_all=len(self.productList)
                 for item in self.productList:
                         aProcessInfo=processInfo.processInfo()
@@ -408,13 +421,14 @@ class Ingester():
                                 self.doOneProduct(aProcessInfo)
 
                                 num_done=num_done+1
-                                list_done.append(item)
+                                list_done.append(item+"|"+aProcessInfo.workFolder)
                                 
                         except Exception, e:
                                 num_error=num_error+1
-                                list_error.append(item)
+                                list_error.append(item+"|"+aProcessInfo.workFolder)
                                 exc_type, exc_obj, exc_tb = sys.exc_info()
                                 aProcessInfo.addLog("Error:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc()))
+                                description_error.append("Error:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc()))
                                 traceback.print_exc(file=sys.stdout)
 
                                 # try to write prodLod in tmp folder
@@ -431,15 +445,40 @@ class Ingester():
                         if num==1:
                                 break
                         
-                self.summary()
-
-
+                self.runStopTime=time.time()
+                tmp=self.summary()
+                # write batch log
+                if not os.path.exists(LOG_FOLDER):
+                    os.makedirs(LOG_FOLDER)
+                path="%s/%s.log" % (LOG_FOLDER, self.batchName)
+                fd=open(path, "w")
+                fd.write(tmp)
+                fd.close()
+                print " batch log '%s' written in:%s" % (self.batchName, path)
+                # write done list
+                path="%s/%s_DONE.log" % (LOG_FOLDER, self.batchName)
+                fd=open(path, "w")
+                for item in list_done:
+                    fd.write(item+"\n")
+                fd.close()
+                path="%s/%s_ERROR.log" % (LOG_FOLDER, self.batchName)
+                fd=open(path, "w")
+                for item in list_error:
+                    fd.write(item+"\n")
+                fd.close()
+                print " batch log '%s' written in:%s" % (self.batchName, path)
+        #
+        #
+        #
         def summary(self):
-            global num,num_total,num_done,num_error,list_done,list_error
-            res="Summary:\n"
+            global num,num_total,num_done,num_error,list_done,list_error,TMPSPACE
+            res="Summary:\nbatch name:%s\n Started at: %s" % (self.batchName, formatUtils.dateFromSec((self.runStartTime)))
+            res="%s\n Stoped at: %s\n" % (res, formatUtils.dateFromSec(self.runStopTime))
+            res="%s Duration: %s sec\n" % (res, (self.runStopTime-self.runStopTime))
+            res="\n%s TMPSPACE:%s\n" % (res,TMPSPACE)
             res="%s Total of products to be processed:%d\n" % (res,num_total)
-            res="%s Number of product done:%d\n" % (res,num_done)
-            res="%s Number of errors:%d\n\n" % (res,num_error)
+            res="%s  Number of product done:%d\n" % (res,num_done)
+            res="%s  Number of errors:%d\n\n" % (res,num_error)
             n=0
             for item in list_done:
                 res="%s done[%d]:%s" % (res, n, item)
@@ -448,6 +487,7 @@ class Ingester():
             for item in list_error:
                 res="%s errors[%d]:%s" % (res, n, item)
             print res
+            return res
                 
         #
         #

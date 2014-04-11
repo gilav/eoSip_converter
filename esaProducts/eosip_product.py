@@ -162,6 +162,7 @@ class EOSIP_Product(Directory_Product):
         reportFolderName=os.path.split(self.sourceBrowsesPath[0])[0]
         #
         productReportBuilder=rep_metadataReport.rep_metadataReport()
+        self.metadata.debug=1
         self.productReport=self.formatXml(productReportBuilder.buildMessage(self.metadata, "rep:metadataReport"), reportFolderName, 'product_report')
         if self.debug!=0:
             print " product report content:\n%s" % self.productReport

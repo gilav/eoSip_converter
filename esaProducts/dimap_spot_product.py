@@ -118,11 +118,11 @@ class Dimap_Spot_Product(Directory_Product):
             #print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ HRV"
             if self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)=='1' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='P':
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRV1_P__1P')
-            elif self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)=='2' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='P':
+            elif self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)=='2' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='P':
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRV2_P__1P')
             elif self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)=='1' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='X':
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRV1_X__1P')
-            elif self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)=='2' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='X':
+            elif self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)=='2' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='X':
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRV_X__1P')
             else:
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRV#_#_##')
@@ -131,11 +131,11 @@ class Dimap_Spot_Product(Directory_Product):
             #print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ HRVIR"
             if self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)=='1' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='M':
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRV1_P__1P')
-            elif self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)=='2' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='M':
+            elif self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)=='2' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='M':
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRV2_P__1P')
             elif self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)=='1' and (self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='I' or self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='X'):
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRI1_X__1P')
-            elif self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)=='2' and (self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='I' or self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='X'):
+            elif self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)=='2' and (self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='I' or self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='X'):
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRI2_X__1P')
             else:
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRVI_#_##')
@@ -144,7 +144,7 @@ class Dimap_Spot_Product(Directory_Product):
             #print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ HRG"
             if self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)=='1' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='J':
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRG1_X__1P')
-            elif self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)=='2' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='J':
+            elif self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)=='2' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='J':
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRG2_X__1P')
             else:
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRG#_#_##')

@@ -35,7 +35,7 @@ EOSIP_METADATA_MAPPING={'responsible':metadata.METADATA_RESPONSIBLE, 'reportType
 class SipBuilder:
     __metaclass__ =ABCMeta
 
-    debug=0
+    debug=1
 
     @abstractmethod
     def buildMessage(self, representation, metadata, currentTreePath):
