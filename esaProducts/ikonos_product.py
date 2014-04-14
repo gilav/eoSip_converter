@@ -21,7 +21,7 @@ class Ikonos_Product(Directory_Product):
     PREVIEW_SUFFIX='ovr.jpg'
     METADATA_SUFFIX='metadata.txt'
     EXTRACTED_PATH=None
-    debug=0
+    #debug=0
     #
 
     #
@@ -30,6 +30,8 @@ class Ikonos_Product(Directory_Product):
     xmlMapping={metadata.METADATA_START_DATE:'Acquisition Date/Time:*|0',
                 metadata.METADATA_SUN_ELEVATION:'Sun Angle Elevation:*|0',
                 metadata.METADATA_SUN_AZIMUTH:'Sun Angle Azimuth:*|0',
+                metadata.METADATA_INSTRUMENT_ZENITH_ANGLE:'Nominal Collection Azimuth:*|0',
+                metadata.METADATA_INSTRUMENT_ELEVATION_ANGLE:'Nominal Collection Elevation:*|0',
                 metadata.METADATA_IMAGE_NUM_COLUMNS:'Columns:*|0',
                 metadata.METADATA_IMAGE_NUM_ROWS:'Rows:*|0',
                 metadata.METADATA_COUNTRY:'Country Code:*|0',
@@ -75,12 +77,14 @@ class Ikonos_Product(Directory_Product):
         d=0
         for name in z.namelist():
             n=n+1
-            print "  zip content[%d]:%s" % (n, name)
+            if self.debug!=0:
+                print "  zip content[%d]:%s" % (n, name)
             if name.find(self.PREVIEW_SUFFIX)>=0:
                 self.preview_path="%s/%s" % (folder, name)
             elif name.find(self.METADATA_SUFFIX)>=0:
                 self.metadata_path="%s/%s" % (folder, name)
-            print "   %s extracted at path:%s" % (name, folder+'/'+name)
+            if self.debug!=0:
+                print "   %s extracted at path:%s" % (name, folder+'/'+name)
             if name.endswith('/'):
                 d=d+1
         if d==1:
@@ -96,7 +100,8 @@ class Ikonos_Product(Directory_Product):
                 self.preview_data=fd.read()
                 fd.close()
             self.EXTRACTED_PATH=folder
-            print " ################### self.preview_path:%s" % self.preview_path 
+            if self.debug!=0:
+                print " ################### self.preview_path:%s" % self.preview_path 
         else:
             raise Exception("More than 1 directory in product:%d" % d)
 

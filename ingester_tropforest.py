@@ -165,7 +165,10 @@ if __name__ == '__main__':
             ingester.readConfig(sys.argv[1])
             ingester.makeFolders()
             ingester.getMissionDefaults()
-            ingester.findProducts()
+            if len(sys.argv)>2:
+                ingester.setProductsList(sys.argv[2])
+            else:
+                    ingester.findProducts()
             ingester.processProducts()
             
         else:

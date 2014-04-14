@@ -4,8 +4,11 @@
 #
 #
 
-from PIL import Image
-from PIL import ImageEnhance
+try:
+    from PIL import Image
+    from PIL import ImageEnhance
+except:
+    pass
 
 
 debug=0

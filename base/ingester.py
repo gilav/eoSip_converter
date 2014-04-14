@@ -41,6 +41,8 @@ from esaProducts import metadata
 from esaProducts import definitions_EoSip
 import imageUtil
 from esaProducts import formatUtils
+import indexCreator
+import statsUtil
 
 
 #
@@ -50,7 +52,7 @@ CONFIG_NAME=None
 SETTING_CONFIG_NAME='CONFIG_NAME'
 INBOX=None
 SETTING_INBOX='INBOX'
-WORKSPACE=None
+OUTSPACE=None
 SETTING_OUTSPACE='OUTSPACE'
 TMPSPACE=None
 SETTING_TMPSPACE='TMPSPACE'
@@ -89,6 +91,7 @@ SETTING_ENGINE='ENGINE'
 SETTING_Main='Main'
 SETTING_Search='Search'
 SETTING_Output='Output'
+SETTING_workflowp='Workflow'
 #
 SETTING_metadataReport_usedMap='metadataReport-xml-map'
 SETTING_browseReport_usedMap='browseReport-xml-map'
@@ -100,6 +103,13 @@ SETTING_OUTPUT_EO_SIP_PATTERN='OUTPUT_EO_SIP_PATTERN'
 #
 OUTPUT_RELATIVE_PATH_TREES=None
 OUTPUT_EO_SIP_PATTERN=None
+
+# workflow
+SETTING_MAX_PRODUCTS_DONE='MAX_PRODUCTS_DONE'
+SETTING_CREATE_INDEX='CREATE_INDEX'
+SETTING_FIXED_BATCH_NAME='FIXED_BATCH_NAME'
+#
+#
 # counters
 num=0
 num_total=0
@@ -114,12 +124,18 @@ FINAL_PATH_LIST=[]
 
 # mission stuff
 mission_metadatas={}
+# workflow stuff
+max_product_done=None
+create_index=0
+fixed_batch_name=None
+
 
 # debug stuff
 DEBUG=0
 
-# fixed
+# fixed stuff
 LOG_FOLDER="./log"
+file_doBeDoneList="%s/%s" % (LOG_FOLDER, 'product_list.txt')
 
 
 class Ingester():
@@ -139,7 +155,7 @@ class Ingester():
                 basicFormat='%(asctime)s - [%(levelname)s] : %(message)s'
                 formatter = logging.Formatter(basicFormat)
                 #
-                file_handler = RotatingFileHandler('ingest_dimap.log', '', 1000000, 1)
+                file_handler = RotatingFileHandler('ingester.log', '', 1000000, 1)
                 file_handler.setLevel(logging.DEBUG)
                 file_handler.setFormatter(formatter)
                 self.logger.addHandler(file_handler)
@@ -152,6 +168,10 @@ class Ingester():
                 #
                 self.runStartTime=None
                 self.runStopTime=None
+                #
+                self.indexCreator=None
+                self.statsUtil=statsUtil.StatsUtil()
+                
 
 
         #
@@ -159,10 +179,11 @@ class Ingester():
         #
         def readConfig(self, path=None):
                 global CONFIG_NAME, __config, OUTSPACE, INBOX, TMPSPACE, LIST_TYPE, LIST_BUILD, FILES_NAMEPATTERN, FILES_EXTPATTERN, DIRS_NAMEPATTERN, DIRS_ISLEAF,\
-                DIRS_ISEMPTY, LIST_LIMIT, LIST_STARTDATE, LIST_STOPDATE, OUTPUT_EO_SIP_PATTERN, OUTPUT_RELATIVE_PATH_TREES
+                DIRS_ISEMPTY, LIST_LIMIT, LIST_STARTDATE, LIST_STOPDATE, OUTPUT_EO_SIP_PATTERN, OUTPUT_RELATIVE_PATH_TREES, max_product_done,\
+                create_index,fixed_batch_name
                 
                 try:
-                        self.logger.info(" reading configuration...")
+                        self.logger.info("\n\n\n\n\n reading configuration...")
                         __config = ConfigParser.RawConfigParser()
                         __config.optionxform=str
                         __config.read(path)
@@ -219,26 +240,22 @@ class Ingester():
                             OUTPUT_RELATIVE_PATH_TREES = __config.get(SETTING_Output, SETTING_OUTPUT_RELATIVE_PATH_TREES)
                         except:
                             pass
-                            
-                        #
-                        #print "\n configuration:"
-                        #self.logger.info("   INBOX: %s" % INBOX)
-                        #self.logger.info("   WORKSPACE: %s" % WORKSPACE)
-                        #self.logger.info("   OUTSPACE: %s" % OUTSPACE)
-                        #print "   #"
 
-                        #print "   LIST_BUILD: %s" % LIST_BUILD
-                        #print "   LIST_TYPE: %s" % LIST_TYPE
-                        #if LIST_TYPE=='files':
-                                #print "   FILES_NAMEPATTERN: %s" % FILES_NAMEPATTERN
-                                #print "   FILES_EXTPATTERN: %s" % FILES_EXTPATTERN
-                        #elif LIST_TYPE=='dirs':
-                                #print "   DIRS_NAMEPATTERN: %s" % DIRS_NAMEPATTERN
-                                #print "   DIRS_ISLEAF: %s" % DIRS_ISLEAF
-                                #print "   DIRS_ISEMPTY: %s" % DIRS_ISEMPTY	
-                        #print "   LIST_LIMIT: %s" % LIST_LIMIT
-                        #print "   LIST_STARTDATE: %s" % LIST_STARTDATE
-                        #print "   LIST_STOPDATE: %s" % LIST_STOPDATE
+                        # workflow
+                        try:
+                            max_product_done = __config.get(SETTING_workflowp, SETTING_MAX_PRODUCTS_DONE)
+                        except:
+                            pass
+                        try:
+                            create_index = __config.get(SETTING_workflowp, SETTING_CREATE_INDEX)
+                        except:
+                            pass
+
+                        try:
+                            fixed_batch_name = __config.get(SETTING_workflowp, SETTING_FIXED_BATCH_NAME)
+                        except:
+                            pass
+
                         self.dump()
                 except Exception, e:
                         print " Error in reading configuration:"
@@ -252,10 +269,14 @@ class Ingester():
         #
         def dump(self):
                 self.logger.info("   INBOX: %s" % INBOX)
-                self.logger.info("   WORKSPACE: %s" % WORKSPACE)
+                self.logger.info("   TMPSPACE: %s" % TMPSPACE)
                 self.logger.info("   OUTSPACE: %s" % OUTSPACE)
+                self.logger.info("   Max product done limit: %s" % max_product_done)
+                self.logger.info("   Create index: %s" % create_index)
+                self.logger.info("   Fixed batch name: %s" % fixed_batch_name)
                 self.logger.info("   OUTPUT_EO_SIP_PATTERN: %s" % OUTPUT_EO_SIP_PATTERN)
                 self.logger.info("   OUTPUT_RELATIVE_PATH_TREES: %s" % OUTPUT_RELATIVE_PATH_TREES)
+                #raise Exception("STOP")
 
 
         #
@@ -271,6 +292,11 @@ class Ingester():
                 if not os.path.exists(OUTSPACE):
                         self.logger.info("  will make OUTSPACE folder:%s" % OUTSPACE)
                         os.makedirs(OUTSPACE)
+
+                self.logger.info(" test log folder exists:%s" % LOG_FOLDER)
+                if not os.path.exists(LOG_FOLDER):
+                        self.logger.info("  will make log folder:%s" % LOG_FOLDER)
+                        os.makedirs(LOG_FOLDER)
 
                         
         #
@@ -312,6 +338,25 @@ class Ingester():
                     processInfo.addLog("  working folder created:%s\n" % (tmpPath))
                 processInfo.workFolder=tmpPath
                 
+        #
+        #
+        #
+        def setProductsList(self, filePath=None):
+            self.logger.info(" set product list from file:%s" % filePath)
+            fd=open(filePath, "r")
+            lines=fd.readlines()
+            fd.close()
+            list=[]
+            n=0
+            for line in lines:
+                if line[0]!="#":
+                    path=line.replace("\\","/").replace('\n','')
+                    list.append(path)
+                    self.logger.info(" product[%d]:%s" % (n,path))
+                    n=n+1
+            self.logger.info(" there are:%s products in list" % (len(lines)))
+            self.productList=list
+
         #
         #
         #
@@ -394,8 +439,12 @@ class Ingester():
         #
         #
         def processProducts(self):
-                global CONFIG_NAME, num,num_total,num_done,num_error,list_done,list_error,description_error
-                self.batchName="batch_%s_%s" % (CONFIG_NAME, formatUtils.dateNow(pattern="%m%d-%H%M%S"))
+                global CONFIG_NAME, num,num_total,num_done,num_error,list_done,list_error,description_error,max_product_done,create_index,fixed_batch_name
+                #
+                if fixed_batch_name!=None:
+                    self.batchName="batch_%s_%s" % (CONFIG_NAME, fixed_batch_name)
+                else:
+                    self.batchName="batch_%s_%s" % (CONFIG_NAME, formatUtils.dateNow(pattern="%m%d-%H%M%S"))
                 #
                 num=0
                 num_total=0
@@ -405,29 +454,65 @@ class Ingester():
                 list_error=[]
                 self.runStartTime=time.time()
                 num_all=len(self.productList)
+    
+                # write file list of products
+                fd=open(file_doBeDoneList, "w")
+                fd.write("# total:%s\n" % len(self.productList))
+                for item in self.productList:
+                    fd.write("%s\n" % item)
+                fd.close
+                self.logger.info("\n\nlist of products to be done written in:%s\n\n" % (file_doBeDoneList))
+
+                #
+                if create_index!=0:
+                    self.indexCreator=indexCreator.IndexCreator()
+                    self.logger.info("will create index")
+
+                self.statsUtil.start(len(self.productList))
+                
                 for item in self.productList:
                         aProcessInfo=processInfo.processInfo()
                         aProcessInfo.srcPath=item
                         aProcessInfo.num=num
+                        #try:
+                        num=num+1
+                        num_total=num_total+1
+                        self.logger.info("")
+                        self.logger.info("")
+                        self.logger.info("")
+                        self.logger.info("")
+                        self.logger.info("doing product[%d/%d]:%s" % ( num, num_all, item))
+                        aProcessInfo.addLog("\n\nDoing product[%d/%d]:%s" % ( num, num_all, item))
                         try:
-                                num=num+1
-                                num_total=num_total+1
-                                self.logger.info("")
-                                self.logger.info("")
-                                self.logger.info("")
-                                self.logger.info("")
-                                self.logger.info("doing product[%d/%d]:%s" % ( num, num_all, item))
-                                aProcessInfo.addLog("\n\nDoing product[%d/%d]:%s" % ( num, num_all, item))
                                 self.doOneProduct(aProcessInfo)
 
                                 num_done=num_done+1
                                 list_done.append(item+"|"+aProcessInfo.workFolder)
+                                if create_index!=0:
+                                    try:
+                                        self.indexCreator.create_index(aProcessInfo.destProduct.metadata)
+                                    except:
+                                        aProcessInfo.addLog("ERROR creating index: TBD")
+                                        pass
                                 
                         except Exception, e:
                                 num_error=num_error+1
-                                list_error.append(item+"|"+aProcessInfo.workFolder)
+                                try:
+                                    #print "111 %s:" % item
+                                    #print "222 %s:" % aProcessInfo
+                                    #print "333 %s:" % list_error
+                                    list_error.append("%s|%s" % (item,aProcessInfo.workFolder))
+                                except Exception, ee:
+                                    self.logger.error("error adding product in error list")
                                 exc_type, exc_obj, exc_tb = sys.exc_info()
-                                aProcessInfo.addLog("Error:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc()))
+                                print "111 %s:" % exc_type
+                                print "222 %s:" % exc_obj
+                                print "333 %s:" % traceback.format_exc()
+                                try:
+                                    aProcessInfo.addLog("Error:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc()))
+                                    self.logger.error("problem adding error info in ProcessInfo:%s" % aProcessInfo)
+                                except:
+                                    pass
                                 description_error.append("Error:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc()))
                                 traceback.print_exc(file=sys.stdout)
 
@@ -436,13 +521,17 @@ class Ingester():
                                 try:
                                         prodLogPath="%s/bad_ingestion_%d.log" % (aProcessInfo.workFolder, num)
                                         fd=open(prodLogPath, 'w')
-                                        fd.write(processInfo.prodLog)
+                                        fd.write(aProcessInfo.prodLog)
                                         fd.close()
                                         #print "prodLog written in fodler:%s" % prodLogPath
-                                except:
+                                except Exception, ee:
                                         print "Error: problem writing prodLog in fodler:%s" % aProcessInfo.workFolder
+                                        exc_type, exc_obj, exc_tb = sys.exc_info()
+                                        print " problem is:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc())
 
-                        if num==1:
+                        if max_product_done!=None and num>=int(max_product_done):
+                                aProcessInfo.addLog("max number of product to be done reached:%s; STOPPING" % max_product_done)
+                                self.logger.info("max number of product to be done reached:%s; STOPPING" % max_product_done)
                                 break
                         
                 self.runStopTime=time.time()
@@ -454,7 +543,7 @@ class Ingester():
                 fd=open(path, "w")
                 fd.write(tmp)
                 fd.close()
-                print " batch log '%s' written in:%s" % (self.batchName, path)
+                print " batch done log '%s' written in:%s" % (self.batchName, path)
                 # write done list
                 path="%s/%s_DONE.log" % (LOG_FOLDER, self.batchName)
                 fd=open(path, "w")
@@ -466,26 +555,31 @@ class Ingester():
                 for item in list_error:
                     fd.write(item+"\n")
                 fd.close()
-                print " batch log '%s' written in:%s" % (self.batchName, path)
+                print " batch error log '%s' written in:%s" % (self.batchName, path)
         #
         #
         #
         def summary(self):
-            global num,num_total,num_done,num_error,list_done,list_error,TMPSPACE
+            global num,num_total,num_done,num_error,list_done,list_error,TMPSPACE,OUTSPACE
             res="Summary:\nbatch name:%s\n Started at: %s" % (self.batchName, formatUtils.dateFromSec((self.runStartTime)))
             res="%s\n Stoped at: %s\n" % (res, formatUtils.dateFromSec(self.runStopTime))
-            res="%s Duration: %s sec\n" % (res, (self.runStopTime-self.runStopTime))
+            res="%s Duration: %s sec\n" % (res, (self.runStopTime-self.runStartTime))
             res="\n%s TMPSPACE:%s\n" % (res,TMPSPACE)
+            res="\n%s OUTSPACE:%s\n" % (res,OUTSPACE)
             res="%s Total of products to be processed:%d\n" % (res,num_total)
             res="%s  Number of product done:%d\n" % (res,num_done)
             res="%s  Number of errors:%d\n\n" % (res,num_error)
             n=0
             for item in list_done:
-                res="%s done[%d]:%s" % (res, n, item)
+                res="%s done[%d]:%s\n" % (res, n, item)
+                n=n+1
             n=0
             res="%s\n" % res
             for item in list_error:
-                res="%s errors[%d]:%s" % (res, n, item)
+                res="%s errors[%d]:%s\n" % (res, n, item)
+                n=n+1
+            res="\n\n%s  Number of product done:%d\n" % (res,num_done)
+            res="%s  Number of errors:%d\n\n" % (res,num_error)
             print res
             return res
                 
@@ -494,7 +588,8 @@ class Ingester():
         #
         def doOneProduct(self, processInfo):
                 global OUTPUT_EO_SIP_PATTERN, OUTSPACE
-                
+
+                startProcessing=time.time()
                 self.verifySourceProduct(processInfo)
                 # create work folder
                 workfolder=self.makeWorkingFolders(processInfo)
@@ -558,11 +653,19 @@ class Ingester():
                 
                 # output Eo-Sip product
                 self.output_eoSip(processInfo, OUTSPACE, OUTPUT_RELATIVE_PATH_TREES)
-                #processInfo.destProduct.writeToFolder(OUTSPACE)
-                #processInfo.addLog("  Eo-Sip product writen in folder:%s\n" %  (OUTSPACE))
-                #self.logger.info("  Eo-Sip product writen in folder:%s\n" %  (OUTSPACE))
 
-                
+                processingDuration=time.time()-startProcessing
+                # compute stats
+                try:
+                    # TODO: move get size into product??
+                    size=os.stat(processInfo.destProduct.path).st_size
+                    self.statsUtil.oneDone(processingDuration, size)
+                    self.logger.info("  batch run will be completed at:%s" % self.statsUtil.getEndDate())
+                except:
+                    exc_type, exc_obj, exc_tb = sys.exc_info()
+                    processInfo.addLog("Error:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc()))
+                    self.logger.info("Error doing stats")
+                    pass
                 print "\n\n\n\nLog:%s\n" % processInfo.prodLog
                 
                 
@@ -633,6 +736,9 @@ if __name__ == '__main__':
     print "start"
     if len(sys.argv) > 1:
             configFile = sys.argv[1]
+            listOfProductFile=None
+            if len(sys.argv[1])>2:
+                listOfProductFile=sys.argv[2]
             ing=Ingester()
             ing.readConfig(configFile)
             ing.findProducts()

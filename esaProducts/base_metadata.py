@@ -28,23 +28,23 @@ class Base_Metadata:
         self.xmlNodeUsedMapping=adict
 
     def isFieldUsed(self, path=None):
-        print "###########################\n###########################\n isFieldUsed: path:'%s'  len(exclusion):%d" % (path, len(self.xmlNodeUsedMapping))
+        #print "###########################\n###########################\n isFieldUsed: path:'%s'  len(exclusion):%d" % (path, len(self.xmlNodeUsedMapping))
         n=0
         for item in self.xmlNodeUsedMapping.keys():
-            print "########################### exclusion[%d]:%s=%s." % (n, item, self.xmlNodeUsedMapping[item])
+            #print "########################### exclusion[%d]:%s=%s." % (n, item, self.xmlNodeUsedMapping[item])
             n=n+1
             
         if self.xmlNodeUsedMapping.has_key(path):
             #print "   field at path:'%s' used flag:%s" % (path, self.xmlNodeUsedMapping[path])
             if self.xmlNodeUsedMapping[path]=='UNUSED':
-                print "########################### UNUSED"
+                #print "########################### UNUSED"
                 return 0
             else:
-                print "########################### USED"
+                #print "########################### USED"
                 return 1
         else:
-            print "########################### NO MAPPING; USED"
-            print "  field with path:'%s' has no used map entry" % path
+            #print "########################### NO MAPPING; USED"
+            #print "  field with path:'%s' has no used map entry" % path
             return 1
             
 

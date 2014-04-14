@@ -20,7 +20,7 @@ EOSIP_METADATA_MAPPING={'responsible':metadata.METADATA_RESPONSIBLE, 'reportType
                         'sensorType':metadata.METADATA_SENSOR_TYPE,
                         'wrsLongitudeGrid':metadata.METADATA_WRS_LONGITUDE_GRID_NORMALISED, 'wrsLatitudeGrid':metadata.METADATA_WRS_LATITUDE_GRID_NORMALISED,
                         'illuminationAzimuthAngle':metadata.METADATA_SUN_AZIMUTH, 'illuminationElevationAngle':metadata.METADATA_SUN_ELEVATION,
-                        'incidanceAngle':metadata.METADATA_INCIDENCE_ANGLE,
+                        'incidanceAngle':metadata.METADATA_INSTRUMENT_INCIDENCE_ANGLE,
                         'productSize':metadata.METADATA_PRODUCT_SIZE,
                         'referenceSystemIdentifier':metadata.METADATA_REFERENCE_SYSTEM_IDENTIFIER,
                         'href':metadata.METADATA_PACKAGENAME, 'timePosition':metadata.METADATA_PROCESSING_TIME, 'cloudCoverPercentage':metadata.METADATA_CLOUD_COVERAGE,
@@ -35,7 +35,7 @@ EOSIP_METADATA_MAPPING={'responsible':metadata.METADATA_RESPONSIBLE, 'reportType
 class SipBuilder:
     __metaclass__ =ABCMeta
 
-    debug=1
+    debug=0
 
     @abstractmethod
     def buildMessage(self, representation, metadata, currentTreePath):
