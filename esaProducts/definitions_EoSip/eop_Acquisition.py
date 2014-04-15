@@ -25,7 +25,9 @@ class eop_Acquisition(SipMessageBuilder):
         "<gml:illuminationAzimuthAngle>@illuminationAzimuthAngle@</gml:illuminationAzimuthAngle>",
         "<gml:illuminationZenithAngle>@illuminationZenithAngle@</gml:illuminationZenithAngle>",
         "<gml:illuminationElevationAngle>@illuminationElevationAngle@</gml:illuminationElevationAngle>",
-        "<gml:incidanceAngle>@incidanceAngle@</gml:incidanceAngle>"]
+        "<gml:incidanceAngle>@incidanceAngle@</gml:incidanceAngle>",
+        "<eop:instrumentZenithAngle>@instrumentZenithAngle@</eop:instrumentZenithAngle>",
+        "<eop:instrumentElevationAngle>@instrumentElevationAngle@</eop:instrumentElevationAngle>"]
 
     FIELDS = ["orbitNumber", "orbitDirection" ,"wrsLongitudeGrid", "wrsLatitudeGrid", "illuminationAzimuthAngle", "illuminationZenithAngle", "illuminationElevationAngle", "incidanceAngle"]
 

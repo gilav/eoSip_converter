@@ -192,6 +192,12 @@ class Ikonos_Product(Directory_Product):
         tmp=self.metadata.getMetadataValue(metadata.METADATA_SUN_AZIMUTH).replace(" degrees","").strip()
         self.metadata.setMetadataPair(metadata.METADATA_SUN_AZIMUTH, tmp)
 
+        tmp=self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ZENITH_ANGLE).replace(" degrees","").strip()
+        self.metadata.setMetadataPair(metadata.METADATA_INSTRUMENT_ZENITH_ANGLE, tmp)
+
+        tmp=self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ELEVATION_ANGLE).replace(" degrees","").strip()
+        self.metadata.setMetadataPair(metadata.METADATA_INSTRUMENT_ELEVATION_ANGLE, tmp)
+
         tmp=self.metadata.getMetadataValue(metadata.METADATA_CLOUD_COVERAGE).strip()
         self.metadata.setMetadataPair(metadata.METADATA_CLOUD_COVERAGE, tmp)
         

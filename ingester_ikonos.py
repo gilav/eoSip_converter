@@ -154,7 +154,7 @@ if __name__ == '__main__':
     try:
         if len(sys.argv) > 1:
             ingester = ingester_ikonos()
-            ingester.debug=1
+            ingester.debug=0
             ingester.readConfig(sys.argv[1])
             ingester.makeFolders()
             ingester.getMissionDefaults()

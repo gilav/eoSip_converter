@@ -130,7 +130,7 @@ create_index=0
 fixed_batch_name=None
 
 
-# debug stuff
+# default debug value
 DEBUG=0
 
 # fixed stuff
@@ -439,7 +439,7 @@ class Ingester():
         #
         #
         def processProducts(self):
-                global CONFIG_NAME, num,num_total,num_done,num_error,list_done,list_error,description_error,max_product_done,create_index,fixed_batch_name
+                global CONFIG_NAME, DEBUG, num,num_total,num_done,num_error,list_done,list_error,description_error,max_product_done,create_index,fixed_batch_name
                 #
                 if fixed_batch_name!=None:
                     self.batchName="batch_%s_%s" % (CONFIG_NAME, fixed_batch_name)
@@ -490,9 +490,14 @@ class Ingester():
                                 list_done.append(item+"|"+aProcessInfo.workFolder)
                                 if create_index!=0:
                                     try:
-                                        self.indexCreator.create_index(aProcessInfo.destProduct.metadata)
-                                    except:
-                                        aProcessInfo.addLog("ERROR creating index: TBD")
+                                        # aProcessInfo.destProduct.browse_metadata_dict, is a dictionnary: browsePath/metadata
+                                        firstBrowsePath=aProcessInfo.destProduct.browse_metadata_dict.iterkeys().next()
+                                        self.indexCreator.addOneProduct(aProcessInfo.destProduct.metadata, aProcessInfo.destProduct.browse_metadata_dict[firstBrowsePath])
+                                    except Exception, e:
+                                        exc_type, exc_obj, exc_tb = sys.exc_info()
+                                        print " ERROR creating index:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc())
+                                        aProcessInfo.addLog("ERROR creating index:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc()))
+                                        self.logger.error("ERROR creating index: %s  %s" % (exc_type, exc_obj))
                                         pass
                                 
                         except Exception, e:
@@ -556,6 +561,19 @@ class Ingester():
                     fd.write(item+"\n")
                 fd.close()
                 print " batch error log '%s' written in:%s" % (self.batchName, path)
+                
+                if create_index!=0:
+                    # index text:
+                    tmp=self.indexCreator.getIndexesText()
+                    if self.debug!=0:
+                        print "\n\nINDEX:\n%s"  % tmp
+                    path="%s/%s" % (OUTSPACE, 'index.txt')
+                    fd=open(path, "w")
+                    fd.write(tmp)
+                    fd.close()
+                    print "\n index written in:%s" % (path)
+                
+
         #
         #
         #
