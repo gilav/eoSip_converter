@@ -116,11 +116,15 @@ class ingester_tropforest(ingester.Ingester):
                     processInfo.addLog("  browse image created:%s" %  (browseDestPath))
                     self.logger.info("  browse image created:%s" % browseDestPath)
             except Exception, e:
-                    exc_type, exc_obj, exc_tb = sys.exc_info()
-                    errorMsg="Error generating browse:%s  %s\n%s" %  (exc_type, exc_obj, traceback.format_exc())
-                    self.logger.error(errorMsg)
-                    processInfo.addLog="%s" %  (errorMsg)
-                    processInfo.addLog="%s" %  (traceback.format_exc())
+                    try:
+                            exc_type, exc_obj, exc_tb = sys.exc_info()
+                            errorMsg="Error generating browse: error type:%s  exec_obj:%s" %  (exc_type, exc_obj)
+                            self.logger.error(errorMsg)
+                            processInfo.addLog("%s" %  (errorMsg))
+                            processInfo.addLog("%s" %  (traceback.format_exc()))
+                    except Exception, ee:
+                            self.logger.error("  problem adding browse generation error in processInfo")
+                            pass
                     raise e
 
         #
@@ -161,7 +165,7 @@ if __name__ == '__main__':
     try:
         if len(sys.argv) > 1:
             ingester = ingester_tropforest()
-            ingester.debug=1
+            #ingester.debug=1
             ingester.readConfig(sys.argv[1])
             ingester.makeFolders()
             ingester.getMissionDefaults()

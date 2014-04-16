@@ -192,8 +192,6 @@ class Dimap_Tropforest_Product(Directory_Product):
     # - build type code
     #
     def refineMetadata(self):
-        #raise Exception("STOP")
-
         #
         if self.metadata.getMetadataValue(metadata.METADATA_PLATFORM)=='ALOS':
             self.metadata.setMetadataPair(metadata.METADATA_PLATFORM_ID, '1')
@@ -208,7 +206,12 @@ class Dimap_Tropforest_Product(Directory_Product):
         tmp = self.metadata.getMetadataValue(metadata.METADATA_PROCESSING_TIME)
         if len(tmp) == 10:
             self.metadata.setMetadataPair(metadata.METADATA_PROCESSING_TIME, "%sT00:00:00Z" % tmp)
-            
+
+        # some product have empty start time
+        if self.metadata.getMetadataValue(metadata.METADATA_START_TIME)==None:
+            self.metadata.setMetadataPair(metadata.METADATA_START_TIME, "00:00:00")
+        if self.metadata.getMetadataValue(metadata.METADATA_STOP_TIME)==None:
+            self.metadata.setMetadataPair(metadata.METADATA_STOP_TIME, "00:00:00")  
         # 
         self.buildTypeCode() 
 
@@ -244,6 +247,7 @@ class Dimap_Tropforest_Product(Directory_Product):
 
     #
     # extract the footprint posList point, ccw, lat lon
+    # NOTE: Deimos products have UTM coordinates
     #
     def extractFootprint(self, helper, met):
         nodes=[]
@@ -251,19 +255,22 @@ class Dimap_Tropforest_Product(Directory_Product):
         if len(nodes)==1:
             ulx = helper.getNodeText(helper.getFirstNodeByPath(nodes[0], 'ULXMAP', None))
             uly = helper.getNodeText(helper.getFirstNodeByPath(nodes[0], 'ULYMAP', None))
-            brx = helper.getNodeText(helper.getFirstNodeByPath(nodes[0], 'BRXMAP', None))
-            bry = helper.getNodeText(helper.getFirstNodeByPath(nodes[0], 'BRYMAP', None))
-            if self.debug!=0:
-                print " ulx:%s  uly:%s  brx:%s  bry:%s" % (ulx, uly, brx, bry)
-            # store it for browse report in rectified browse
-            # should be in lower left lat/lon + upper right lat/lon.
-            met.setMetadataPair(browse_metadata.BROWSE_METADATA_RECT_COORDLIST, "%s %s %s %s" % (bry, ulx, uly , brx))
+            try:
+                brx = helper.getNodeText(helper.getFirstNodeByPath(nodes[0], 'BRXMAP', None))
+                bry = helper.getNodeText(helper.getFirstNodeByPath(nodes[0], 'BRYMAP', None))
+                if self.debug!=0:
+                    print " ulx:%s  uly:%s  brx:%s  bry:%s" % (ulx, uly, brx, bry)
+                # store it for browse report in rectified browse
+                # should be in lower left lat/lon + upper right lat/lon.
+                met.setMetadataPair(browse_metadata.BROWSE_METADATA_RECT_COORDLIST, "%s %s %s %s" % (bry, ulx, uly , brx))
 
-            # make the product metadata report footprint in ccw order
-            ccw="%s %s %s %s %s %s %s %s %s %s" % (uly, ulx,   bry, ulx,   bry, brx,   uly, brx,   uly, ulx)
-            if self.debug!=0:
-                print " posList:%s" % ccw
-            met.setMetadataPair(metadata.METADATA_FOOTPRINT, ccw)
+                # make the product metadata report footprint in ccw order
+                ccw="%s %s %s %s %s %s %s %s %s %s" % (uly, ulx,   bry, ulx,   bry, brx,   uly, brx,   uly, ulx)
+                if self.debug!=0:
+                    print " posList:%s" % ccw
+                met.setMetadataPair(metadata.METADATA_FOOTPRINT, ccw)
+            except:
+                met.setMetadataPair(metadata.METADATA_FOOTPRINT, "1234 5678")
         else:
             print " ERROR: Geoposition/Geoposition_Insert has not 4 subnodes:%d" % len(nodes)
         return

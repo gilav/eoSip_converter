@@ -11,10 +11,15 @@ import StringIO
 import time
 import datetime
 import traceback
+import utm
 
 
 debug=0
 
+
+def utmToLatLon(easting, northing, zone_number, zone_letter):
+        return utm.to_latlon(easting, northing, zone_number, zone_letter)
+        
 def dateFromSec(t, pattern="%y-%m-%d %H:%M:%S"):
         d=datetime.datetime.fromtimestamp(t)
         return d.strftime(pattern)
@@ -49,8 +54,13 @@ def EEEtoNumber(s=None):
                 print " ### EEEtoNumber res:'%s'\n" % i
         return "%s" % i
         
-        
-def normaliseNumber(s=None, max=-1, pad=' '):
+
+#
+# change number text:
+# - suppress leading and tailing space
+# - set length
+#
+def normaliseNumber(s=None, max=-1, pad=' ', truncate=None):
         if debug!=0:
             print "normaliseNumber:'%s'" % s
         if s==None:
@@ -68,6 +78,11 @@ def normaliseNumber(s=None, max=-1, pad=' '):
                 # suppress space on left side
                 while len(res)>max and res[0]==' ':
                         res=res[1:]
+
+        if len(res) > max:
+                # suppress space on right side, troncate if allowed
+                while len(res)>max and truncate!=None:
+                        res=res[0:-1]
 
         if debug!=0:
                 print " normaliseNumber after max; res:'%s'" % res
@@ -101,13 +116,22 @@ def reverseFootprint(footprint):
 
 if __name__ == '__main__':
     try:
+        a="Ikonos"
+        print "a=='%s' normaliseNumber(a)==>'%s'" % (a, normaliseNumber(a, 2, None, 1))
+
+        
         a="          1"
         print "a=='%s' normaliseNumber(a)==>'%s'" % (a, normaliseNumber(a))
         print "a=='%s' normaliseNumber(a,4)==>'%s'" % (a, normaliseNumber(a,4))
         print "a=='%s' normaliseNumber(a,-1)==>'%s'" % (a, normaliseNumber(a,8))
+
+
         a="   +1.2345E02   "
         print "a=='%s' normaliseNumber(a,4)==>'%s'" % (a, normaliseNumber(a,8))
         print "a=='%s' EEEtoNumber(a)==>'%s'" % (a, EEEtoNumber(a))
+
+
+
         a="   -1.2345E02   "
         print "a=='%s' EEEtoNumber(a)==>'%s'" % (a, EEEtoNumber(a))
         cwFootprint="11.505158383 -1.7328153269 22.400659479 -2.9829417472 33.876066318 -3.1602073246 44.979779308 -4.903779609 55.505158383 -5.7328153269"

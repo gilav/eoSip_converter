@@ -490,7 +490,6 @@ class Ingester():
                                 list_done.append(item+"|"+aProcessInfo.workFolder)
                                 if create_index!=0:
                                     try:
-                                        # aProcessInfo.destProduct.browse_metadata_dict, is a dictionnary: browsePath/metadata
                                         firstBrowsePath=aProcessInfo.destProduct.browse_metadata_dict.iterkeys().next()
                                         self.indexCreator.addOneProduct(aProcessInfo.destProduct.metadata, aProcessInfo.destProduct.browse_metadata_dict[firstBrowsePath])
                                     except Exception, e:
@@ -502,34 +501,22 @@ class Ingester():
                                 
                         except Exception, e:
                                 num_error=num_error+1
-                                try:
-                                    #print "111 %s:" % item
-                                    #print "222 %s:" % aProcessInfo
-                                    #print "333 %s:" % list_error
-                                    list_error.append("%s|%s" % (item,aProcessInfo.workFolder))
-                                except Exception, ee:
-                                    self.logger.error("error adding product in error list")
+                                list_error.append("%s|%s" % (item,aProcessInfo.workFolder))
                                 exc_type, exc_obj, exc_tb = sys.exc_info()
-                                print "111 %s:" % exc_type
-                                print "222 %s:" % exc_obj
-                                print "333 %s:" % traceback.format_exc()
                                 try:
+                                    self.logger.error("Error:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc()))
                                     aProcessInfo.addLog("Error:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc()))
-                                    self.logger.error("problem adding error info in ProcessInfo:%s" % aProcessInfo)
-                                except:
-                                    pass
-                                description_error.append("Error:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc()))
-                                traceback.print_exc(file=sys.stdout)
+                                except  Exception, ee:
+                                    self.logger.error(" Error: adding log info into processInfo:%s" % aProcessInfo)
+                                    exc_type, exc_obj, exc_tb = sys.exc_info()
+                                    print " ERROR adding error in log:%s  %s" %  (exc_type, exc_obj)
 
-                                # try to write prodLod in tmp folder
-                                #print "\n\n\nProduct log:\n%s" % prodLog
                                 try:
                                         prodLogPath="%s/bad_ingestion_%d.log" % (aProcessInfo.workFolder, num)
                                         fd=open(prodLogPath, 'w')
                                         fd.write(aProcessInfo.prodLog)
                                         fd.close()
-                                        #print "prodLog written in fodler:%s" % prodLogPath
-                                except Exception, ee:
+                                except Exception, eee:
                                         print "Error: problem writing prodLog in fodler:%s" % aProcessInfo.workFolder
                                         exc_type, exc_obj, exc_tb = sys.exc_info()
                                         print " problem is:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc())
@@ -597,94 +584,95 @@ class Ingester():
                 res="%s errors[%d]:%s\n" % (res, n, item)
                 n=n+1
             res="\n\n%s  Number of product done:%d\n" % (res,num_done)
-            res="%s  Number of errors:%d\n\n" % (res,num_error)
+            res="%s  Number of errors:%d\n" % (res,num_error)
+            res="\n%s Duration: %s sec\n" % (res, (self.runStopTime-self.runStartTime))
             print res
             return res
                 
         #
         #
         #
-        def doOneProduct(self, processInfo):
+        def doOneProduct(self, pInfo):
                 global OUTPUT_EO_SIP_PATTERN, OUTSPACE
 
                 startProcessing=time.time()
-                self.verifySourceProduct(processInfo)
+                self.verifySourceProduct(pInfo)
                 # create work folder
-                workfolder=self.makeWorkingFolders(processInfo)
+                workfolder=self.makeWorkingFolders(pInfo)
                 # instanciate source product
-                self.createSourceProduct(processInfo)
+                self.createSourceProduct(pInfo)
                 # prepare it: move/decompress it in work folder
-                self.prepareProducts(processInfo)
+                self.prepareProducts(pInfo)
                 # create empty metadata
                 met=metadata.Metadata(mission_metadatas)
                 if self.debug!=0:
                         print "\n###  initial metadata dump:\n%s" % met.toString()
                 #
-                self.extractMetadata(met, processInfo)
+                self.extractMetadata(met, pInfo)
                 if self.debug!=0:
                         print "\n###  final metadata dump:\n%s" % met.toString()
 
                 # instanciate destination product
-                self.createDestinationProduct(processInfo)
+                self.createDestinationProduct(pInfo)
 
                 # set metadata
-                processInfo.destProduct.setMetadata(met)
-                processInfo.destProduct.setXmlMappingMetadata(xmlMappingMetadata, xmlMappingBrowse)
+                pInfo.destProduct.setMetadata(met)
+                pInfo.destProduct.setXmlMappingMetadata(xmlMappingMetadata, xmlMappingBrowse)
 
                 # build product name
                 patternName = OUTPUT_EO_SIP_PATTERN
-                processInfo.destProduct.buildProductNames(patternName, definitions_EoSip.getDefinition('PRODUCT_EXT'))
-                self.logger.info("  Eo-Sip product name:%s"  % processInfo.destProduct.productShortName)
-                processInfo.addLog("  Eo-Sip product name:%s"  % processInfo.destProduct.productShortName)
+                pInfo.destProduct.buildProductNames(patternName, definitions_EoSip.getDefinition('PRODUCT_EXT'))
+                self.logger.info("  Eo-Sip product name:%s"  % pInfo.destProduct.productShortName)
+                pInfo.addLog("  Eo-Sip product name:%s"  % pInfo.destProduct.productShortName)
 
                 # make Eo-Sip tmp folder
-                processInfo.eosipTmpFolder = processInfo.workFolder + "/" + processInfo.destProduct.productShortName
-                if not os.path.exists(processInfo.eosipTmpFolder):
-                        self.logger.info("  will make tmpEosipFolder:%s" % processInfo.eosipTmpFolder)
-                        processInfo.addLog("  will make tmpEosipFolder:%s" % processInfo.eosipTmpFolder)
-                        os.makedirs(processInfo.eosipTmpFolder)
+                pInfo.eosipTmpFolder = pInfo.workFolder + "/" + pInfo.destProduct.productShortName
+                if not os.path.exists(pInfo.eosipTmpFolder):
+                        self.logger.info("  will make tmpEosipFolder:%s" % pInfo.eosipTmpFolder)
+                        pInfo.addLog("  will make tmpEosipFolder:%s" % pInfo.eosipTmpFolder)
+                        os.makedirs(pInfo.eosipTmpFolder)
 
                 # make browse file
-                self.makeBrowses(processInfo)
+                self.makeBrowses(pInfo)
 
                 # make report files
                 # SIP report
-                tmp=processInfo.destProduct.buildSipReportFile()
-                processInfo.addLog("  Sip report file built:%s" %  (tmp))
+                tmp=pInfo.destProduct.buildSipReportFile()
+                pInfo.addLog("  Sip report file built:%s" %  (tmp))
                 self.logger.info("  Sip report file built:%s" %  (tmp))
 
                 # browse reports
-                tmp=processInfo.destProduct.buildBrowsesReportFile()
+                tmp=pInfo.destProduct.buildBrowsesReportFile()
                 n=0
                 for item in tmp:
-                    processInfo.addLog("  Browse[%d] report file built:%s\n" %  (n, item))
+                    pInfo.addLog("  Browse[%d] report file built:%s\n" %  (n, item))
                     self.logger.info("  Browse[%d] report file built:%s" %  (n, item))
                     n=n+1
 
                 # metadata report
-                tmp=processInfo.destProduct.buildProductReportFile()
-                processInfo.addLog("  Product report file built:%s" % tmp)
+                tmp=pInfo.destProduct.buildProductReportFile()
+                pInfo.addLog("  Product report file built:%s" % tmp)
                 self.logger.info("  Product report file built:%s" % tmp)
 
                 #
-                processInfo.destProduct.info()
+                pInfo.destProduct.info()
                 
                 # output Eo-Sip product
-                self.output_eoSip(processInfo, OUTSPACE, OUTPUT_RELATIVE_PATH_TREES)
+                self.output_eoSip(pInfo, OUTSPACE, OUTPUT_RELATIVE_PATH_TREES)
 
                 processingDuration=time.time()-startProcessing
                 # compute stats
                 try:
                     # TODO: move get size into product??
-                    size=os.stat(processInfo.destProduct.path).st_size
+                    size=os.stat(pInfo.destProduct.path).st_size
                     self.statsUtil.oneDone(processingDuration, size)
                     self.logger.info("  batch run will be completed at:%s" % self.statsUtil.getEndDate())
                 except:
                     exc_type, exc_obj, exc_tb = sys.exc_info()
-                    processInfo.addLog("Error:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc()))
+                    pInfo.addLog("Error:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc()))
                     self.logger.info("Error doing stats")
                     pass
-                print "\n\n\n\nLog:%s\n" % processInfo.prodLog
+                print "\n\n\n\nLog:%s\n" % pInfo.prodLog
                 
                 
         #

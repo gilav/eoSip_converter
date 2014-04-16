@@ -39,8 +39,8 @@ class NamingConvention(Product):
             if self.debug!=0:
                 print "doing token:%s" % tok
             if tok=='<SSS>':
-                tmp=formatUtils.normaliseNumber(met.getMetadataValue(metadata.METADATA_PLATFORM), len(tok)-3)
-                tmp1=formatUtils.normaliseNumber(met.getMetadataValue(metadata.METADATA_PLATFORM_ID), len(tok)-4)
+                tmp=formatUtils.normaliseNumber(met.getMetadataValue(metadata.METADATA_PLATFORM), len(tok)-3, None, 1).upper()
+                tmp1=formatUtils.normaliseNumber(met.getMetadataValue(metadata.METADATA_PLATFORM_ID), len(tok)-4, None, 1)
                 res="%s%s" % (tmp, tmp1)
                 if self.debug!=0:
                     print "res is now:%s"% res

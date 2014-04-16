@@ -13,7 +13,11 @@ class processInfo():
         print "init processInfo"
 
     def addLog(self, mess):
-        self.prodLog="%s%s\n" % (self.prodLog, mess)
+        try:
+            self.prodLog="%s%s\n" % (self.prodLog, mess)
+        except:
+            print " ERROR: processInfo.addLog problem"
+            pass
 
     
     def toString(self):
