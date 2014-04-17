@@ -172,22 +172,22 @@ class XmlHelper:
             n=0
             for node in nodeList:
                 if self.DEBUG!=0:
-                    print "  getNodeByPath: non-leaf node[%d] name:%s" % (n, node.localName)
+                    print "  getNodeByPath: non-deep-ok node[%d]; name:%s; currentLevel:%s" % (n, node.localName, currentLevel)
                 if node.localName == currentLevel:
                     if self.DEBUG!=0:
-                        print "  getNodeByPath: non-leaf node[%d] name:%s match" % (n, node.localName)
+                        print "  getNodeByPath: non-deep-ok node[%d] name:%s match" % (n, node.localName)
                     self.getNodeByPath(node, nextPath, attr, result)
 
-        else: #deepest level reached
-            # look for leaf node
+        else: #deepest ok level reached
+            # look for the node
             nodeList = node.childNodes
             n=0
             for node in nodeList:
                 if self.DEBUG!=0:
-                    print "  getNodeByPath: leaf node[%d] name:%s" % (n, node.localName)
+                    print "  getNodeByPath: deep-ok node[%d]; name:%s; currentLevel:%s" % (n, node.localName, currentLevel)
                 if node.localName == currentLevel:
                     if self.DEBUG!=0:
-                        print "  getNodeByPath: leaf node[%d] name:%s match" % (n, node.localName)
+                        print "  getNodeByPath: deep-ok node[%d] name:%s match" % (n, node.localName)
                     result.append(node)
 
     #

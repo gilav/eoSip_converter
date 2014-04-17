@@ -49,7 +49,10 @@ class IndexCreator():
                       'THUMBNAIL_URL':browse_metadata.BROWSE_METADATA_FILENAME
                       }
     # metadata taken from browse (not from product)
-    BROWSE_METADATA_USED=['BROWSE_IMAGE_LOCATION','THUMBNAIL_URL']
+    BROWSE_METADATA_USED=['BROWSE_METADATA_LOCATION', 'BROWSE_IMAGE_LOCATION', 'THUMBNAIL_URL']
+
+    # metadata taken from browse (not from product) and using the BASE_URL
+    BROWSE_METADATA_BASE_URL_USED=['BROWSE_METADATA_LOCATION','BROWSE_IMAGE_LOCATION','THUMBNAIL_URL']
     
     #
     rows=[]
@@ -85,7 +88,7 @@ class IndexCreator():
 
 
     def addOneProduct(self, met=None, bmet=None):
-        global BROWSE_METADATA_USED
+        global BROWSE_METADATA_USED, BASE_URL
         res=''
         n=0
         if self.debug!=0:
@@ -108,18 +111,30 @@ class IndexCreator():
             else:
                 try:
                     useBrowse=0
+                    useBrowseBaseUrl=0
                     try:
                         self.BROWSE_METADATA_USED.index(field)
                         useBrowse=1
-                        #print "  #### @@@@ #### CONTAINED"
+                        #print "  #### useBrowse"
                     except:
                         pass
+
+                    try:
+                        self.BROWSE_METADATA_BASE_URL_USED.index(field)
+                        useBrowseBaseUrl=1
+                        #print "  #### useBrowseBaseUrl"
+                    except:
+                        pass
+                    
                     if useBrowse==0:
                         #print "  #### create index row: field[%s]: key=%s: use metadata" % (n,key)
                         value=met.getMetadataValue(key)
                     else:
-                        #print "  #### create index row: field[%s]: key=%s: use BROWSE metadata" % (n,key)
-                        value=bmet.getMetadataValue(key)    
+                        if useBrowseBaseUrl==0:
+                            #print "  #### create index row: field[%s]: key=%s: use BROWSE metadata" % (n,key)
+                            value=bmet.getMetadataValue(key)
+                        else:
+                            value="%s%s%s" % (self.BASE_URL, met.getMetadataValue(metadata.METADATA_PRODUCT_RELATIVE_PATH), bmet.getMetadataValue(key))
                 except:
                     value="ERROR_getMetadataValue"
                     exc_type, exc_obj, exc_tb = sys.exc_info()

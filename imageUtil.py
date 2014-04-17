@@ -70,46 +70,51 @@ def externalMakeJpeg(src=None, dest=None):
 #
 #
 def makeJpegPil(src=None, dest=None, resizePercent=-1, w=-1, h=-1, enhance=None):
-    if debug!=0:
-        print " internal resize image:%s into:%s; percent:%s" % (src, dest, resizePercent)
-    im = Image.open(src)
-    if debug!=0:
-        print "  src image readed:%s" % im.info
-
-    if enhance != None:
-        converter = ImageEnhance.Contrast(im)
-        img = converter.enhance(1.5)
-        r, g, b, a = img.split()
+    try:
         if debug!=0:
-            print "  im splitted"
-        newIm = Image.merge("RGB", (r, g, b))
-    else:
-        r, g, b, a = im.split()
+            print " internal resize image:%s into:%s; percent:%s" % (src, dest, resizePercent)
+        im = Image.open(src)
         if debug!=0:
-            print "  im splitted"
-        newIm = Image.merge("RGB", (r, g, b))
-    if debug!=0:
-        print "  newIm merged"
+            print "  src image readed:%s" % im.info
 
-    width, height = im.size
-    newSize=None
-    if resizePercent!=-1:
-        nw=width*resizePercent/100
-        nh=height*resizePercent/100
-        newSize=[nw,nh]
-    elif w>0 and h>0:
-        newSize=[w,h]
-
-    if newSize!=None:   
-        im=newIm.resize(newSize, Image.BILINEAR )
+        if enhance != None:
+            converter = ImageEnhance.Contrast(im)
+            img = converter.enhance(1.5)
+            r, g, b, a = img.split()
+            if debug!=0:
+                print "  im splitted"
+            newIm = Image.merge("RGB", (r, g, b))
+        else:
+            r, g, b, a = im.split()
+            if debug!=0:
+                print "  im splitted"
+            newIm = Image.merge("RGB", (r, g, b))
         if debug!=0:
-            print "  newIm resized"
-        im.save(dest, "JPEG")
-    else:
-        newIm.save(dest, "JPEG")
-    if debug!=0:
-        print "  jpeg saved as:%s" % dest
+            print "  newIm merged"
 
+        width, height = im.size
+        newSize=None
+        if resizePercent!=-1:
+            nw=width*resizePercent/100
+            nh=height*resizePercent/100
+            newSize=[nw,nh]
+        elif w>0 and h>0:
+            newSize=[w,h]
+
+        if newSize!=None:   
+            im=newIm.resize(newSize, Image.BILINEAR )
+            if debug!=0:
+                print "  newIm resized"
+            im.save(dest, "JPEG")
+        else:
+            newIm.save(dest, "JPEG")
+        if debug!=0:
+            print "  jpeg saved as:%s" % dest
+    except:
+        print " !!!!!!!!!!!!!!!!!!!!! FAKE IMAGE GENERATED, to be removed in operation !!!!!!!!!!!!!!!!!!!!!!!!"
+        fd=open(dest, "w")
+        fd.write('0')
+        fd.close()
 
     
 if __name__ == '__main__':

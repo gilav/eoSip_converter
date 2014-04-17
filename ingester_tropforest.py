@@ -103,6 +103,7 @@ class ingester_tropforest(ingester.Ingester):
             processInfo.srcProduct.refineMetadata()
 
 
+
         #
         # Override
         #
@@ -136,21 +137,24 @@ class ingester_tropforest(ingester.Ingester):
         #
         def output_eoSip(self, processInfo, basePath, pathRules):
                 self.logger.info("  output_eoSip: basePath=%s" %  (basePath))
-                # copy eoSip in first path
-                # make links in other paths
-                outputProductResolvedPaths = processInfo.destProduct.getOutputFolders(basePath, pathRules)
-                if len(outputProductResolvedPaths)==0:
+                # copy eoSip in first path; make links in other paths: 
+                
+                # now done before in base_ingester.doOneProduct
+                #self.outputProductResolvedPaths = processInfo.destProduct.getOutputFolders(basePath, pathRules)
+
+                #
+                if len(self.outputProductResolvedPaths)==0:
                         raise Exception("no product resolved path")
                 else:
                         # output in first path
-                        firstPath=outputProductResolvedPaths[0]
+                        firstPath=self.outputProductResolvedPaths[0]
                         processInfo.addLog("  Eo-Sip product writen in folder:%s\n" %  (firstPath))
                         self.logger.info("  Eo-Sip product writen in folder:%s\n" %  (firstPath))
                         processInfo.destProduct.writeToFolder(firstPath)
 
                         # output link in other path
                         i=0
-                        for item in outputProductResolvedPaths:
+                        for item in self.outputProductResolvedPaths:
                                 if i>0:
                                         otherPath="%s" % (item)
                                         self.logger.info("  eoSip product tree path[%d] is:%s" %(i, item))

@@ -171,6 +171,8 @@ class Ingester():
                 #
                 self.indexCreator=None
                 self.statsUtil=statsUtil.StatsUtil()
+                # resolved output folders
+                self.outputProductResolvedPaths=None
                 
 
 
@@ -631,6 +633,11 @@ class Ingester():
                         self.logger.info("  will make tmpEosipFolder:%s" % pInfo.eosipTmpFolder)
                         pInfo.addLog("  will make tmpEosipFolder:%s" % pInfo.eosipTmpFolder)
                         os.makedirs(pInfo.eosipTmpFolder)
+
+                # MOVED FROM specialized ingested
+                self.outputProductResolvedPaths = pInfo.destProduct.getOutputFolders(OUTSPACE, OUTPUT_RELATIVE_PATH_TREES)
+                relativePathPart=self.outputProductResolvedPaths[0][len(OUTSPACE):]
+                met.setMetadataPair(metadata.METADATA_PRODUCT_RELATIVE_PATH, relativePathPart)
 
                 # make browse file
                 self.makeBrowses(pInfo)

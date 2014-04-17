@@ -11,6 +11,7 @@ import logging
 class Product:
     debug=0
     path='dummy_path'
+    size=0
     origName=None
     folder=None
     type=None
@@ -23,7 +24,8 @@ class Product:
     def __init__(self, p=None):
         if self.debug!=0:
             print " init class Product, path=%s" % p
-        self.path = p
+        self.path=p
+        self.size=0
         self.type=self.TYPE_UNKNOWN
         # the product original name
         self.origName=os.path.split(self.path)[1]
@@ -37,6 +39,10 @@ class Product:
     @abstractmethod
     def myInit(self):
         pass
+
+    def getize(self):
+        self.size=os.stat(self.path).st_size
+        return self.size
 
     def read(self, size=0):
         if self.debug!=0:

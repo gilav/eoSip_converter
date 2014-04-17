@@ -43,7 +43,8 @@ class Dimap_Tropforest_Product(Directory_Product):
                 metadata.METADATA_VIEWING_ANGLE:'Dataset_Sources/Source_Information/Scene_Source/VIEWING_ANGLE',
                 metadata.METADATA_SUN_AZIMUTH:'Dataset_Sources/Source_Information/Scene_Source/SUN_AZIMUTH',
                 metadata.METADATA_SUN_ELEVATION:'Dataset_Sources/Source_Information/Scene_Source/SUN_ELEVATION',
-                metadata.METADATA_REFERENCE_SYSTEM_IDENTIFIER:'Coordinate_Reference_System/Horizontal_CS/HORIZONTAL_CS_CODE'
+                metadata.METADATA_REFERENCE_SYSTEM_IDENTIFIER:'Coordinate_Reference_System/Horizontal_CS/HORIZONTAL_CS_CODE',
+                metadata.METADATA_REFERENCE_SYSTEM_IDENTIFIER_NAME:'Coordinate_Reference_System/Horizontal_CS/HORIZONTAL_CS_NAME'
                 }
 
     def myInit(self):
@@ -51,6 +52,9 @@ class Dimap_Tropforest_Product(Directory_Product):
         print " init class Dimap_Tropforest_Product"
         self.type=Product.TYPE_DIR
 
+    #
+    # 
+    #
     def getMetadataInfo(self):
         if self.XML_FILE_NAME==None:
             raise Exception(" no metadata file")
@@ -64,6 +68,11 @@ class Dimap_Tropforest_Product(Directory_Product):
         return data
 
 
+    #
+    # extract the tropforest product
+    # keep the metadata+browse file path
+    # Note that Deimos metadata in .met file are more conplet
+    #
     def extractToPath(self, folder=None):
         if not os.path.exists(folder):
             raise Exception("destination fodler does not exists:%s" % folder)
@@ -83,7 +92,11 @@ class Dimap_Tropforest_Product(Directory_Product):
             if name.find(self.TIF_FILE_SUFFIX)>=0:
                 self.TIF_FILE_NAME=name
             elif name.find(self.XML_FILE_SUFFIX)>=0:
-                self.XML_FILE_NAME=name       
+                # test if Deimos product: DE1 in filename
+                if name.find("DE1")>0:
+                    self.XML_FILE_NAME=name.replace(self.XML_FILE_SUFFIX, ".met")
+                else:
+                    self.XML_FILE_NAME=name
             if self.debug!=0:
                 print "   %s extracted at path:%s" % (name, folder+'/'+name)
         fh.close()
@@ -247,7 +260,7 @@ class Dimap_Tropforest_Product(Directory_Product):
 
     #
     # extract the footprint posList point, ccw, lat lon
-    # NOTE: Deimos products have UTM coordinates
+    # NOTE: Deimos products have UTM coordinates in meters
     #
     def extractFootprint(self, helper, met):
         nodes=[]
@@ -255,7 +268,7 @@ class Dimap_Tropforest_Product(Directory_Product):
         if len(nodes)==1:
             ulx = helper.getNodeText(helper.getFirstNodeByPath(nodes[0], 'ULXMAP', None))
             uly = helper.getNodeText(helper.getFirstNodeByPath(nodes[0], 'ULYMAP', None))
-            try:
+            try: # next for non Deimos products
                 brx = helper.getNodeText(helper.getFirstNodeByPath(nodes[0], 'BRXMAP', None))
                 bry = helper.getNodeText(helper.getFirstNodeByPath(nodes[0], 'BRYMAP', None))
                 if self.debug!=0:
@@ -270,9 +283,43 @@ class Dimap_Tropforest_Product(Directory_Product):
                     print " posList:%s" % ccw
                 met.setMetadataPair(metadata.METADATA_FOOTPRINT, ccw)
             except:
-                met.setMetadataPair(metadata.METADATA_FOOTPRINT, "1234 5678")
+                # for Deimos products
+                #helper.setDebug(1)
+                # get the UTM zone and number
+                # is like: WGS 84 / UTM zone 21N
+                # ==>extract 21 and N
+                utmInfo=met.getMetadataValue(metadata.METADATA_REFERENCE_SYSTEM_IDENTIFIER_NAME)
+                lastTok=utmInfo.split(" ")[-1]
+                zone=lastTok[-1]
+                zoneNumber=lastTok[0:-1]
+                print " ################# utm info:'%s'; zone:'%s'; zone number:'%s'" % (utmInfo, zone, zoneNumber)
+                nodes=[]
+                footprint=''
+                helper.getNodeByPath(None, 'Dataset_Frame/Vertex', None, nodes)
+                if len(nodes)!=0:
+                    n=0
+                    for vertex in nodes:
+                        x_m=helper.getNodeText(helper.getFirstNodeByPath(vertex, 'FRAME_X', None))
+                        y_m=helper.getNodeText(helper.getFirstNodeByPath(vertex, 'FRAME_Y', None))
+                        print " ################# coords in UTM:%s; %s" % (x_m, y_m)
+                        lat,lon=formatUtils.utmToLatLon(float(x_m), float(y_m), int(zoneNumber), zone)
+                        print " ################# coords in lat lon: lat=%s; lon=%s" % (lat, lon)
+                        if n==0:
+                            first_lat=lat
+                            first_lon=lon
+                        if len(footprint)>0:
+                            footprint="%s " % footprint
+                        footprint="%s%s %s" % (footprint, lat, lon)
+                        n=n+1
+                    footprint="%s %s %s" % (footprint, first_lat, first_lon)
+                    print " ################# footprint:%s" % footprint
+                    met.setMetadataPair(metadata.METADATA_FOOTPRINT, formatUtils.reverseFootprint(footprint))
+                else:
+                    print " ERROR: Dataset_Frame/Vertex not found:%d" % len(nodes)
+                    raise Exception(" ERROR: Dataset_Frame/Vertex not found:%d" % len(nodes))
         else:
-            print " ERROR: Geoposition/Geoposition_Insert has not 4 subnodes:%d" % len(nodes)
+            print " ERROR: Geoposition/Geoposition_Insert has not 1 subnode but:%d" % len(nodes)
+            raise Exception(" ERROR: Geoposition/Geoposition_Insert has not 1 subnode but:%d" % len(nodes))
         return
         
 
