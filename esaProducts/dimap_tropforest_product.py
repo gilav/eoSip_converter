@@ -103,12 +103,6 @@ class Dimap_Tropforest_Product(Directory_Product):
         self.EXTRACTED_PATH=folder
 
 
-    def extractProductFileSize(self):
-        full_path=self.EXTRACTED_PATH+'/'+self.TIF_FILE_NAME
-        size=os.stat(full_path).st_size
-        return size
-
-
     def extractGridFromFile(self,value):
         if value==None:
             raise Exception("value (lat/lon) is None")
@@ -261,6 +255,7 @@ class Dimap_Tropforest_Product(Directory_Product):
     #
     # extract the footprint posList point, ccw, lat lon
     # NOTE: Deimos products have UTM coordinates in meters
+    # prepare the browse report footprint block
     #
     def extractFootprint(self, helper, met):
         nodes=[]
@@ -292,28 +287,49 @@ class Dimap_Tropforest_Product(Directory_Product):
                 lastTok=utmInfo.split(" ")[-1]
                 zone=lastTok[-1]
                 zoneNumber=lastTok[0:-1]
-                print " ################# utm info:'%s'; zone:'%s'; zone number:'%s'" % (utmInfo, zone, zoneNumber)
+                if self.debug!=0:
+                    print " ################# utm info:'%s'; zone:'%s'; zone number:'%s'" % (utmInfo, zone, zoneNumber)
                 nodes=[]
                 footprint=''
                 helper.getNodeByPath(None, 'Dataset_Frame/Vertex', None, nodes)
+                #
+                # keep first + 2th and 4th point to close the polygon and make the rectBrose BL/UR corners
+                #
                 if len(nodes)!=0:
                     n=0
                     for vertex in nodes:
                         x_m=helper.getNodeText(helper.getFirstNodeByPath(vertex, 'FRAME_X', None))
                         y_m=helper.getNodeText(helper.getFirstNodeByPath(vertex, 'FRAME_Y', None))
-                        print " ################# coords in UTM:%s; %s" % (x_m, y_m)
+                        if self.debug!=0:
+                            print " ################# coords in UTM:%s; %s" % (x_m, y_m)
                         lat,lon=formatUtils.utmToLatLon(float(x_m), float(y_m), int(zoneNumber), zone)
-                        print " ################# coords in lat lon: lat=%s; lon=%s" % (lat, lon)
+                        if self.debug!=0:
+                            print " ################# coords in lat lon: lat=%s; lon=%s" % (lat, lon)
                         if n==0:
                             first_lat=lat
                             first_lon=lon
+                        if n==1:
+                            second_lat=lat
+                            second_lon=lon
+                        if n==3:
+                            fourth_lat=lat
+                            fourth_lon=lon
                         if len(footprint)>0:
                             footprint="%s " % footprint
                         footprint="%s%s %s" % (footprint, lat, lon)
                         n=n+1
                     footprint="%s %s %s" % (footprint, first_lat, first_lon)
-                    print " ################# footprint:%s" % footprint
-                    met.setMetadataPair(metadata.METADATA_FOOTPRINT, formatUtils.reverseFootprint(footprint))
+                    if self.debug!=0:
+                        print " ################# footprint:%s" % footprint
+                    #
+                    # deimos are already in CCW order. it seems
+                    #
+                    #met.setMetadataPair(metadata.METADATA_FOOTPRINT, formatUtils.reverseFootprint(footprint))
+                    met.setMetadataPair(metadata.METADATA_FOOTPRINT, footprint)
+
+                    # store it for browse report in rectified browse
+                    # should be in lower left lat/lon + upper right lat/lon.
+                    met.setMetadataPair(browse_metadata.BROWSE_METADATA_RECT_COORDLIST, "%s %s %s %s" % (second_lat, second_lon, fourth_lat , fourth_lon))
                 else:
                     print " ERROR: Dataset_Frame/Vertex not found:%d" % len(nodes)
                     raise Exception(" ERROR: Dataset_Frame/Vertex not found:%d" % len(nodes))

@@ -32,8 +32,6 @@ except:
 import ConfigParser
 
     
-#
-from esaProducts import dimap_tropforest_product
 from esaProducts import eosip_product
 import processInfo
 import fileHelper
@@ -183,6 +181,9 @@ class Ingester():
                 global CONFIG_NAME, __config, OUTSPACE, INBOX, TMPSPACE, LIST_TYPE, LIST_BUILD, FILES_NAMEPATTERN, FILES_EXTPATTERN, DIRS_NAMEPATTERN, DIRS_ISLEAF,\
                 DIRS_ISEMPTY, LIST_LIMIT, LIST_STARTDATE, LIST_STOPDATE, OUTPUT_EO_SIP_PATTERN, OUTPUT_RELATIVE_PATH_TREES, max_product_done,\
                 create_index,fixed_batch_name
+
+                if not os.path.exists(path):
+                    raise Exception("cofiguration file:'%s' doesn't exists" % path)
                 
                 try:
                         self.logger.info("\n\n\n\n\n reading configuration...")
@@ -634,7 +635,7 @@ class Ingester():
                         pInfo.addLog("  will make tmpEosipFolder:%s" % pInfo.eosipTmpFolder)
                         os.makedirs(pInfo.eosipTmpFolder)
 
-                # MOVED FROM specialized ingested
+                # CODE MOVED FROM specialized ingested
                 self.outputProductResolvedPaths = pInfo.destProduct.getOutputFolders(OUTSPACE, OUTPUT_RELATIVE_PATH_TREES)
                 relativePathPart=self.outputProductResolvedPaths[0][len(OUTSPACE):]
                 met.setMetadataPair(metadata.METADATA_PRODUCT_RELATIVE_PATH, relativePathPart)

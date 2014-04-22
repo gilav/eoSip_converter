@@ -38,7 +38,8 @@ class Ikonos_Product(Directory_Product):
                 metadata.METADATA_ACQUISITION_CENTER:'Ground Station ID:*|0',
                 metadata.METADATA_REFERENCE_SYSTEM_IDENTIFIER:'Map Projection:*|0,2,3',
                 metadata.METADATA_CLOUD_COVERAGE:'Percent Cloud Cover:*|0',
-                metadata.METADATA_FOOTPRINT:'Component Geographic Corner Coordinates*|3,4,6,7,9,10,12,13,3,4'
+                metadata.METADATA_FOOTPRINT:'Component Geographic Corner Coordinates*|3,4,6,7,9,10,12,13,3,4',
+                browse_metadata.BROWSE_METADATA_RECT_COORDLIST:'Component Map Coordinates (in Map Units)*|1,2'
                 
                 }
 
@@ -106,9 +107,9 @@ class Ikonos_Product(Directory_Product):
             raise Exception("More than 1 directory in product:%d" % d)
 
 
-    def extractProductFileSize(self):
-        size=os.stat(self.path).st_size
-        return size
+    #def extractProductFileSize(self):
+    #    size=os.stat(self.path).st_size
+    #    return size
 
 
 
@@ -182,7 +183,8 @@ class Ikonos_Product(Directory_Product):
         self.metadata.setMetadataPair(metadata.METADATA_START_TIME, "%s:00" % toks[1])
         self.metadata.setMetadataPair(metadata.METADATA_STOP_DATE, toks[0])
         self.metadata.setMetadataPair(metadata.METADATA_STOP_TIME, "%s:00" % toks[1])
-
+        
+        # supress the degrees
         tmp=self.metadata.getMetadataValue(metadata.METADATA_FOOTPRINT).replace(" degrees","").replace("|","").strip()
         self.metadata.setMetadataPair(metadata.METADATA_FOOTPRINT, formatUtils.reverseFootprint(tmp))
 
@@ -197,23 +199,63 @@ class Ikonos_Product(Directory_Product):
 
         tmp=self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ELEVATION_ANGLE).replace(" degrees","").strip()
         self.metadata.setMetadataPair(metadata.METADATA_INSTRUMENT_ELEVATION_ANGLE, tmp)
+        
+        # supress the meters, rect coordlist for ikonos is ULX |ULY
+        tmp=self.metadata.getMetadataValue(browse_metadata.BROWSE_METADATA_RECT_COORDLIST).replace(" meters","").strip()
+        self.metadata.setMetadataPair(browse_metadata.BROWSE_METADATA_RECT_COORDLIST, tmp)
 
+        # supress the pixels
+        tmp=self.metadata.getMetadataValue(metadata.METADATA_IMAGE_NUM_ROWS).replace(" pixels","").strip()
+        self.metadata.setMetadataPair(metadata.METADATA_IMAGE_NUM_ROWS, tmp)
+        tmp=self.metadata.getMetadataValue(metadata.METADATA_IMAGE_NUM_COLUMNS).replace(" pixels","").strip()
+        self.metadata.setMetadataPair(metadata.METADATA_IMAGE_NUM_COLUMNS, tmp)
+
+        # format UTM code
+        tmp=self.metadata.getMetadataValue(metadata.METADATA_REFERENCE_SYSTEM_IDENTIFIER).strip()
+        if tmp.find("Universal Transverse Mercator")>=0:
+            toks=tmp.split("|")
+            tmp="UTM%s%s" % (toks[2].strip(), toks[1].strip())
+            self.metadata.setMetadataPair(metadata.METADATA_REFERENCE_SYSTEM_IDENTIFIER, tmp)
+        
+        #
         tmp=self.metadata.getMetadataValue(metadata.METADATA_CLOUD_COVERAGE).strip()
         self.metadata.setMetadataPair(metadata.METADATA_CLOUD_COVERAGE, tmp)
+
+        self.extractQuality(None, self.metadata)
+
+        self.extractFootprint(None, self.metadata)
         
-        # 
-        #self.buildTypeCode()
         return 1
 
-
+    #
+    #
+    #
     def extractQuality(self, helper, met):
         return
 
 
     #
-    # extract the footprint posList point, ccw, lat lon
+    # extract the footprint
+    # - footprint is already extracted directly from metadata, Is already CCW
+    # is:
+    #   3          2
+    #
+    #
+    #   0/4        1
+    #
+    # - there are 5 footprint node
+    # - need to build the rowCol 
     #
     def extractFootprint(self, helper, met):
+        # build the browse choice:
+        # there are 5 coords
+        met.setMetadataPair(browse_metadata.BROWSE_METADATA_FOOTPRINT_NUMBER_NODES, "5")
+
+        nrows=self.metadata.getMetadataValue(metadata.METADATA_IMAGE_NUM_ROWS)
+        ncols=self.metadata.getMetadataValue(metadata.METADATA_IMAGE_NUM_COLUMNS)
+        
+        tmp="1 %s %s %s %s 1 1 1 1 %s" % (ncols, nrows, ncols, nrows, ncols)
+        met.setMetadataPair(metadata.METADATA_FOOTPRINT_IMAGE_ROWCOL, tmp)
         return
         
 

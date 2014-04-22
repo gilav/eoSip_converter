@@ -25,7 +25,7 @@ from namingConvention import NamingConvention
 import definitions_EoSip
 import xmlHelper
 import browse_metadata, metadata
-from definitions_EoSip import rep_metadataReport, rep_browseReport, SIPInfo, rep_rectifiedBrowse
+from definitions_EoSip import rep_metadataReport, rep_browseReport, SIPInfo
 
 
 
@@ -125,15 +125,16 @@ class EOSIP_Product(Directory_Product):
         bMet.setMetadataPair('METADATA_RESPONSIBLE', self.metadata.getMetadataValue('METADATA_RESPONSIBLE'))
         bMet.setMetadataPair('BROWSE_METADATA_IMAGE_TYPE', self.metadata.getMetadataValue('BROWSE_METADATA_IMAGE_TYPE'))
         # set the BROWSE_CHOICE content
-        self.buildBrowseChoice(bMet)
+        #self.buildBrowseChoice(bMet) : CODE MOVED IN SPECIALIZED INGESTER
         self.browse_metadata_dict[path]=bMet
         
 
 
     #
-    def buildBrowseChoice(self, bMet):
-        reportBuilder=rep_rectifiedBrowse.rep_rectifiedBrowse()
-        browseChoiceBlock=reportBuilder.buildMessage(self.metadata, "rep:rectifiedBrowse").strip()
+    def storeBrowseChoice_NOT_USED(self, path, browseChoiceBlock):
+        bmet=self.browse_metadata_dict[path]
+        #reportBuilder=rep_rectifiedBrowse.rep_rectifiedBrowse()
+        #browseChoiceBlock=reportBuilder.buildMessage(self.metadata, "rep:rectifiedBrowse").strip()
         if self.debug!=0:
             print "browseChoiceBlock:%s" % (browseChoiceBlock)
         bMet.setMetadataPair(browse_metadata.METADATA_BROWSE_CHOICE, browseChoiceBlock)

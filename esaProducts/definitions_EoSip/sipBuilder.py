@@ -39,11 +39,13 @@ EOSIP_METADATA_MAPPING={'responsible':metadata.METADATA_RESPONSIBLE,
                         'cloudCoverPercentage':metadata.METADATA_CLOUD_COVERAGE,
                         'status':metadata.METADATA_STATUS,
                         'acquisitionType':metadata.METADATA_ACQUISITION_TYPE,
-                        'posList':metadata.METADATA_FOOTPRINT,
+                        'coordList':metadata.METADATA_FOOTPRINT,
+                        'numberOfNodes':'BROWSE_METADATA_FOOTPRINT_NUMBER_NODES',
                         'browseImageType':browse_metadata.BROWSE_METADATA_IMAGE_TYPE,
                         'browseIdentifier':browse_metadata.BROWSE_METADATA_FILENAME,
                         'browseFileName':browse_metadata.BROWSE_METADATA_NAME,
-                        'BrowseRectCoordList':browse_metadata.BROWSE_METADATA_RECT_COORDLIST
+                        'BrowseRectCoordList':browse_metadata.BROWSE_METADATA_RECT_COORDLIST,
+                        'colRowList':metadata.METADATA_FOOTPRINT_IMAGE_ROWCOL
                         }
 
 

@@ -16,8 +16,9 @@ import zipfile
 import traceback
 from base import ingester
 from esaProducts import dimap_tropforest_product, eosip_product
-from esaProducts import metadata
+from esaProducts import metadata, browse_metadata
 from esaProducts import definitions_EoSip
+from definitions_EoSip import rep_rectifiedBrowse
 import imageUtil
 
 
@@ -81,7 +82,7 @@ class ingester_tropforest(ingester.Ingester):
         def extractMetadata(self,met,processInfo):
             # fill metadata object
             numAdded=processInfo.srcProduct.extractMetadata(met)
-            size=processInfo.srcProduct.extractProductFileSize()
+            size=processInfo.srcProduct.getSize()
             grid_lat=processInfo.srcProduct.extractGridFromFile("lat")
             grid_lon=processInfo.srcProduct.extractGridFromFile("lon")
             grid_lat_norm=processInfo.srcProduct.extractGridFromFileNormalised("lat")
@@ -106,6 +107,8 @@ class ingester_tropforest(ingester.Ingester):
 
         #
         # Override
+        # make the jpeg brose image from the TIFF image
+        # construct the browse_metadatareport footprint block: it is the rectifedBrowse for tropforest
         #
         def makeBrowses(self,processInfo):
             try:
@@ -114,6 +117,16 @@ class ingester_tropforest(ingester.Ingester):
                     browseDestPath="%s/%s.%s" % (processInfo.eosipTmpFolder, processInfo.destProduct.productShortName, browseExtension)
                     imageUtil.makeJpeg(browseSrcPath, browseDestPath, 50 )
                     processInfo.destProduct.addSourceBrowse(browseDestPath, [])
+
+                    # create browse choice for browse metadata report
+                    bmet=processInfo.destProduct.browse_metadata_dict[browseDestPath]
+                    reportBuilder=rep_rectifiedBrowse.rep_rectifiedBrowse()
+                    print "###\n###\n### BUILD BROWSE CHOICE FROM METADATA:%s" % (processInfo.destProduct.metadata.toString())
+                    browseChoiceBlock=reportBuilder.buildMessage(processInfo.destProduct.metadata, "rep:rectifiedBrowse").strip()
+                    if self.debug==0:
+                            print "browseChoiceBlock:%s" % (browseChoiceBlock)
+                    bmet.setMetadataPair(browse_metadata.METADATA_BROWSE_CHOICE, browseChoiceBlock)
+        
                     processInfo.addLog("  browse image created:%s" %  (browseDestPath))
                     self.logger.info("  browse image created:%s" % browseDestPath)
             except Exception, e:
@@ -126,7 +139,7 @@ class ingester_tropforest(ingester.Ingester):
                     except Exception, ee:
                             self.logger.error("  problem adding browse generation error in processInfo")
                             pass
-                    raise e
+                    #raise e
 
         #
         # Override

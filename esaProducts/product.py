@@ -40,7 +40,7 @@ class Product:
     def myInit(self):
         pass
 
-    def getize(self):
+    def getSize(self):
         self.size=os.stat(self.path).st_size
         return self.size
 

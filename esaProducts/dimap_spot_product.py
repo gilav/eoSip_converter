@@ -7,7 +7,7 @@
 #  - a .XML metadata file
 #
 #
-import os, sys
+import os,sys,sys,inspect
 import logging
 import zipfile
 import xmlHelper
@@ -16,6 +16,9 @@ from directory_product import Directory_Product
 import metadata
 import browse_metadata
 import formatUtils
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+sys.path.insert(0,currentdir)
+import imageUtil
 
 class Dimap_Spot_Product(Directory_Product):
 
@@ -103,9 +106,9 @@ class Dimap_Spot_Product(Directory_Product):
             raise Exception("More than 1 directory in product:%d" % d)
 
 
-    def extractProductFileSize(self):
-        size=os.stat(self.path).st_size
-        return size
+    #def extractProductFileSize(self):
+    #    size=os.stat(self.path).st_size
+    #    return size
 
     def buildTypeCode_(self):
         #global product_type_dict
@@ -257,9 +260,34 @@ class Dimap_Spot_Product(Directory_Product):
 
     #
     # extract the footprint posList point, ccw, lat lon
+    # extract also the corresponding image ROW/COL 
+    # prepare the browse report footprint block
     #
     def extractFootprint(self, helper, met):
-        result=""
+        # get preview resolution
+        try:
+            imw, imh=imageUtil.get_image_size(self.preview_path)
+            if self.debug!=0:
+                print "  ############# preview image size: w=%s; h=%s" % (imw, imh)
+        except:
+            print "###################### ERROR getting preview image size"
+
+        # get tiff resolution
+        tmpNodes=[]
+        helper.getNodeByPath(None, 'Raster_Dimensions', None, tmpNodes)
+        if len(tmpNodes)==1:
+            ncols = helper.getNodeText(helper.getFirstNodeByPath(tmpNodes[0], 'NCOLS', None))
+            nrows = helper.getNodeText(helper.getFirstNodeByPath(tmpNodes[0], 'NROWS', None))
+            print "  ############# tiff image size: w=%s; h=%s" % (ncols, nrows)
+        else:
+            print "###################### ERROR getting tiff image size"
+
+        rcol=int(ncols)/imw
+        rrow=int(nrows)/imh
+        print "  ############# ratio tiff/preview: rcol=%s; rrow=%s" % (rcol, rrow)
+        
+        footprint=""
+        rowCol=""
         nodes=[]
         helper.setDebug(1)
         helper.getNodeByPath(None, 'Dataset_Frame', None, nodes)
@@ -270,32 +298,44 @@ class Dimap_Spot_Product(Directory_Product):
 
             n=0
             closePoint=""
+            closeRowCol=""
             for node in vertexList:
                 lon = helper.getNodeText(helper.getFirstNodeByPath(node, 'FRAME_LON', None))
                 lat = helper.getNodeText(helper.getFirstNodeByPath(node, 'FRAME_LAT', None))
+                row = helper.getNodeText(helper.getFirstNodeByPath(node, 'FRAME_ROW', None))
+                col = helper.getNodeText(helper.getFirstNodeByPath(node, 'FRAME_COL', None))
                 if self.debug!=0:
                     print "  ############# vertex %d: lon:%s  lat:%s" % (n, lon, lat)
-                if len(result)>0:
-                    result="%s " % (result)
-                result="%s%s %s" % (result, formatUtils.EEEtoNumber(lat), formatUtils.EEEtoNumber(lon))
+                if len(footprint)>0:
+                    footprint="%s " % (footprint)
+                if len(rowCol)>0:
+                    rowCol="%s " % (rowCol)
+                footprint="%s%s %s" % (footprint, formatUtils.EEEtoNumber(lat), formatUtils.EEEtoNumber(lon))
+                okRow=int(row)/rcol
+                okCol=int(col)/rrow
+                if row=='1':
+                    okRow=1
+                if col=='1':
+                    okCol=1
+                rowCol="%s%s %s" % (rowCol, okRow, okCol)
+                
                 if n==0:
                     closePoint = "%s %s" % (formatUtils.EEEtoNumber(lat), formatUtils.EEEtoNumber(lon))
+                    closeRowCol = "%s %s" % (okRow, okCol)
                 n=n+1
-            result="%s %s" % (result,closePoint)
-                
-            #raise Exception("STOP")
+            footprint="%s %s" % (footprint, closePoint)
+            rowCol="%s %s" % (rowCol, closeRowCol)
 
-            # store it for browse report in rectified browse
-            # should be in lower left lat/lon + upper right lat/lon.
-            #met.setMetadataPair(browse_metadata.BROWSE_METADATA_RECT_COORDLIST, "%s %s %s %s" % (bry, ulx, uly , brx))
-            if self.debug!=0:
-                print "  ############# footprint:%s" % (result)
-            if self.debug!=0:
-                print "  ############# ccw:%s" % (formatUtils.reverseFootprint(result))
-            met.setMetadataPair(metadata.METADATA_FOOTPRINT, formatUtils.reverseFootprint(result))
+            # number of nodes in footprint
+            met.setMetadataPair(browse_metadata.BROWSE_METADATA_FOOTPRINT_NUMBER_NODES, "%s" % (n+1))
+                
+
+            # make it CCW
+            #met.setMetadataPair(metadata.METADATA_FOOTPRINT, formatUtils.reverseFootprint(footprint))
+            met.setMetadataPair(metadata.METADATA_FOOTPRINT, footprint)
+            met.setMetadataPair(metadata.METADATA_FOOTPRINT_IMAGE_ROWCOL, rowCol)
             
-            #raise Exception("STOP")
-        return result
+        return footprint, rowCol
         
 
     def toString(self):

@@ -24,7 +24,7 @@ class eop_Footprint(SipMessageBuilder):
 "<gml:Polygon gml:id=\"@gmlId@_$$getNextCounter()$$\">",
 "<gml:exterior>",
 "<gml:LinearRing>",
-"<gml:posList>@posList@</gml:posList>",
+"<gml:posList>@coordList@</gml:posList>",
 "</gml:LinearRing>",
 "</gml:exterior>",
 "</gml:Polygon>",
@@ -32,9 +32,9 @@ class eop_Footprint(SipMessageBuilder):
 "</gml:MultiSurface>",
 "</eop:multiExtentOf>"]
 
-    FIELDS = ["gmlId", "posList"]
+    FIELDS = ["gmlId", "coordList"]
 
-    MANDATORY = ["gmlId", "posList"]
+    MANDATORY = ["gmlId", "coordList"]
 
     def __init__(self):
         pass
