@@ -20,6 +20,7 @@ class Product:
     TYPE_MPH=1
     TYPE_DIR=2
     TYPE_EOSIP=3
+    TYPE_NETCDF=4
 
     def __init__(self, p=None):
         if self.debug!=0:
@@ -66,6 +67,7 @@ class Product:
             print " will parse filename"
         pass
 
+    @abstractmethod
     def getMetadataInfo(self):
         if self.debug!=0:
             print " will get metadata info"

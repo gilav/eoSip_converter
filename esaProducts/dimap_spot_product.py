@@ -110,11 +110,6 @@ class Dimap_Spot_Product(Directory_Product):
     #    size=os.stat(self.path).st_size
     #    return size
 
-    def buildTypeCode_(self):
-        #global product_type_dict
-        my_product_type = self.product_type_dict[self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)][self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)][self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)]
-        print "############################## %s" % my_product_type
-        self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,my_product_type)
 
     def buildTypeCode(self):
         if (self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)=='HRV'):
@@ -349,13 +344,3 @@ class Dimap_Spot_Product(Directory_Product):
         res="%s\nxml file:%s" % (res, self.XML_FILE_NAME)
         print res
 
-
-if __name__ == '__main__':
-    print "start"
-    logging.basicConfig(level=logging.WARNING)
-    log = logging.getLogger('example')
-    try:
-        p=Dimap_Product("d:\gilles\dev\M01_abcdefgfhj_20020920T100345.txt")
-        p.getMetadataInfo()
-    except Exception, err:
-        log.exception('Error from throws():')

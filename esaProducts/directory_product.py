@@ -10,15 +10,12 @@ from product import Product
 
 
 class Directory_Product(Product):
-    
-    def __init_disabled__(self, p=None):
-        print " init class Directory_Product, path=%s" % p
-        self.path=p
-        self.type=Product.TYPE_DIR
 
+    def __init__(self, path):
+        Product.__init__(self, path)
+        
     def myInit(self):
-        #if self.debug!=0:
-        print " init class Dimap_Product"
+        print " init class Directory_Product"
         self.type=Product.TYPE_DIR
         
 
@@ -27,7 +24,6 @@ class Directory_Product(Product):
             print "  test file:%s" % file
         
         
-
     def getMetadataInfo(self):
         data=self.read(4*1024)
         print " extract metadata from:%s" % data
