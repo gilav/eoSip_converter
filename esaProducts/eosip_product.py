@@ -160,11 +160,11 @@ class EOSIP_Product(Directory_Product):
             print "\n build product metadata report"
             print " Eo-Sip metadata dump:\n%s" % self.metadata.toString()
         #
-        reportFolderName=os.path.split(self.sourceBrowsesPath[0])[0]
+        #reportFolderName=os.path.split(self.sourceBrowsesPath[0])[0]
         #
         productReportBuilder=rep_metadataReport.rep_metadataReport()
         self.metadata.debug=1
-        self.productReport=self.formatXml(productReportBuilder.buildMessage(self.metadata, "rep:metadataReport"), reportFolderName, 'product_report')
+        self.productReport=self.formatXml(productReportBuilder.buildMessage(self.metadata, "rep:metadataReport"), self.folder, 'product_report')
         if self.debug!=0:
             print " product report content:\n%s" % self.productReport
         ext=definitions_EoSip.getDefinition("XML_EXT")
@@ -172,7 +172,7 @@ class EOSIP_Product(Directory_Product):
         if self.debug!=0:
             print "   product report name:%s" % (reportName)
         # write it
-        self.reportFullPath="%s/%s" % (reportFolderName,reportName)
+        self.reportFullPath="%s/%s" % (self.folder,reportName)
         fd=open(self.reportFullPath, "w")
         fd.write(self.productReport)
         fd.close()
@@ -192,7 +192,7 @@ class EOSIP_Product(Directory_Product):
         if self.debug!=0:
             print " build browse metadata reports"
         #
-        reportFolderName=os.path.split(self.sourceBrowsesPath[0])[0]
+        #reportFolderName=os.path.split(self.sourceBrowsesPath[0])[0]
         
         n=0
         browseReport=None
@@ -213,7 +213,7 @@ class EOSIP_Product(Directory_Product):
                 
             browseReportBuilder=rep_browseReport.rep_browseReport()
             #browseReportBuilder.debug=1
-            browseReport=self.formatXml(browseReportBuilder.buildMessage(bmet, "rep:browseReport"), reportFolderName, 'browse_report_%d' % i)
+            browseReport=self.formatXml(browseReportBuilder.buildMessage(bmet, "rep:browseReport"), self.folder, 'browse_report_%d' % i)
             # add BROWSE_CHOICE block
             browseReport=browseReport.replace('<BROWSE_CHOICE></BROWSE_CHOICE>', bmet.getMetadataValue(browse_metadata.METADATA_BROWSE_CHOICE))
             if self.debug!=0:
@@ -221,7 +221,7 @@ class EOSIP_Product(Directory_Product):
             
             #
             # write it
-            browseFullPath="%s/%s" % (reportFolderName,browseReportName)
+            browseFullPath="%s/%s" % (self.folder, browseReportName)
             self.browseFullPath.append(browseFullPath)
             #print " browse report content:\n%s" % browseReport
             fd=open(browseFullPath, "w")
@@ -238,11 +238,17 @@ class EOSIP_Product(Directory_Product):
     def buildSipReportFile(self):
         if self.debug!=0:
             print " build sip report"
+
         #
-        reportFolderName=os.path.split(self.sourceBrowsesPath[0])[0]
+        self.info()
+
+        
+        #
+        #reportFolderName=os.path.split(self.sourceBrowsesPath[0])[0]
+        #reportFolderName=self.folder
         #
         sipReportBuilder=SIPInfo.SIPInfo()
-        self.sipReport=self.formatXml(sipReportBuilder.buildMessage(self.metadata, "SIPInfo"), reportFolderName, 'sip_report')
+        self.sipReport=self.formatXml(sipReportBuilder.buildMessage(self.metadata, "SIPInfo"), self.folder, 'sip_report')
         if self.debug!=0:
             print " sip report content:\n%s" % self.sipReport
         ext=definitions_EoSip.getDefinition("SI_EXT")
@@ -250,7 +256,7 @@ class EOSIP_Product(Directory_Product):
         if self.debug!=0:
             print "   sip report name:%s" % (sipName)
         # write it
-        self.sipFullPath="%s/%s" % (reportFolderName,sipName)
+        self.sipFullPath="%s/%s" % (self.folder, sipName)
         fd=open(self.sipFullPath, "w")
         fd.write(self.sipReport)
         fd.close()
@@ -383,7 +389,7 @@ class EOSIP_Product(Directory_Product):
         print "   product name:%s" % self.productName
         print "   source product path:%s" % self.sourceProductPath
         print "   product shortName:%s" % self.productShortName
-        #print "   product report:%s" % self.productReportName
+        print "   product tmpFolder:%s" % self.folder
         if len(self.sourceBrowsesPath)==0:
             print "   no sourceBrowsesPath"
         else:

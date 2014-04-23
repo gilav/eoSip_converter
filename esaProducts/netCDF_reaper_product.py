@@ -9,6 +9,7 @@ import logging
 import traceback
 import metadata
 import browse_metadata
+import formatUtils
 from netCDF_product import netCDF_Product
 
 
@@ -207,13 +208,14 @@ class netCDF_reaper_Product(netCDF_Product):
 
     def myInit(self):
         print " myInit class netCDF_reaper_Product"
-        self.debug=1
+        #self.debug=1
 
 
     #
     #
     #
     def extractMetadata(self, met=None):
+        self.debug=1
         if met==None:
             raise Exception("metadate is None")
 
@@ -234,14 +236,22 @@ class netCDF_reaper_Product(netCDF_Product):
             #if self.debug!=0:
             #    print " ##### handle metadata:%s" % field
 
-            value=dataset.__dict__[rule]
+            aValue=dataset.__dict__[rule]
             if self.debug!=0:
-                print " ##### metadata %s=%s" % (field, value)
+                print " ##### metadata %s=%s" % (field, aValue)
                 
             met.setMetadataPair(field, aValue)
             num_added=num_added+1
             
         self.metadata=met
+
+        # use also the filename
+        # is like: E2_TEST_ERS_ALT_2S_20010212T105332_20010212T115740_COM5.NC
+        toks=met.getMetadataValue(metadata.METADATA_PRODUCTNAME).split('_')
+        met.setMetadataPair(metadata.METADATA_TYPECODE, "%s_%s_%s" % (toks[2],toks[3],toks[4]))
+        met.setMetadataPair(metadata.METADATA_PLATFORM_ID,toks[0][1])
+        
+        
    
         return num_added
 
@@ -250,6 +260,19 @@ class netCDF_reaper_Product(netCDF_Product):
     # refine the metada, should perform in order:
     #
     def refineMetadata(self):
+        # normalise date string: change 3 digit month into month number
+        # also invert date which is dd-mm-yyyy
+        tmp = self.metadata.getMetadataValue(metadata.METADATA_START_DATE)
+        startDateTime=formatUtils.normaliseDateString(tmp).split('.')[0]
+        toks=startDateTime.split('T')[0].split('-')
+        self.metadata.setMetadataPair(metadata.METADATA_START_DATE, "%s-%s-%s" % (toks[2],toks[1],toks[0]))
+        self.metadata.setMetadataPair(metadata.METADATA_START_TIME, startDateTime.split('T')[1])
+
+        tmp = self.metadata.getMetadataValue(metadata.METADATA_STOP_DATE)
+        stopDateTime=formatUtils.normaliseDateString(tmp).split('.')[0]
+        toks=stopDateTime.split('T')[0].split('-')
+        self.metadata.setMetadataPair(metadata.METADATA_STOP_DATE, "%s-%s-%s" % (toks[2],toks[1],toks[0]))
+        self.metadata.setMetadataPair(metadata.METADATA_STOP_TIME, stopDateTime.split('T')[1])
         pass
 
     #

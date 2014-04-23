@@ -634,6 +634,8 @@ class Ingester():
                         self.logger.info("  will make tmpEosipFolder:%s" % pInfo.eosipTmpFolder)
                         pInfo.addLog("  will make tmpEosipFolder:%s" % pInfo.eosipTmpFolder)
                         os.makedirs(pInfo.eosipTmpFolder)
+                #
+                pInfo.destProduct.folder=pInfo.eosipTmpFolder
 
                 # CODE MOVED FROM specialized ingested
                 self.outputProductResolvedPaths = pInfo.destProduct.getOutputFolders(OUTSPACE, OUTPUT_RELATIVE_PATH_TREES)
