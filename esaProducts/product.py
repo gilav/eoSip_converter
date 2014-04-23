@@ -28,18 +28,15 @@ class Product:
         self.path=p
         self.size=0
         self.type=self.TYPE_UNKNOWN
+        if p==None:
+            return
         # the product original name
         self.origName=os.path.split(self.path)[1]
         self.folder=os.path.split(self.path)[0]
         if self.debug!=0:
             print " folder=%s" % self.folder
             print " origName=%s" % self.origName
-        self.debug=0
-        self.myInit()
 
-    @abstractmethod
-    def myInit(self):
-        pass
 
     def getSize(self):
         self.size=os.stat(self.path).st_size

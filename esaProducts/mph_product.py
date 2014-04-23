@@ -7,6 +7,7 @@ from Product import Product
 class MphProduct(Product):
     
     def __init__(self, p=None):
+        Product.__init__(self, path)
         print " init class MphProduct, path=%s" % p
         self.path=p
         self.type=Product.TYPE_MPH

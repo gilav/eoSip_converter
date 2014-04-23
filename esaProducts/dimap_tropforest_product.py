@@ -24,8 +24,6 @@ class Dimap_Tropforest_Product(Directory_Product):
     TIF_FILE_NAME=None
     XML_FILE_NAME=None
     EXTRACTED_PATH=None
-    debug=0
-    #
 
     xmlMapping={metadata.METADATA_START_DATE:'Dataset_Sources/Source_Information/Scene_Source/IMAGING_DATE',
                 metadata.METADATA_START_TIME:'Dataset_Sources/Source_Information/Scene_Source/IMAGING_TIME',
@@ -47,10 +45,9 @@ class Dimap_Tropforest_Product(Directory_Product):
                 metadata.METADATA_REFERENCE_SYSTEM_IDENTIFIER_NAME:'Coordinate_Reference_System/Horizontal_CS/HORIZONTAL_CS_NAME'
                 }
 
-    def myInit(self):
-        #if self.debug!=0:
+    def __init__(self, p=None):
+        Directory_Product.__init__(self, path)
         print " init class Dimap_Tropforest_Product"
-        self.type=Product.TYPE_DIR
 
     #
     # 

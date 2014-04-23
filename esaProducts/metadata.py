@@ -134,6 +134,7 @@ class Metadata(Base_Metadata):
     def getNextCounter(self):
         self.counter=self.counter+1
         return self.counter
+        
 
 
     

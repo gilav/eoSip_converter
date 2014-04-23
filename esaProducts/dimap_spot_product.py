@@ -25,8 +25,10 @@ class Dimap_Spot_Product(Directory_Product):
     PREVIEW_NAME='preview.jpg'
     METADATA_NAME='metadata.dim'
     EXTRACTED_PATH=None
-    debug=0
-    #
+    preview_data=None
+    metadata_data=None
+    preview_path=None
+    metadata_path=None
 
 
 
@@ -52,16 +54,10 @@ class Dimap_Spot_Product(Directory_Product):
                 metadata.METADATA_REFERENCE_SYSTEM_IDENTIFIER:'Coordinate_Reference_System/Horizontal_CS/HORIZONTAL_CS_CODE'
                 }
     
-    def myInit(self):
-        #if self.debug!=0:
+    def __init__(self, path):
+        Directory_Product.__init__(self, path)
         print " init class Dimap_Spot_Product"
-        self.type=Product.TYPE_DIR
-        self.preview_data=None
-        self.meatadata_data=None
-        self.preview_path=None
-        self.metadata_path=None
-        self.PREVIEW_NAME='preview.jpg'
-        self.METADATA_NAME='metadata.dim'
+
         
     def getMetadataInfo(self):
         return self.metadata_data
@@ -106,14 +102,9 @@ class Dimap_Spot_Product(Directory_Product):
             raise Exception("More than 1 directory in product:%d" % d)
 
 
-    #def extractProductFileSize(self):
-    #    size=os.stat(self.path).st_size
-    #    return size
-
 
     def buildTypeCode(self):
         if (self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)=='HRV'):
-            #print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ HRV"
             if self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)=='1' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='P':
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRV1_P__1P')
             elif self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)=='2' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='P':
@@ -126,7 +117,6 @@ class Dimap_Spot_Product(Directory_Product):
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRV#_#_##')
                         
         elif (self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)=='HRVIR'):
-            #print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ HRVIR"
             if self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)=='1' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='M':
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRV1_P__1P')
             elif self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)=='2' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='M':
@@ -139,7 +129,6 @@ class Dimap_Spot_Product(Directory_Product):
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRVI_#_##')
 
         elif (self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)=='HRG'):
-            #print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ HRG"
             if self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)=='1' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='J':
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRG1_X__1P')
             elif self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)=='2' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='J':

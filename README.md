@@ -14,7 +14,7 @@ History:
 ========
 
 
-2014-04-22:
+2014-04-23:
  - Reaper converter works.
 
 2014-04-22:
@@ -24,7 +24,7 @@ History:
 2014-04-17: 
  - implement Tiff convertion using external exec
  - UTM to lat/lon convertion
- ==> Tropforest  converter ok, all product processed
+ ==> Tropforest  converter ok, all products processed
 
 2014-04-15:
- ==> Ikonos converter ok, all product processed
+ ==> Ikonos converter ok, all products processed

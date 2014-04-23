@@ -1,7 +1,7 @@
 #
 # The Ingester class is a base classe that can be used to convert Eo-Products into Eo-Sip packaged products
 #
-# For Esa/ lite dissemination project
+# For Esa/lite dissemination project
 #
 # Serco 04/2014
 # Lavaux Gilles & Simone Garofalo
@@ -690,52 +690,42 @@ class Ingester():
         #
         @abstractmethod
         def createSourceProduct(self, processInfo):
-                processInfo.addLog("create src product")
-                self.logger.info("create srcproduct")
+                raise Exception("abstractmethod")
 
         #
         # should be abstract
         #
         @abstractmethod
         def createDestinationProduct(self, processInfo):
-                processInfo.addLog("create dest product")
-                self.logger.info("create dest product") 
+                raise Exception("abstractmethod")
 
         #
         # should be abstract
         #
         @abstractmethod
         def verifySourceProduct(self, processInfo):
-                global debug,logger
-                processInfo.addLog("verifying product:%s" % (processInfo.srcPath))
-                self.logger.info("verifying product");
+                raise Exception("abstractmethod")
 
         #
         # should be abstract
         #
         @abstractmethod
         def prepareProducts(self,processInfo):
-                global debug,logger
-                processInfo.addLog("prepare product in:%s" % (processInfo.workFolder))
-                self.logger.info("prepare product");
+                raise Exception("abstractmethod")
 
         #
         # should be abstract
         #
         @abstractmethod
         def extractMetadata(self,met,processInfo):
-                global debug,logger
-                processInfo.addLog("extract metadata")
-                self.logger.info("extract metadata")
+                raise Exception("abstractmethod")
                 
         #
         # should be abstract
         #
         @abstractmethod
         def makeBrowses(self,processInfo):
-                global debug,logger
-                processInfo.addLog("make browses")
-                self.logger.info("make browses")
+                raise Exception("abstractmethod")
 
                 
         #
@@ -743,21 +733,6 @@ class Ingester():
         #
         @abstractmethod
         def output_eoSip(self, processInfo, basePath, pathRules):
-                global debug,logger
-                processInfo.addLog("write EoSip, base path:%s" % path)
-                self.logger.info("write EoSip, base path:%s" % path)
+                raise Exception("abstractmethod")
                 
 
-if __name__ == '__main__':
-    print "start"
-    if len(sys.argv) > 1:
-            configFile = sys.argv[1]
-            listOfProductFile=None
-            if len(sys.argv[1])>2:
-                listOfProductFile=sys.argv[2]
-            ing=Ingester()
-            ing.readConfig(configFile)
-            ing.findProducts()
-    else:
-        print "syntax: python ingester.py configuration_file.cfg"
-        sys.exit(1)

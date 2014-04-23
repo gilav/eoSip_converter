@@ -30,15 +30,9 @@ class netCDF_Product(Product):
         self.type=Product.TYPE_NETCDF
         self.dataset=None
 
-    def myInit(self):
-        #global netCdfReady
-        print " myInit class netCDF_Product"
-        #self.type=Product.TYPE_NETCDF
-        #self.dataset=None
-
         
     #
-    # 
+    # return the dataset object
     #
     def getMetadataInfo(self):
         if self.netCdfReady:

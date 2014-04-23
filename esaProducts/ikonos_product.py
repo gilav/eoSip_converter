@@ -21,8 +21,10 @@ class Ikonos_Product(Directory_Product):
     PREVIEW_SUFFIX='ovr.jpg'
     METADATA_SUFFIX='metadata.txt'
     EXTRACTED_PATH=None
-    #debug=0
-    #
+    preview_data=None
+    metadata_data=None
+    preview_path=None
+    metadata_path=None
 
     #
     # syntax is: sectionName|[key][+nLine,+nLine...]
@@ -43,16 +45,11 @@ class Ikonos_Product(Directory_Product):
                 
                 }
 
-    def myInit(self):
-        #if self.debug!=0:
-        print " init class Dimap_Tropforest_Product"
-        self.type=Product.TYPE_DIR
-        self.preview_data=None
-        self.metadata_data=None
-        self.preview_path=None
-        self.metadata_path=None
-        self.PREVIEW_SUFFIX='ovr.jpg'
-        self.METADATA_SUFFIX='metadata.txt'
+    
+    def __init__(self, path):
+        Directory_Product.__init__(self, path)
+        print " init class Ikonos_Product"
+
 
     def getMetadataInfo(self):
         return self.metadata_data
@@ -66,12 +63,6 @@ class Ikonos_Product(Directory_Product):
             print " will exttact product to path:%s" % folder
         fh = open(self.path, 'rb')
         z = zipfile.ZipFile(fh)
-
-        #for DEBUG:
-        #self.preview_path='C:/Users/glavaux/Shared/LITE/testData/spaceTmp/workfolder_0/20090721222747_po_2627437_0000000/po_2627437_rgb_0000000_ovr.jpg'
-        #self.metadata_path='C:/Users/glavaux/Shared/LITE/testData/spaceTmp/workfolder_0/20090721222747_po_2627437_0000000/po_2627437_metadata.txt'
-        #self.EXTRACTED_PATH=folder
-        #return
 
         
         n=0
@@ -105,12 +96,6 @@ class Ikonos_Product(Directory_Product):
                 print " ################### self.preview_path:%s" % self.preview_path 
         else:
             raise Exception("More than 1 directory in product:%d" % d)
-
-
-    #def extractProductFileSize(self):
-    #    size=os.stat(self.path).st_size
-    #    return size
-
 
 
     def buildTypeCode(self):

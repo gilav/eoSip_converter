@@ -1,0 +1,6 @@
+# -*- coding: cp1252 -*-
+
+DESCENDING="DESCENDING"
+ASCENDING="ASCENDING"
+
+

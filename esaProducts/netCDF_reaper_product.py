@@ -10,7 +10,9 @@ import traceback
 import metadata
 import browse_metadata
 import formatUtils
+import valid_values
 from netCDF_product import netCDF_Product
+
 
 
 
@@ -206,10 +208,6 @@ class netCDF_reaper_Product(netCDF_Product):
         print " init class netCDF_reaper_Product"
         
 
-    def myInit(self):
-        print " myInit class netCDF_reaper_Product"
-        #self.debug=1
-
 
     #
     #
@@ -223,7 +221,7 @@ class netCDF_reaper_Product(netCDF_Product):
         met.setMetadataPair(metadata.METADATA_PRODUCTNAME, self.origName)
         
         # use what contains the metadata file
-        dataset=self.getMetadataInfo()
+        self.getMetadataInfo()
         #print "########## got dict:%s" % dataset.__dict__
         
         # extact metadata, from NETCDF global attributes
@@ -236,7 +234,7 @@ class netCDF_reaper_Product(netCDF_Product):
             #if self.debug!=0:
             #    print " ##### handle metadata:%s" % field
 
-            aValue=dataset.__dict__[rule]
+            aValue=self.dataset.__dict__[rule]
             if self.debug!=0:
                 print " ##### metadata %s=%s" % (field, aValue)
                 
@@ -273,7 +271,22 @@ class netCDF_reaper_Product(netCDF_Product):
         toks=stopDateTime.split('T')[0].split('-')
         self.metadata.setMetadataPair(metadata.METADATA_STOP_DATE, "%s-%s-%s" % (toks[2],toks[1],toks[0]))
         self.metadata.setMetadataPair(metadata.METADATA_STOP_TIME, stopDateTime.split('T')[1])
-        pass
+
+        firstLat=self.dataset.__dict__[self.ATTRIBUTE__RA0_FIRST_LAT]
+        firstLon=self.dataset.__dict__[self.ATTRIBUTE__RA0_FIRST_LONG]
+        lastLat=self.dataset.__dict__[self.ATTRIBUTE__RA0_LAST_LAT]
+        lastLon=self.dataset.__dict__[self.ATTRIBUTE__RA0_LAST_LONG]
+
+        # get the footprint from the first/last coordinates
+        footprint="%s %s %s %s %s %s" % (firstLat, firstLon, lastLat, lastLon, firstLat, firstLon)
+        self.metadata.setMetadataPair(metadata.METADATA_FOOTPRINT, footprint)
+
+        # get ascending from z_velocity vector
+        tmp=self.dataset.__dict__[self.ATTRIBUTE__Z_VELOCITY]
+        if float(tmp) <0:
+            self.metadata.setMetadataPair(metadata.METADATA_ORBIT_DIRECTION, valid_values.DESCENDING)
+        else:
+            self.metadata.setMetadataPair(metadata.METADATA_ORBIT_DIRECTION, valid_values.ASCENDING)
 
     #
     #

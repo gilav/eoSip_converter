@@ -35,10 +35,9 @@ class EOSIP_Product(Directory_Product):
     # xml node used mapping
     xmlMappingBrowse=None
     xmlMappingMetadata=None
-    #
-    debug=0
 
     def __init__(self, p=None):
+        Directory_Product.__init__(self, p)
         if self.debug!=0:
             print " init class EOSIP_Product, path=%s" % p
         #

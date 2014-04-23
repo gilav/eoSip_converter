@@ -13,8 +13,6 @@ class Directory_Product(Product):
 
     def __init__(self, path):
         Product.__init__(self, path)
-        
-    def myInit(self):
         print " init class Directory_Product"
         self.type=Product.TYPE_DIR
         
