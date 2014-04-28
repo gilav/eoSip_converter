@@ -48,6 +48,7 @@ METADATA_REFERENCE_SYSTEM_IDENTIFIER_NAME='METADATA_REFERENCE_SYSTEM_IDENTIFIER_
 METADATA_RELATIVE_ORBIT='METADATA_RELATIVE_ORBIT'
 METADATA_RESPONSIBLE='METADATA_RESPONSIBLE'
 METADATA_REPORT_TYPE='METADATA_REPORT_TYPE'
+METADATA_SCENE_CENTER='METADATA_SCENE_CENTER'
 METADATA_SENSOR_NAME='METADATA_SENSOR_NAME'
 METADATA_SENSOR_TYPE='METADATA_SENSOR_TYPE'
 METADATA_SENSOR_CODE='METADATA_SENSOR_CODE'
@@ -74,21 +75,17 @@ METADATA_WRS_LATITUDE_GRID_NORMALISED='METADATA_WRS_LATITUDE_GRID_NORMALISED'
 
 
 class Metadata(Base_Metadata):
-    #counter=0
     #
-    
     METADATA_FIELDS=[METADATA_CLOUD_COVERAGE, METADATA_GENERATION_TIME,METADATA_PRODUCTNAME,METADATA_PRODUCT_SIZE,METADATA_PATH,METADATA_START_DATE,METADATA_STOP_DATE,METADATA_START_TIME,METADATA_STOP_TIME,
                  METADATA_TYPECODE,METADATA_PLATFORM,METADATA_PLATFORM_ID,METADATA_FILECLASS,METADATA_FOOTPRINT,METADATA_ORBIT,
                  METADATA_TRACK,METADATA_FRAME,METADATA_VERSION,METADATA_URL,METADATA_PROCESSING_TIME,METADATA_DATASET_NAME,METADATA_SENSOR_NAME,
                  METADATA_SENSOR_CODE,METADATA_DATA_FILE_PATH,METADATA_DATASET_PRODUCTION_DATE,METADATA_INSTRUMENT_INCIDENCE_ANGLE,METADATA_VIEWING_ANGLE,
                  METADATA_SUN_AZIMUTH,METADATA_SUN_ELEVATION,METADATA_REFERENCE_SYSTEM_IDENTIFIER,METADATA_REPORT_TYPE]
 
-    #debug=0
-    # the metadata dictionnary
-    #dict=None
-    # the mapping of nodes used in xml report. keys is node path
-    #xmlNodeUsedMapping={}
-    
+
+    #
+    #
+    #
     def __init__(self, defaults=None):
         self.dict={}
         self.counter=0
@@ -101,6 +98,9 @@ class Metadata(Base_Metadata):
             print ' init Metadata done'
             
 
+    #
+    #
+    #
     def eval(self, expr):
         #print "%%%%%%%%%%%%%%%%%%%%%% wil eval:'%s'" % expr
         try:
@@ -114,6 +114,9 @@ class Metadata(Base_Metadata):
             traceback.print_exc(file=sys.stdout)
         return res
 
+    #
+    #
+    #
     def getMetadataNames(self):
         res=[]
         # copy defaults fieds
@@ -122,15 +125,24 @@ class Metadata(Base_Metadata):
         # add extra fields
         return res
 
+    #
+    #
+    #
     def setMetadataPair(self, name=None, value=None):
         self.dict[name] = value
 
+    #
+    #
+    #
     def getMetadataValue(self,name=None):
         if self.dict.has_key(name):
             return self.dict[name]
         else:
             return "NOT-PRESENT"
 
+    #
+    #
+    #
     def getNextCounter(self):
         self.counter=self.counter+1
         return self.counter

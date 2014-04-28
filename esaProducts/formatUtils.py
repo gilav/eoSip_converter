@@ -9,7 +9,7 @@ import sys
 import xml.dom.minidom
 import StringIO
 import time
-import datetime
+from datetime import datetime, timedelta
 import traceback
 import math
 
@@ -17,9 +17,14 @@ import math
 monthDict={1:'JAN', 2:'FEB', 3:'MAR', 4:'APR', 5:'MAY', 6:'JUN', 7:'JUL', 8:'AUG', 9:'SEP', 10:'OCT', 11:'NOV', 12:'DEC'}
 monthDict2={'JAN':'01', 'FEB':'02', 'MAR':'03', 'APR':'04', 'MAY':'05', 'JUN':'06', 'JUL':'07', 'AUG':'08', 'SEP':'09', 'OCT':'10','NOV':'11', 'DEC':'12'}
 
+DEFAULT_DATE_PATTERN="%Y-%m-%dT%H:%M:%SZ"
+DEFAULT_DATE_PATTERN_MSEC="%Y-%m-%dT%H:%M:%S.000Z"
 
 debug=0
 
+#
+#
+#
 def utmToLatLon(easting, northing, zone, northernHemisphere=True):
     if northernHemisphere=='S' or northernHemisphere=='s':
             northernHemisphere=False;
@@ -78,34 +83,87 @@ def utmToLatLon(easting, northing, zone, northernHemisphere=True):
     return (latitude, longitude)
 
 
-        
-def dateFromSec(t, pattern="%y-%m-%d %H:%M:%S"):
-        d=datetime.datetime.fromtimestamp(t)
+#
+# return a dateTime string
+#
+def dateFromSec(t, pattern=DEFAULT_DATE_PATTERN):
+        d=datetime.fromtimestamp(t)
         return d.strftime(pattern)
 
+#
+# return a dateTime string, with msec
+#
+def dateFromSecMs(t, pattern=DEFAULT_DATE_PATTERN):
+        d=datetime.fromtimestamp(t)
+        msec=d.microsecond/1000
+        return "%s.%s" % (d.strftime(pattern), msec)
 
-def dateNow(pattern="%y-%m-%d %H:%M:%S"):
-        d=datetime.datetime.fromtimestamp(time.time())
+#
+# return a dateTime string, with 10th of second
+#
+def dateFromSecDs(t, pattern=DEFAULT_DATE_PATTERN):
+        d=datetime.fromtimestamp(t)
+        dsec=d.microsecond/10000
+        return "%s.%s" % (d.strftime(pattern), dsec)
+
+
+#
+# take a dateTime string, return a dateTime string, with msec
+#
+def datePlusMsec(s, deltaMsec, pattern=DEFAULT_DATE_PATTERN):
+        d=datetime.strptime(s, pattern)
+        d=d+timedelta(milliseconds=deltaMsec)
+        msec=d.microsecond/1000
+        tmp="%s" % d.strftime(DEFAULT_DATE_PATTERN_MSEC)
+        return tmp.replace("000", "%s" % msec)
+
+#
+# return a time
+#
+def timePlusMsec(t, deltaMsec):
+        d=datetime.fromtimestamp(t)
+        d+timedelta(milliseconds=deltaMsec)
+        return d+timedelta(milliseconds=deltaMsec)
+
+
+#
+#
+#
+def dateNow(pattern=DEFAULT_DATE_PATTERN):
+        d=datetime.fromtimestamp(time.time())
         return d.strftime(pattern)
 
-
+#
+# from YYYY-MM-DD to: YYYYMMDD; if max==4
+#
 def normaliseDate(s=None, max=-1, pad='#'):
         if s != None:
-            return s.replace('-', '')
+            s=s.replace('-', '')
+            if len(s) > max:
+                s=s[0:max]
+            return s
         else:
             s=''
             while len(s)<max:
-             s="%s%s" % (s, pad)
+                s="%s%s" % (s, pad)
+            if len(s) > max:
+                s=s[0:max]
             return s
 
-
+#
+# from hh:mm:ss[.000]Z to: hhmnss; if max==6
+#
 def normaliseTime(s=None, max=-1, pad='#'):
         if s != None:
-            return s.replace(':', '')
+            s=s.replace(':', '')
+            s=s.replace('Z', '')
+            if len(s) > max:
+                s=s[0:max]
+            return s
         else:
             s=''
             while len(s)<max:
-             s="%s%s" % (s, pad)
+                s="%s%s" % (s, pad)
             return s
 
 
@@ -123,7 +181,10 @@ def normaliseDateString(mess=None):
         #
         pos = mess.find('.')
         if pos>=0:
-                mess=mess[0:pos+4]+'Z'
+                mess=mess[0:pos+4]
+        pos = mess.find('Z')
+        if pos < 0:
+            mess=mess+'Z'
         
         return mess
 
@@ -224,7 +285,18 @@ if __name__ == '__main__':
 
         print "Utm(712605, 10000, 21, True) ==> lat:0.090422 Lon:-55.089726567181266 ? :: %s %s" % utmToLatLon(712605, 10000, 21, True)
 
-        print "dateNow:%s" % dateNow()
+        sNow=dateNow()
+        print "dateNow:%s" % sNow
+
+        nowPlus=datePlusMsec(sNow, 4512)
+        print "now + 4.512 sec=%s" % nowPlus
+
+        toks=nowPlus.split('T')
+        print normaliseTime(toks[1], 6)
+
+        
+
+        
             
     except Exception, e:
         print " Error"

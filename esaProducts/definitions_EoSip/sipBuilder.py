@@ -55,10 +55,19 @@ class SipBuilder:
     __metaclass__ =ABCMeta
 
     debug=0
+    USED_METADATA_MAPPING=EOSIP_METADATA_MAPPING
 
     @abstractmethod
     def buildMessage(self, representation, metadata, currentTreePath):
         pass
+
+
+    #
+    # if we want to change the mapping...
+    #
+    def setMetadataMapping(self, adict):
+        self.USED_METADATA_MAPPING=adict
+
 
     #
     # return a field name, from:
@@ -120,8 +129,8 @@ class SipBuilder:
     #
     #
     def resolveField(self, name, metadata=None):
-        if EOSIP_METADATA_MAPPING.has_key(name):
-            metaName=EOSIP_METADATA_MAPPING[name]
+        if self.USED_METADATA_MAPPING.has_key(name):
+            metaName=self.USED_METADATA_MAPPING[name]
             if self.debug==1:
                 print " resolve '%s' in metadata name:%s"% (name, metaName)
             try:

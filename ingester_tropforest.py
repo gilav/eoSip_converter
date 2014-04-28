@@ -103,6 +103,18 @@ class ingester_tropforest(ingester.Ingester):
             # refine
             processInfo.srcProduct.refineMetadata()
 
+                
+        #
+        #
+        #
+        def makeBrowseChoiceBlock(self, processInfo, metadata):
+            # create browse choice for browse metadata report
+            reportBuilder=rep_rectifiedBrowse.rep_rectifiedBrowse()
+            print "###\n###\n### BUILD BROWSE CHOICE FROM METADATA:%s" % (processInfo.destProduct.metadata.toString())
+            browseChoiceBlock=reportBuilder.buildMessage(processInfo.destProduct.metadata, "rep:rectifiedBrowse").strip()
+            if self.debug==0:
+                    print "browseChoiceBlock:%s" % (browseChoiceBlock)
+            metadata.setMetadataPair(browse_metadata.METADATA_BROWSE_CHOICE, browseChoiceBlock)
 
 
         #
@@ -120,12 +132,13 @@ class ingester_tropforest(ingester.Ingester):
 
                     # create browse choice for browse metadata report
                     bmet=processInfo.destProduct.browse_metadata_dict[browseDestPath]
-                    reportBuilder=rep_rectifiedBrowse.rep_rectifiedBrowse()
-                    print "###\n###\n### BUILD BROWSE CHOICE FROM METADATA:%s" % (processInfo.destProduct.metadata.toString())
-                    browseChoiceBlock=reportBuilder.buildMessage(processInfo.destProduct.metadata, "rep:rectifiedBrowse").strip()
-                    if self.debug==0:
-                            print "browseChoiceBlock:%s" % (browseChoiceBlock)
-                    bmet.setMetadataPair(browse_metadata.METADATA_BROWSE_CHOICE, browseChoiceBlock)
+                    #reportBuilder=rep_rectifiedBrowse.rep_rectifiedBrowse()
+                    #print "###\n###\n### BUILD BROWSE CHOICE FROM METADATA:%s" % (processInfo.destProduct.metadata.toString())
+                    #browseChoiceBlock=reportBuilder.buildMessage(processInfo.destProduct.metadata, "rep:rectifiedBrowse").strip()
+                    #if self.debug==0:
+                    #        print "browseChoiceBlock:%s" % (browseChoiceBlock)
+                    #bmet.setMetadataPair(browse_metadata.METADATA_BROWSE_CHOICE, browseChoiceBlock)
+                    self.makeBrowseChoiceBlock(processInfo, bmet)
         
                     processInfo.addLog("  browse image created:%s" %  (browseDestPath))
                     self.logger.info("  browse image created:%s" % browseDestPath)

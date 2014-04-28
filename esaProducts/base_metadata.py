@@ -16,17 +16,60 @@ class Base_Metadata:
     debug=0
     # the metadata dictionnary
     dict=None
+    # the localAttibutes
+    localAttributes=[]
     # the mapping of nodes used in xml report. keys is node path
     xmlNodeUsedMapping={}
-     
+    # the typology of xml report in use: 'eop:EarthObservation', 'sar:EarthObservation', 'opt:EarthObservation'
+    TYPOLOGY_LIST=["eop_EarthObservation", "sar_EarthObservation", "opt_EarthObservation"]
+    TYPOLOGY_eop_EarthObservation=0;
+    TYPOLOGY_sar_EarthObservation=1;
+    TYPOLOGY_opt_EarthObservation=2;
+    xmlTypology_used=0
+
+
+    #
+    #
+    #
     def __init__(self):
             print ' init Base_Metadata done'
 
 
-    #@abstractmethod
+    #
+    # use a xml typology
+    #
+    def useXmlTypology(self, n=TYPOLOGY_eop_EarthObservation):
+        if n < len(TYPOLOGY_LIST):
+            xmlTypology_used=n
+        else:
+            raise "typology unknown:%d" % n
+        
+
+    #
+    # add a local attributes
+    #
+    def addLocalAttribute(self, name, value):
+        adict={}
+        adict[name]=value
+        self.localAttributes.append(adict)
+
+    #
+    # get the local attributes
+    #
+    def getLocalAttribute(self):
+        return self.localAttributes
+
+    
+
+    #
+    # set the dictionnary of node used in the xml reports
+    #
     def setUsedInXmlMap(self, adict):
         self.xmlNodeUsedMapping=adict
 
+    #
+    # test if a field is used in the xml report
+    #
     def isFieldUsed(self, path=None):
         #print "###########################\n###########################\n isFieldUsed: path:'%s'  len(exclusion):%d" % (path, len(self.xmlNodeUsedMapping))
         n=0
@@ -48,8 +91,10 @@ class Base_Metadata:
             return 1
             
 
+    #
+    #
+    #
     def dump(self):
-        #raise Exception("STOP")
         res='Dict:\n'
         for item in sorted(self.dict.keys()):
             res="%s%s=%s\n" % (res, item, self.dict[item])
@@ -58,11 +103,13 @@ class Base_Metadata:
             for item in sorted(self.xmlNodeUsedMapping.keys()):
                 res="%s%s=%s\n" % (res, item, self.xmlNodeUsedMapping[item])
         print res
-    
+
+    #
+    #
+    #
     def toString(self):
         res='Dict:\n'
         for item in sorted(self.dict.keys()):
-            #print "key:"+item
             res="%s%s=%s\n" % (res, item, self.dict[item])
         if len(self.xmlNodeUsedMapping.keys())>0:
             res='%s\nXml used mapping:\n' % res

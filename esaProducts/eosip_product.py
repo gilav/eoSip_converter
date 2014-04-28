@@ -35,7 +35,17 @@ class EOSIP_Product(Directory_Product):
     # xml node used mapping
     xmlMappingBrowse=None
     xmlMappingMetadata=None
+    # xml tag that have to be replaced
+    # BROWSE_CHOICE is in browse report
+    # LOCAL_ATTR is in metadata report
+    NODES_AS_TEXT_BLOCK=["<BROWSE_CHOICE></BROWSE_CHOICE>","<LOCAL_ATTR></LOCAL_ATTR>"]
+    # default replace text, if None it can not be defaulted.
+    NODES_AS_TEXT_BLOCK_DEFAULT=[None,""]
 
+
+    #
+    #
+    #
     def __init__(self, p=None):
         Directory_Product.__init__(self, p)
         if self.debug!=0:
@@ -82,7 +92,9 @@ class EOSIP_Product(Directory_Product):
         self.browseFullPath=None
         self.sipFullPath=None
 
-
+    #
+    #
+    #
     def setXmlMappingMetadata(self, dict1, dict2):
         self.xmlMappingMetadata=dict1
         self.xmlMappingBrowse=dict2
@@ -90,10 +102,15 @@ class EOSIP_Product(Directory_Product):
         self.metadata.xmlNodeUsedMapping=dict1
         
 
+    #
+    #
+    #
     def getMetadataInfo(self):
         pass
 
+    #
     # add a source browse, create the corresponding report info
+    #
     def addSourceBrowse(self, path=None, reportDict=None):
         if self.debug!=0:
             print "#############$$$$$$$$$$$$$$$ add source browse file[%d]:%s" % (len(self.sourceBrowsesPath), path)
@@ -123,23 +140,13 @@ class EOSIP_Product(Directory_Product):
         bMet.setMetadataPair('METADATA_GENERATION_TIME', self.metadata.getMetadataValue(metadata.METADATA_GENERATION_TIME))
         bMet.setMetadataPair('METADATA_RESPONSIBLE', self.metadata.getMetadataValue('METADATA_RESPONSIBLE'))
         bMet.setMetadataPair('BROWSE_METADATA_IMAGE_TYPE', self.metadata.getMetadataValue('BROWSE_METADATA_IMAGE_TYPE'))
-        # set the BROWSE_CHOICE content
-        #self.buildBrowseChoice(bMet) : CODE MOVED IN SPECIALIZED INGESTER
         self.browse_metadata_dict[path]=bMet
         
 
 
     #
-    def storeBrowseChoice_NOT_USED(self, path, browseChoiceBlock):
-        bmet=self.browse_metadata_dict[path]
-        #reportBuilder=rep_rectifiedBrowse.rep_rectifiedBrowse()
-        #browseChoiceBlock=reportBuilder.buildMessage(self.metadata, "rep:rectifiedBrowse").strip()
-        if self.debug!=0:
-            print "browseChoiceBlock:%s" % (browseChoiceBlock)
-        bMet.setMetadataPair(browse_metadata.METADATA_BROWSE_CHOICE, browseChoiceBlock)
-
-
     # build product and package name
+    #
     def buildProductNames(self, pattern=None, ext=None ):
         self.extension=ext
         if self.debug==0:
@@ -153,23 +160,54 @@ class EOSIP_Product(Directory_Product):
         self.buildackageName()
 
 
+    #
     # build the product metadata report, running the class rep_metadataReport
+    #
     def buildProductReportFile(self):
         if self.debug==0:
             print "\n build product metadata report"
             print " Eo-Sip metadata dump:\n%s" % self.metadata.toString()
-        #
-        #reportFolderName=os.path.split(self.sourceBrowsesPath[0])[0]
-        #
+
+        # make the report xml data
         productReportBuilder=rep_metadataReport.rep_metadataReport()
         self.metadata.debug=1
-        self.productReport=self.formatXml(productReportBuilder.buildMessage(self.metadata, "rep:metadataReport"), self.folder, 'product_report')
+        xmldata=productReportBuilder.buildMessage(self.metadata, "rep:metadataReport")
+
+        # add the local attributes
+        attr=self.metadata.getLocalAttribute()
+        print " @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ length localattributes:%s" % len(attr)
+        if len(attr) > 0:
+            n=0
+            res="<eop:vendorSpecific>"
+            for adict in attr:
+                key=adict.keys()[0]
+                value=adict[key]
+                print " @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ localattributes[%d]: %s=%s" % (n, key, value)
+                res = "%s<eop:SpecificInformation><eop:localAttribute>%s</eop:localAttribute><eop:localValue>%s</eop:localValue></eop:SpecificInformation>" % (res, key, value)
+                    
+                n=n+1
+            res="%s</eop:vendorSpecific>" % res
+            print " @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ localattributes block:%s" % res
+            pos = xmldata.find("<LOCAL_ATTR></LOCAL_ATTR>")
+            if pos >= 0:
+                xmldata=xmldata.replace("<LOCAL_ATTR></LOCAL_ATTR>", res)
+            else:
+                print " @@@@@@@@@@@@@@@@@@@@@@@@@ !!!!!!!!!!!!!!!!!!! no <LOCAL_ATTR></LOCAL_ATTR> block found"
+            
+        
+        
+        # verify xml, build file name
+        self.productReport=self.formatXml(xmldata, self.folder, 'product_report')
         if self.debug!=0:
             print " product report content:\n%s" % self.productReport
         ext=definitions_EoSip.getDefinition("XML_EXT")
         reportName="%s.%s" % (self.productShortName, ext)
         if self.debug!=0:
             print "   product report name:%s" % (reportName)
+
+        # sanitize test
+        self.productReport=self.sanitizeXml(self.productReport)
+            
         # write it
         self.reportFullPath="%s/%s" % (self.folder,reportName)
         fd=open(self.reportFullPath, "w")
@@ -217,6 +255,9 @@ class EOSIP_Product(Directory_Product):
             browseReport=browseReport.replace('<BROWSE_CHOICE></BROWSE_CHOICE>', bmet.getMetadataValue(browse_metadata.METADATA_BROWSE_CHOICE))
             if self.debug!=0:
                 print " browse report content:\n%s" % browseReport
+
+            #
+            browseReport=self.sanitizeXml(browseReport)
             
             #
             # write it
@@ -233,7 +274,9 @@ class EOSIP_Product(Directory_Product):
         return allBrowseReportNames
 
 
+    #
     # build the sip report
+    #
     def buildSipReportFile(self):
         if self.debug!=0:
             print " build sip report"
@@ -254,6 +297,10 @@ class EOSIP_Product(Directory_Product):
         sipName="%s.%s" % (self.productShortName, ext)
         if self.debug!=0:
             print "   sip report name:%s" % (sipName)
+
+        #
+        self.sipReport=self.sanitizeXml(self.sipReport)
+            
         # write it
         self.sipFullPath="%s/%s" % (self.folder, sipName)
         fd=open(self.sipFullPath, "w")
@@ -265,11 +312,15 @@ class EOSIP_Product(Directory_Product):
         
         
 
+    #
     # build package name
+    #
     def buildackageName(self):
         self.packageName=self.productName.replace(".%s"% self.extension, ".%s" % definitions_EoSip.getDefinition('PACKAGE_EXT'))
         self.metadata.setMetadataPair(metadata.METADATA_PACKAGENAME, self.packageName)
 
+    #
+    #
     #
     def getOutputFolders(self, basePath=None, final_path_list=None):                
             #create directory trees according to the configuration path rules
@@ -355,16 +406,19 @@ class EOSIP_Product(Directory_Product):
         zipf.close()
 
     #
-    # control the xml report
+    # control that the xml is well formatted, if not save it on disk
     #
     def formatXml(self, data=None, path=None, type=None):
         res=None
         try:
             helper=xmlHelper.XmlHelper()
             helper.parseData(data)
+            # this will verify that xml is correct:
             res=helper.prettyPrint()
             #print "pretty print xml:\n%s" % res
+            # keep original format, because is already indexed, to avoid mess with helper.prettyPrint()
             res=data
+            #res=self.sanitizeXml(data)
         except Exception, e:
             # write it for debug
             path="%s/faulty_%s.xml" % (path, type)
@@ -377,8 +431,32 @@ class EOSIP_Product(Directory_Product):
             raise e
         return res
 
+
+    #
+    # verify that the xml doesn't have anymore BLOCK_NODE that should have been substituted
+    # if there still are, default them if possible
+    # if not, raise error
+    #
+    def sanitizeXml(self, mess):
+        n=0
+        for pattern in self.NODES_AS_TEXT_BLOCK:
+            pos=mess.find(pattern)
+            if pos>0:
+                print " @@@@@@@@@@@@@@@ sanitizeXml: pattern[%d]:'%s' found at pos:%s; can be substituted with:'%s'" % (n, pattern, pos, self.NODES_AS_TEXT_BLOCK_DEFAULT[n])
+                if self.NODES_AS_TEXT_BLOCK_DEFAULT[n]==None:
+                    raise Exception("sanitizeXml: block %s can not be defaulted!" % pattern)
+                else:
+                    # TODO: should delete backward up to precedent newline...
+                    mess=mess.replace(pattern, self.NODES_AS_TEXT_BLOCK_DEFAULT[n])
+                
+            n=n+1
+                
+        return mess
         
+    
+    #
     # 
+    #
     def info(self):
         #raise Exception("STOP")
         print "\n\n##################################"

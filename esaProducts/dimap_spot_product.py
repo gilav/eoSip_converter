@@ -16,6 +16,7 @@ from directory_product import Directory_Product
 import metadata
 import browse_metadata
 import formatUtils
+from datetime import datetime, timedelta
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 sys.path.insert(0,currentdir)
 import imageUtil
@@ -200,14 +201,46 @@ class Dimap_Spot_Product(Directory_Product):
     # - build type code
     #
     def refineMetadata(self):
-        #raise Exception("STOP")
-
+        # processing time: suppress microsec
+        tmp = self.metadata.getMetadataValue(metadata.METADATA_PROCESSING_TIME)
+        pos = tmp.find('.')
+        if pos > 0:
+            tmp=tmp[0:pos]
+        pos = tmp.find('Z')
+        if pos < 0:
+            tmp=tmp+"Z"
+        self.metadata.setMetadataPair(metadata.METADATA_PROCESSING_TIME, tmp)
+        
         # convert sun azimut from EEE format
         tmp = self.metadata.getMetadataValue(metadata.METADATA_SUN_AZIMUTH)
         self.metadata.setMetadataPair(metadata.METADATA_SUN_AZIMUTH, formatUtils.EEEtoNumber(tmp))
 
         tmp = self.metadata.getMetadataValue(metadata.METADATA_SUN_ELEVATION)
         self.metadata.setMetadataPair(metadata.METADATA_SUN_ELEVATION, formatUtils.EEEtoNumber(tmp))
+
+        # set scene center, from the only we have: start time
+        tmp = "%sT%sZ" % (self.metadata.getMetadataValue(metadata.METADATA_START_DATE), self.metadata.getMetadataValue(metadata.METADATA_START_TIME))
+        #self.metadata.setMetadataPair(metadata.METADATA_SCENE_CENTER, "%sZ" % tmp)
+        self.metadata.setMetadataPair(metadata.METADATA_SCENE_CENTER, tmp)
+
+        # set start stop time from scene center
+        #scene_center_date=datetime.strptime(tmp, '%Y-%m-%dT%H:%M:%S')
+        #print " @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ sceneCenter=%s; %s" % (tmp,scene_center_date.strftime('%Y-%m-%dT%H:%M:%S'))
+        #scene_start=scene_center_date - timedelta(seconds=4, milliseconds=512)
+        #scene_end=scene_center_date + timedelta(seconds=4, milliseconds=512)
+        #self.metadata.setMetadataPair(metadata.METADATA_START_DATE, scene_start.strftime('%Y-%m-%d'))
+        #self.metadata.setMetadataPair(metadata.METADATA_START_TIME, scene_start.strftime('%H:%M:%S.%f'))
+        #self.metadata.setMetadataPair(metadata.METADATA_STOP_DATE, scene_end.strftime('%Y-%m-%d'))
+        #self.metadata.setMetadataPair(metadata.METADATA_STOP_TIME, scene_end.strftime('%H:%M:%S.%f'))
+
+        start=formatUtils.datePlusMsec(tmp, -4512)
+        stop=formatUtils.datePlusMsec(tmp, 4512)
+        toks=start.split('T')
+        self.metadata.setMetadataPair(metadata.METADATA_START_DATE, toks[0])
+        self.metadata.setMetadataPair(metadata.METADATA_START_TIME, toks[1][0:-1])
+        toks=stop.split('T')
+        self.metadata.setMetadataPair(metadata.METADATA_STOP_DATE, toks[0])
+        self.metadata.setMetadataPair(metadata.METADATA_STOP_TIME, toks[1][0:-1])
         
         # 
         self.buildTypeCode()

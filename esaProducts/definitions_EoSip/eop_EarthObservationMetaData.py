@@ -22,7 +22,8 @@ class eop_EarthObservationMetaData(SipMessageBuilder):
                       "<eop:acquisitionType>@acquisitionType@</eop:acquisitionType>",
                       "<eop:productType>@productType@</eop:productType>",
                       "<eop:status>@status@</eop:status>",
-                      "eop_processing"]
+                      "eop_processing",
+                      "<LOCAL_ATTR></LOCAL_ATTR>"]
 
     FIELDS = ["identifier", "parentIdentifier", "acquisitionType", "productType", "status"]
 

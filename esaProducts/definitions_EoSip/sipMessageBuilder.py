@@ -32,7 +32,7 @@ class SipMessageBuilder(SipBuilder):
     # evaluate things like: $$self.getNextCounter()$$
     # in the context of the Metadata object
     #
-    def resolveEval_(self, segment, met=None):
+    def resolveEval__NOT_USED(self, segment, met=None):
         pos=segment.find('$$')
         if pos>=0:
             pos2=pos
@@ -63,7 +63,7 @@ class SipMessageBuilder(SipBuilder):
     #
     # resolve variable inside @varName@
     #
-    def resolveVarname_(self, segment, met=None):
+    def resolveVarname__NOT_USED(self, segment, met=None):
             pos=segment.find('@')
             if self.debug!=0:
                 print " @@@@ to be varName resolved:'%s'" % segment

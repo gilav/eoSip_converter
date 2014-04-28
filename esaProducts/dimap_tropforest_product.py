@@ -45,7 +45,7 @@ class Dimap_Tropforest_Product(Directory_Product):
                 metadata.METADATA_REFERENCE_SYSTEM_IDENTIFIER_NAME:'Coordinate_Reference_System/Horizontal_CS/HORIZONTAL_CS_NAME'
                 }
 
-    def __init__(self, p=None):
+    def __init__(self, path=None):
         Directory_Product.__init__(self, path)
         print " init class Dimap_Tropforest_Product"
 
@@ -119,6 +119,9 @@ class Dimap_Tropforest_Product(Directory_Product):
         return grid_final
 
 
+    #
+    #
+    #
     def extractGridFromFileNormalised(self,value):
         if value==None:
             raise Exception("value (lat/lon) is None")
@@ -127,6 +130,9 @@ class Dimap_Tropforest_Product(Directory_Product):
         return grid_final
 
 
+    #
+    #
+    #
     def buildTypeCode(self):
         if self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)=='AVNIR':
             self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'AV2_OBS_11')
@@ -137,7 +143,10 @@ class Dimap_Tropforest_Product(Directory_Product):
         else:
             self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'###_###_##')
 
-       
+
+    #
+    #
+    #
     def extractMetadata(self, met=None):
         if met==None:
             raise Exception("metadate is None")
@@ -220,6 +229,9 @@ class Dimap_Tropforest_Product(Directory_Product):
         self.buildTypeCode() 
 
 
+    #
+    #
+    #
     def extractQuality(self, helper, met):
         #helper.setDebug(1)
         quality=[]
@@ -330,6 +342,13 @@ class Dimap_Tropforest_Product(Directory_Product):
                 else:
                     print " ERROR: Dataset_Frame/Vertex not found:%d" % len(nodes)
                     raise Exception(" ERROR: Dataset_Frame/Vertex not found:%d" % len(nodes))
+
+            # extract also COUNTRY, add it to local attributes
+            country = helper.getNodeText(helper.getFirstNodeByPath(nodes[0], 'COUNTRY', None))
+            met.setMetadataPair(metadata.METADATA_COUNTRY, country)
+            met.addLocalAttribute("country", country)
+            
+
         else:
             print " ERROR: Geoposition/Geoposition_Insert has not 1 subnode but:%d" % len(nodes)
             raise Exception(" ERROR: Geoposition/Geoposition_Insert has not 1 subnode but:%d" % len(nodes))

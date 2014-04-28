@@ -258,6 +258,16 @@ class netCDF_reaper_Product(netCDF_Product):
     # refine the metada, should perform in order:
     #
     def refineMetadata(self):
+        # processing time: suppress microsec
+        tmp = self.metadata.getMetadataValue(metadata.METADATA_PROCESSING_TIME)
+        pos = tmp.find('.')
+        if pos > 0:
+            tmp=tmp[0:pos]
+        pos = tmp.find('Z')
+        if pos < 0:
+            tmp=tmp+"Z"
+        self.metadata.setMetadataPair(metadata.METADATA_PROCESSING_TIME, tmp)
+        
         # normalise date string: change 3 digit month into month number
         # also invert date which is dd-mm-yyyy
         tmp = self.metadata.getMetadataValue(metadata.METADATA_START_DATE)
@@ -278,7 +288,8 @@ class netCDF_reaper_Product(netCDF_Product):
         lastLon=self.dataset.__dict__[self.ATTRIBUTE__RA0_LAST_LONG]
 
         # get the footprint from the first/last coordinates
-        footprint="%s %s %s %s %s %s" % (firstLat, firstLon, lastLat, lastLon, firstLat, firstLon)
+        #footprint="%s %s %s %s %s %s" % (firstLat, firstLon, lastLat, lastLon, firstLat, firstLon)
+        footprint=self.getFootprint(0, 1)
         self.metadata.setMetadataPair(metadata.METADATA_FOOTPRINT, footprint)
 
         # get ascending from z_velocity vector
@@ -287,6 +298,49 @@ class netCDF_reaper_Product(netCDF_Product):
             self.metadata.setMetadataPair(metadata.METADATA_ORBIT_DIRECTION, valid_values.DESCENDING)
         else:
             self.metadata.setMetadataPair(metadata.METADATA_ORBIT_DIRECTION, valid_values.ASCENDING)
+
+
+    def getFootprint(self, number=0, reduce=50):
+        v=self.dataset.variables['latitude']
+        v2=self.dataset.variables['longitude']
+        n=0
+        footprint=''
+        # try to not have too much coords
+        r=len(v)/50
+        
+        print " ################ ratio=%s" % r
+        for i in range(len(v)):
+            if i==0:
+                firstLat=float(v[i][number])
+                firstLon=float(v2[i][number])
+            #if i%r==r:
+            fv=float(v[i][number])
+            fv2=float(v2[i][number])
+            if self.debug != 0:
+                print " v[%d]= %f %f" % (n, (fv/1000000.0), (fv2/1000000.0))
+
+            if len(footprint)>0:
+                footprint="%s " % footprint
+            footprint="%s%s %s" % (footprint, fv/1000000.0, fv2/1000000.0)
+            lastLat=float(v[i][number])
+            lastLon=float(v2[i][number])
+            n=n+1
+
+        if self.debug == 0:
+            print "footprint[%d]:%s" % (number,footprint)
+            fd=open("footprint__%d.out" % number, 'w')
+            fd.write(footprint)
+            fd.close()
+            
+        print "Z velocity:%s" % (self.dataset.__dict__['z_velocity'])
+        print "ra0_first_lat:%s  VS %s" % (self.dataset.__dict__['ra0_first_lat'],firstLat)
+        print "ra0_first_long:%s  VS %s" % (self.dataset.__dict__['ra0_first_long'],firstLon)
+        try:
+            print "ra0_last_lat:%s  VS %s" % (self.dataset.__dict__['ra0_last_lat'],lastLat)
+            print "ra0_last_long:%s  VS %s" % (self.dataset.__dict__['ra0_last_long'],lastLon)
+        except:
+            pass
+        return footprint
 
     #
     #
