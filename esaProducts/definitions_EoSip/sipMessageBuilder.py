@@ -4,6 +4,7 @@ import logging
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 sys.path.insert(0,currentdir)
 
+import sipBuilder
 from sipBuilder import SipBuilder
 
 class SipMessageBuilder(SipBuilder):
@@ -29,64 +30,45 @@ class SipMessageBuilder(SipBuilder):
 
 
     #
-    # evaluate things like: $$self.getNextCounter()$$
-    # in the context of the Metadata object
+    # return the 'this' used
     #
-    def resolveEval__NOT_USED(self, segment, met=None):
-        pos=segment.find('$$')
-        if pos>=0:
-            pos2=pos
-            n=0
-            result=''
-            while pos>=0 and pos2>=0:
-                if self.debug!=0:
-                    print " @@@@ actual eval segment[%d]:'%s'" % (n, segment)
-                pos2=segment.find('$$', pos+2)
-                varName=segment[pos+2:pos2]
-                if self.debug!=0:
-                    print " @@@@ resolve eval[%d]:'%s'" % (n, varName)
-                value=met.eval(varName)
-                if self.debug!=0:
-                    print " @@@@ resolve eval:'%s'->'%s'" % (varName, value)
-                result="%s%s%s" % (result, segment[0:pos], value)
-                segment=segment[pos2+2:]
-                pos=segment.find('$$')
-            result="%s%s" % (result, segment)
-            if self.debug!=0:
-                print " @@@@ resolved eval:'%s'" % result
-            return result
+    def getThisUsed(self, metadata):
+        thisUsed="this_%s" % metadata.getOtherInfo("TYPOLOGY_SUFFIX")
+
+        try:
+            res=self.__getattribute__(thisUsed)
+            print "@@@@@@@@@@@@@@@@@@@@ final 'this' for %s:'%s' used:'%s'" % (self, thisUsed, res)
+        except:
+            res=self.__getattribute__('this')
+            print "@@@@@@@@@@@@@@@@@@@@ WARNING: typology '%s' not available in %s; use 'this':'this'" % (thisUsed, self)
+
+        return res
+    
+
+    #
+    # return the representation used
+    #
+    def getRepresentationUsed(self, metadata):
+        #return SipBuilder.TYPOLOGY_DEFAULT_REPRESENTATION
+        typologySuffixUsed=metadata.getOtherInfo("TYPOLOGY_SUFFIX")
+        res=None
+        if typologySuffixUsed==None or typologySuffixUsed=='':
+            representation_name=self.TYPOLOGY_DEFAULT_REPRESENTATION
         else:
-            return segment
+            representation_name="%s_%s" % (self.TYPOLOGY_DEFAULT_REPRESENTATION, typologySuffixUsed)
+                
+        #print "@@@@@@@@@@@@@@@@@@@@ used typology:%s; rep name:%s" %  (typologySuffixUsed, representation_name)
+        #print "@@@@@@@@@@ self:%s" % self
+        #print "@@@@@@@@@@ self dict:%s" % self.__dict__
 
+        try:
+            res=self.__getattribute__(representation_name)
+            print "@@@@@@@@@@@@@@@@@@@@ final representation for %s:'%s' used:'%s'" % (self, representation_name, res)
+        except:
+            res=self.__getattribute__(self.TYPOLOGY_DEFAULT_REPRESENTATION)
+            print "@@@@@@@@@@@@@@@@@@@@ WARNING: typology '%s' not available in %s; use:'%s'" % (representation_name, self, self.TYPOLOGY_DEFAULT_REPRESENTATION)
 
-
-    #
-    # resolve variable inside @varName@
-    #
-    def resolveVarname__NOT_USED(self, segment, met=None):
-            pos=segment.find('@')
-            if self.debug!=0:
-                print " @@@@ to be varName resolved:'%s'" % segment
-            pos2=pos
-            n=0
-            result=''
-            while pos>=0 and pos2>=0:
-                if self.debug!=0:
-                    print " @@@@ actual varName segment[%d]:'%s'" % (n, segment)
-                pos2=segment.find('@', pos+1)
-                varName=segment[pos+1:pos2]
-                if self.debug!=0:
-                    print " @@@@ resolve varname[%d]:'%s'" % (n, varName)
-                value=self.resolveField(varName, met)
-                if self.debug!=0:
-                    print " @@@@ resolve varname:'%s'->'%s'" % (varName, value)
-                result="%s%s%s" % (result, segment[0:pos], value)
-                segment=segment[pos2+1:]
-                pos=segment.find('@')
-            result="%s%s" % (result, segment)
-            if self.debug!=0:
-                print " @@@@ varName resolved:'%s'" % result
-            return result
+        return res
 
 
     #
@@ -96,6 +78,7 @@ class SipMessageBuilder(SipBuilder):
         for i in range(n):
             res="%s    " % res 
         return res
+
         
     #
     #
@@ -104,10 +87,13 @@ class SipMessageBuilder(SipBuilder):
         deepness=len(currentTreePath.split('/'))-1
         if self.debug!=0:
             print "\n\n==> buildMessage at currentTreePath:"+currentTreePath+"  deepness:%d on this:" % deepness
+
+        thisToUse=self.getThisUsed(metadata)
+        
         n=0
         firstField=None
         lastField=None
-        for field in this:
+        for field in thisToUse:
             if field.strip()[0] != '<':
                 raise Exception("field is malformed, wrong start:'%s'" % field)
             elif field.strip()[-1] != '>':
@@ -124,13 +110,16 @@ class SipMessageBuilder(SipBuilder):
             print  "\n firstField=%s; lastField=%s" % (firstField, lastField)
 
         sipMessage=self.makeIndent(deepness)
-        sipMessage=self.addToSipMessageLn(sipMessage, this[0], metadata)
+        sipMessage=self.addToSipMessageLn(sipMessage, thisToUse[0], metadata)
         if self.debug!=0:
             print  " => after this; mess is now:%s" % sipMessage
 
+        representationToUse=self.getRepresentationUsed(metadata)
+        #print "@@@@@@@@@@@@@@@@@@@@@@@@@\n@@@@@@@@@@@@@@@@@@@@@@@@@\n@@@@@@@@@@@@@@@@@@@@@@@@@ typology index:%s" % index
             
         n=0
-        for field in representation:
+        #for field in representation:
+        for field in representationToUse:
             if self.debug!=0:
                 print "  => buildMessage on field[%d]:%s" % (n, field)
 
@@ -175,44 +164,44 @@ class SipMessageBuilder(SipBuilder):
         closureNeeded = 0;
         done = 0;
         if len(representation) > 0: # need to write closing node
-            if len(this) == 1: # only starting node is given
-                if  not this[0].strip()[-2:] == '/>':  # and is not also a closing node
+            if len(thisToUse) == 1: # only starting node is given
+                if  not thisToUse[0].strip()[-2:] == '/>':  # and is not also a closing node
                     if self.debug!=0:
-                        print "#################%s######" % this[0][-2:]
+                        print "#################%s######" % thisToUse[0][-2:]
                         print "################# CREATE CLOSING NODE"
                     sipMessage="%s%s" %  (sipMessage, self.makeIndent(deepness))
                     sipMessage=self.addToSipMessage(sipMessage, "</", metadata)
-                    sipMessage=self.addToSipMessageLn(sipMessage,this[0][1:], metadata)
+                    sipMessage=self.addToSipMessageLn(sipMessage,thisToUse[0][1:], metadata)
                     done = 1
                 else:
                     if self.debug!=0:
-                        print "#################%s######" % this[0][-2:]
+                        print "#################%s######" % thisToUse[0][-2:]
                         print "################# ALREADY CLOSED NODE"
                 
             else: # use given closing node
                 sipMessage="%s%s" %  (sipMessage, self.makeIndent(deepness))
-                sipMessage=self.addToSipMessageLn(sipMessage, self.this[1], metadata)
+                sipMessage=self.addToSipMessageLn(sipMessage, thisToUse[1], metadata)
                 done = 1
             
         elif done==0:
-            if len(this) == 1:
-                if this[0].strip()[-2:]=='/>':
+            if len(thisToUse) == 1:
+                if thisToUse[0].strip()[-2:]=='/>':
                     if self.debug!=0:
-                        print "#################%s######" % this[0][-2:]
+                        print "#################%s######" % thisToUse[0][-2:]
                         print "################# CREATE CLOSING NODE"
                     # the only node given is also a closing node
                     pass
                 else:
                     if self.debug!=0:
-                        print "#################%s######" % this[0][-2:]
+                        print "#################%s######" % thisToUse[0][-2:]
                         print "################# ALREADY CLOSED NODE"
                     sipMessage="%s%s" %  (sipMessage, self.makeIndent(deepness))
                     sipMessage=self.addToSipMessage(sipMessage, "</", metadata)
-                    sipMessage=self.addToSipMessageLn(sipMessage, this[0][1:], metadata)
+                    sipMessage=self.addToSipMessageLn(sipMessage, thisToUse[0][1:], metadata)
                     done = 1
             else:
                 sipMessage="%s%s" %  (sipMessage, self.makeIndent(deepness))
-                sipMessage=self.addToSipMessageLn(sipMessage, this[1], metadata)
+                sipMessage=self.addToSipMessageLn(sipMessage, thisToUse[1], metadata)
                 done = 1
 
         return sipMessage

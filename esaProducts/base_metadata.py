@@ -32,8 +32,27 @@ class Base_Metadata:
     #
     #
     def __init__(self):
-            print ' init Base_Metadata done'
+        print ' init Base_Metadata done'
+        # metadata dictionnary
+        self.dict={}
+        # a counter, can be used to increment the gml_id in the xml reports
+        self.counter=0
+        # other info
+        self.otherInfo={}
 
+
+    #
+    #
+    #
+    def setOtherInfo(self, key, value):
+        self.otherInfo[key]=value
+
+    #
+    #
+    #
+    def getOtherInfo(self, key):
+        return self.otherInfo[key]
+    
 
     #
     # use a xml typology

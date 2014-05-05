@@ -78,6 +78,7 @@ LIST_STARTDATE=None
 SETTING_LIST_STARTDATE='LIST_STARTDATE'
 LIST_STOPDATE=None
 SETTING_LIST_STOPDATE='LIST_STOPDATE'
+TYPOLOGY=None
 #
 ENGINE_STATE=None
 SETTING_ENGINE_STATE='ENGINE_STATE'
@@ -90,6 +91,7 @@ SETTING_Main='Main'
 SETTING_Search='Search'
 SETTING_Output='Output'
 SETTING_workflowp='Workflow'
+SETTING_eosip='eoSip'
 #
 SETTING_metadataReport_usedMap='metadataReport-xml-map'
 SETTING_browseReport_usedMap='browseReport-xml-map'
@@ -97,15 +99,16 @@ SETTING_MISSION_SPECIFIC='Mission-specific-values'
 SETTING_OUTPUT_RELATIVE_PATH_TREES='OUTPUT_RELATIVE_PATH_TREES'
 SETTING_OUTPUT_EO_SIP_PATTERN='OUTPUT_EO_SIP_PATTERN'
 #
-#
-#
 OUTPUT_RELATIVE_PATH_TREES=None
 OUTPUT_EO_SIP_PATTERN=None
-
 # workflow
 SETTING_MAX_PRODUCTS_DONE='MAX_PRODUCTS_DONE'
 SETTING_CREATE_INDEX='CREATE_INDEX'
 SETTING_FIXED_BATCH_NAME='FIXED_BATCH_NAME'
+# eoSip
+SETTING_EOSIP_TYPOLOGY='TYPOLOGY'
+
+
 #
 #
 # counters
@@ -180,7 +183,7 @@ class Ingester():
         def readConfig(self, path=None):
                 global CONFIG_NAME, __config, OUTSPACE, INBOX, TMPSPACE, LIST_TYPE, LIST_BUILD, FILES_NAMEPATTERN, FILES_EXTPATTERN, DIRS_NAMEPATTERN, DIRS_ISLEAF,\
                 DIRS_ISEMPTY, LIST_LIMIT, LIST_STARTDATE, LIST_STOPDATE, OUTPUT_EO_SIP_PATTERN, OUTPUT_RELATIVE_PATH_TREES, max_product_done,\
-                create_index,fixed_batch_name
+                create_index,fixed_batch_name,TYPOLOGY
 
                 if not os.path.exists(path):
                     raise Exception("cofiguration file:'%s' doesn't exists" % path)
@@ -259,6 +262,12 @@ class Ingester():
                         except:
                             pass
 
+                        # eoSip
+                        try:
+                            TYPOLOGY = __config.get(SETTING_eosip, SETTING_EOSIP_TYPOLOGY)
+                        except:
+                            TYPOLOGY = ''
+                            pass
                         self.dump()
                 except Exception, e:
                         print " Error in reading configuration:"
@@ -279,6 +288,7 @@ class Ingester():
                 self.logger.info("   Fixed batch name: %s" % fixed_batch_name)
                 self.logger.info("   OUTPUT_EO_SIP_PATTERN: %s" % OUTPUT_EO_SIP_PATTERN)
                 self.logger.info("   OUTPUT_RELATIVE_PATH_TREES: %s" % OUTPUT_RELATIVE_PATH_TREES)
+                self.logger.info("   eoSip typology: %s" % TYPOLOGY)
                 #raise Exception("STOP")
 
 
@@ -617,6 +627,9 @@ class Ingester():
 
                 # instanciate destination product
                 self.createDestinationProduct(pInfo)
+                # set the EOP typology used
+                met.setOtherInfo("TYPOLOGY_SUFFIX", TYPOLOGY)
+
 
                 # set metadata
                 pInfo.destProduct.setMetadata(met)

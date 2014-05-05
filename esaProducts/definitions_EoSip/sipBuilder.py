@@ -10,6 +10,8 @@ import sys
 import traceback
 import metadata, browse_metadata
 
+
+# default xml node mapping
 EOSIP_METADATA_MAPPING={'responsible':metadata.METADATA_RESPONSIBLE,
                         'reportType':metadata.METADATA_REPORT_TYPE,
                         'generationTime':metadata.METADATA_GENERATION_TIME,
@@ -50,25 +52,68 @@ EOSIP_METADATA_MAPPING={'responsible':metadata.METADATA_RESPONSIBLE,
                         'colRowList':metadata.METADATA_FOOTPRINT_IMAGE_ROWCOL
                         }
 
+#TYPOLOGY_EOP=0
+#TYPOLOGY_SAR=1
+#TYPOLOGY_OPT=2
+#TYPOLOGY_LIST=[TYPOLOGY_EOP, TYPOLOGY_SAR, TYPOLOGY_OPT]
+#TYPOLOGY_REPRESENTATION_SUFFIX=['EOP', 'SAR', 'OPT']
+#TYPOLOGY_DEFAULT_REPRESENTATION='REPRESENTATION'
+#USED_TYPOLIGY=TYPOLOGY_EOP
+
 
 class SipBuilder:
     __metaclass__ =ABCMeta
 
     debug=0
+    # the matadata to xml node mapping in use
     USED_METADATA_MAPPING=EOSIP_METADATA_MAPPING
+
+
+    TYPOLOGY_EOP=0
+    TYPOLOGY_SAR=1
+    TYPOLOGY_OPT=2
+    TYPOLOGY_LIST=[TYPOLOGY_EOP, TYPOLOGY_SAR, TYPOLOGY_OPT]
+    TYPOLOGY_REPRESENTATION_SUFFIX=['EOP', 'SAR', 'OPT']
+    TYPOLOGY_DEFAULT_REPRESENTATION='REPRESENTATION'
+    
+    # the eop xml typology in use
+    #USED_TYPOLIGY=TYPOLOGY_EOP
+
+    #global TYPOLOGY_LIST
+
+
+    def __init__(self):
+        pass
 
     @abstractmethod
     def buildMessage(self, representation, metadata, currentTreePath):
-        pass
+        raise Exception("abstractmethod")
 
 
     #
     # if we want to change the mapping...
     #
-    def setMetadataMapping(self, adict):
-        self.USED_METADATA_MAPPING=adict
+    #def setMetadataMappingUsed(self, adict):
+        #self.USED_METADATA_MAPPING=adict
 
 
+    #
+    # set the eop typology index used : eop: sar: opt: etc. As index: 0,1,2,3
+    #
+    #def setTypologyIndexUsed(self, n):
+    #    if n > len(self.TYPOLOGY_LIST):
+    #        raise Exception("typology out of range:%s" % n)
+    #    #self.USED_TYPOLIGY=n
+    #    self.USED_TYPOLIGY=n
+
+    #
+    # set the eop typology used : EOP: SAR: OPT: etc...
+    #
+    #def setTypologySuffixUsed(self, s):
+    #    n=self.TYPOLOGY_REPRESENTATION_SUFFIX.index(s)
+    #    self.USED_TYPOLIGY=n
+
+        
     #
     # return a field name, from:
     # - field xml representation liek: "<gml:orbitNumber>@orbitNumber@</gml:orbitNumber>" ==> gml:orbitNumber

@@ -213,7 +213,7 @@ class netCDF_reaper_Product(netCDF_Product):
     #
     #
     def extractMetadata(self, met=None):
-        self.debug=1
+        #self.debug=1
         if met==None:
             raise Exception("metadate is None")
 
@@ -308,7 +308,7 @@ class netCDF_reaper_Product(netCDF_Product):
         # try to not have too much coords
         r=len(v)/50
         
-        print " ################ ratio=%s" % r
+        #print " ################ ratio=%s" % r
         for i in range(len(v)):
             if i==0:
                 firstLat=float(v[i][number])
@@ -326,15 +326,15 @@ class netCDF_reaper_Product(netCDF_Product):
             lastLon=float(v2[i][number])
             n=n+1
 
-        if self.debug == 0:
+        if self.debug != 0:
             print "footprint[%d]:%s" % (number,footprint)
             fd=open("footprint__%d.out" % number, 'w')
             fd.write(footprint)
             fd.close()
             
-        print "Z velocity:%s" % (self.dataset.__dict__['z_velocity'])
-        print "ra0_first_lat:%s  VS %s" % (self.dataset.__dict__['ra0_first_lat'],firstLat)
-        print "ra0_first_long:%s  VS %s" % (self.dataset.__dict__['ra0_first_long'],firstLon)
+        #print "Z velocity:%s" % (self.dataset.__dict__['z_velocity'])
+        #print "ra0_first_lat:%s  VS %s" % (self.dataset.__dict__['ra0_first_lat'],firstLat)
+        #print "ra0_first_long:%s  VS %s" % (self.dataset.__dict__['ra0_first_long'],firstLon)
         try:
             print "ra0_last_lat:%s  VS %s" % (self.dataset.__dict__['ra0_last_lat'],lastLat)
             print "ra0_last_long:%s  VS %s" % (self.dataset.__dict__['ra0_last_long'],lastLon)

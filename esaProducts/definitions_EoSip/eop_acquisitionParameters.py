@@ -19,6 +19,7 @@ class eop_acquisitionParameters(SipMessageBuilder):
     this = ["<eop:acquisitionParameters>"]
 
     REPRESENTATION = ["eop_Acquisition"]
+    REPRESENTATION_SAR = ["sar_Acquisition"]
 
     FIELDS = ["Acquisition"]
 

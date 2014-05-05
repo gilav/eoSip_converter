@@ -91,6 +91,7 @@ class EOSIP_Product(Directory_Product):
         self.reportFullPath=None
         self.browseFullPath=None
         self.sipFullPath=None
+        #self.typology_suffix=None
 
     #
     #
@@ -171,6 +172,8 @@ class EOSIP_Product(Directory_Product):
         # make the report xml data
         productReportBuilder=rep_metadataReport.rep_metadataReport()
         self.metadata.debug=1
+        #typologyUsed = self.metadata.getOtherInfo("TYPOLOGY_SUFFIX")
+        #if typologyUsed=='':
         xmldata=productReportBuilder.buildMessage(self.metadata, "rep:metadataReport")
 
         # add the local attributes
@@ -229,7 +232,6 @@ class EOSIP_Product(Directory_Product):
         if self.debug!=0:
             print " build browse metadata reports"
         #
-        #reportFolderName=os.path.split(self.sourceBrowsesPath[0])[0]
         
         n=0
         browseReport=None
@@ -423,6 +425,7 @@ class EOSIP_Product(Directory_Product):
             # write it for debug
             path="%s/faulty_%s.xml" % (path, type)
             print "xml faulty %s data dump at path:%s" % (type, path)
+            print "\n\n\n%s\n\n\n" % data
             fd=open(path, 'w')
             fd.write(data)
             fd.close()

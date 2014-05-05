@@ -87,8 +87,14 @@ class Metadata(Base_Metadata):
     #
     #
     def __init__(self, defaults=None):
-        self.dict={}
+        Base_Metadata.__init__(self)
+        # metadata dictionnary
+        #self.dict={}
+        # a counter, can be used to increment the gml_id in the xml reports
         self.counter=0
+        # other info
+        #self.otherInfo={}
+        #
         for item in self.METADATA_FIELDS:
             self.dict[item] = None
         if defaults!=None:
