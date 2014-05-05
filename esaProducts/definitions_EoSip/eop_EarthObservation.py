@@ -27,15 +27,6 @@ class eop_EarthObservation(SipMessageBuilder):
         "eop_metaDataProperty"
         ]
 
-    FIELDS = ["phenomeneTime", "resultTime", "procedure", "observedProperty"]
-
-    MANDATORY = ["phenomeneTime", "resultTime", "procedure", "observedProperty"];
-
-    def __init__(self):
-        pass
-
-    def buildMessage(self, metadata, currentTreePath):
-        return self._buildMessage(self.this, self.REPRESENTATION, metadata, currentTreePath)
 
     def test(self):
         meta=Metadata()

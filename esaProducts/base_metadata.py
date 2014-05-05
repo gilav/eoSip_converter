@@ -32,13 +32,13 @@ class Base_Metadata:
     #
     #
     def __init__(self):
-        print ' init Base_Metadata done'
         # metadata dictionnary
         self.dict={}
         # a counter, can be used to increment the gml_id in the xml reports
         self.counter=0
         # other info
         self.otherInfo={}
+        print ' init Base_Metadata done'
 
 
     #
@@ -97,7 +97,7 @@ class Base_Metadata:
             n=n+1
             
         if self.xmlNodeUsedMapping.has_key(path):
-            #print "   field at path:'%s' used flag:%s" % (path, self.xmlNodeUsedMapping[path])
+            print "   field at path:'%s' used flag:%s" % (path, self.xmlNodeUsedMapping[path])
             if self.xmlNodeUsedMapping[path]=='UNUSED':
                 #print "########################### UNUSED"
                 return 0

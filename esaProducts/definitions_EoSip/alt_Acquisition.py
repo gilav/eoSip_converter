@@ -1,9 +1,9 @@
 from sipMessageBuilder import SipMessageBuilder
 
 
-class eop_Acquisition(SipMessageBuilder):
+class alt_Acquisition(SipMessageBuilder):
     
-    this = ["<eop:Acquisition>"]
+    this = ["<alt:Acquisition>"]
 
     REPRESENTATION = [
         "<gml:orbitNumber>@orbitNumber@</gml:orbitNumber>",
@@ -15,4 +15,7 @@ class eop_Acquisition(SipMessageBuilder):
         "<gml:illuminationElevationAngle>@illuminationElevationAngle@</gml:illuminationElevationAngle>",
         "<gml:incidanceAngle>@incidanceAngle@</gml:incidanceAngle>",
         "<eop:instrumentZenithAngle>@instrumentZenithAngle@</eop:instrumentZenithAngle>",
-        "<eop:instrumentElevationAngle>@instrumentElevationAngle@</eop:instrumentElevationAngle>"]
+        "<eop:instrumentElevationAngle>@instrumentElevationAngle@</eop:instrumentElevationAngle>",
+        "<alt:cycleNumber>@cycleNumber@</alt:cycleNumber>",
+        "<alt:isSegment>@isSegment@</alt:isSegment>",
+        "<alt:relativePassNumber>@relativePassNumber@</alt:relativePassNumber>"]

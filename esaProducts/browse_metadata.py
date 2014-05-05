@@ -25,32 +25,22 @@ METADATA_BROWSE_CHOICE='METADATA_BROWSE_CHOICE'
 
 
 class Browse_Metadata(Base_Metadata):
-    #counter=0
-    #
     
     METADATA_FIELDS=[BROWSE_METADATA_IDENTIFIER, BROWSE_METADATA_FILENAME, BROWSE_METADATA_IMAGE_TYPE,
                      BROWSE_METADATA_START_DATE, BROWSE_METADATA_START_TIME,
                      BROWSE_METADATA_STOP_DATE, BROWSE_METADATA_STOP_TIME, BROWSE_METADATA_BROWSE_TYPE]
 
-    #
-    #debug=0
-    #dict={}
 
     
     def __init__(self, defaults=None):
-        self.dict={}
-        self.counter=0
+        Base_Metadata.__init__(self)
         for item in self.METADATA_FIELDS:
             self.dict[item] = None
         if defaults!=None:
             for item in defaults.iterkeys():
                 self.dict[item] = defaults[item]
-        if self.debug!=0:
-            print ' init Browse_Metadata done'
+        print ' init Browse_Metadata done'
 
-
-    #def setUsedInXmlMap(self, adict=None):
-    #    self.xmlNodeUsedMapping=adict
 
         
     def eval(self, expr):

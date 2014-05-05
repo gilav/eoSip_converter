@@ -26,6 +26,7 @@ EOSIP_METADATA_MAPPING={'responsible':metadata.METADATA_RESPONSIBLE,
                         'platformShortName':metadata.METADATA_PLATFORM,
                         'platformSerialIdentifier':metadata.METADATA_PLATFORM_ID,
                         'instrumentShortName':metadata.METADATA_INSTRUMENT,
+                        'instrumentDescription':metadata.METADATA_INSTRUMENT_DESCRIPTION,
                         'sensorType':metadata.METADATA_SENSOR_TYPE,
                         'orbitNumber':metadata.METADATA_ORBIT,
                         'orbitDirection':metadata.METADATA_ORBIT_DIRECTION,
@@ -52,14 +53,6 @@ EOSIP_METADATA_MAPPING={'responsible':metadata.METADATA_RESPONSIBLE,
                         'colRowList':metadata.METADATA_FOOTPRINT_IMAGE_ROWCOL
                         }
 
-#TYPOLOGY_EOP=0
-#TYPOLOGY_SAR=1
-#TYPOLOGY_OPT=2
-#TYPOLOGY_LIST=[TYPOLOGY_EOP, TYPOLOGY_SAR, TYPOLOGY_OPT]
-#TYPOLOGY_REPRESENTATION_SUFFIX=['EOP', 'SAR', 'OPT']
-#TYPOLOGY_DEFAULT_REPRESENTATION='REPRESENTATION'
-#USED_TYPOLIGY=TYPOLOGY_EOP
-
 
 class SipBuilder:
     __metaclass__ =ABCMeta
@@ -75,11 +68,6 @@ class SipBuilder:
     TYPOLOGY_LIST=[TYPOLOGY_EOP, TYPOLOGY_SAR, TYPOLOGY_OPT]
     TYPOLOGY_REPRESENTATION_SUFFIX=['EOP', 'SAR', 'OPT']
     TYPOLOGY_DEFAULT_REPRESENTATION='REPRESENTATION'
-    
-    # the eop xml typology in use
-    #USED_TYPOLIGY=TYPOLOGY_EOP
-
-    #global TYPOLOGY_LIST
 
 
     def __init__(self):
@@ -89,34 +77,11 @@ class SipBuilder:
     def buildMessage(self, representation, metadata, currentTreePath):
         raise Exception("abstractmethod")
 
-
-    #
-    # if we want to change the mapping...
-    #
-    #def setMetadataMappingUsed(self, adict):
-        #self.USED_METADATA_MAPPING=adict
-
-
-    #
-    # set the eop typology index used : eop: sar: opt: etc. As index: 0,1,2,3
-    #
-    #def setTypologyIndexUsed(self, n):
-    #    if n > len(self.TYPOLOGY_LIST):
-    #        raise Exception("typology out of range:%s" % n)
-    #    #self.USED_TYPOLIGY=n
-    #    self.USED_TYPOLIGY=n
-
-    #
-    # set the eop typology used : EOP: SAR: OPT: etc...
-    #
-    #def setTypologySuffixUsed(self, s):
-    #    n=self.TYPOLOGY_REPRESENTATION_SUFFIX.index(s)
-    #    self.USED_TYPOLIGY=n
-
         
     #
     # return a field name, from:
-    # - field xml representation liek: "<gml:orbitNumber>@orbitNumber@</gml:orbitNumber>" ==> gml:orbitNumber
+    # - field xml representation like: "<gml:orbitNumber>@orbitNumber@</gml:orbitNumber>" ==> gml:orbitNumber
+    # - field xml representation like: "<opt:cloudCoverPercentage uom='%'>@cloudCoverPercentage@</opt:cloudCoverPercentage>" ==> opt:cloudCoverPercentage
     # - class name like: "eop_earthObservation" ==> eop:earthObservation
     #
     def getFieldName(self, rep=None):
@@ -124,7 +89,11 @@ class SipBuilder:
             pos = rep.find('>')
             if pos<0:
                 raise Exception("field is malformed: no end >:%s" % rep)
-            return rep[1:pos]
+            rep=rep[1:pos]
+            pos = rep.find(" ")
+            if pos > 0:
+                rep=rep[0:pos]
+            return rep
         else:
             pos = rep.find('_')
             if pos<0:
@@ -133,38 +102,48 @@ class SipBuilder:
 
     #
     # check if a field is in the xml used map
-    # based on field path like: /rep:browseReport|rep_browse/rep:referenceSystemIdentifier=UNUSED
-    # Note: the actual path has(can have) '|' char used for '/'.
+    # based on field path like: /rep:browseReport/rep_browse/rep:referenceSystemIdentifier=UNUSED
     # 
     #
     def isFieldUsed(self, rep=None, metadata=None, path=None):
-        #print "########################### test rep:'%s' at path:'%s'" % (rep, path)
+        if self.debug!=0:
+            print "### isFieldUsed: test rep:'%s' at path:'%s'" % (rep, path)
         if path[0]!='/':
             path="/%s" % (path)
         # is closing node:
         if rep[0:2]=='</':
-            #print "########################### CLOSING NODE: USED"
+            if self.debug!=0:
+                print "### isFieldUsed: CLOSING NODE: USED"
             return 1
-        # normalyse path
-        # replace path like 'eop_Sensor@eop_sensor' with eop_Sensor
+        # normalyse path 
+        # replace path blocks like '/eop_Sensor@eop_sensor/...' with eop_Sensor
+        # this is because of windows filename case problem, so workarround
         pos = path.find('@')
         pathOk=''
         while pos>0:
+            #raise Exception("TEST @ in path")
             pathOk=pathOk+path[0:pos]
-            #print "############# pathOk:'%s'" % pathOk
-            endPos=path.find('|')
+            if self.debug!=0:
+                print "### isFieldUsed: pathOk:'%s'" % pathOk
+            endPos=path.find('/')
             if endPos>0:
-                pos = path.find('@')
-                #print "############# pathOk remain from pos:'%d'" % pos
+                pos = path.find('@', endPos+1)
+                if self.debug!=0:
+                    print "### isFieldUsed: pathOk remain from pos:'%d'" % pos
             else:
                 pos=-1
-                #print "############# pathOk end"
+                if self.debug!=0:
+                    print "### isFieldUsed: pathOk end"
 
         if len(pathOk)==0:
             pathOk=path
-            
-        #print "########################### pathOk:'%s'" % pathOk
+
+        #pathOk=pathOk.replace(":","_")
+        if self.debug!=0:
+            print "### isFieldUsed: pathOk:'%s'" % pathOk
         name=self.getFieldName(rep)
+        if self.debug!=0:
+            print "### isFieldUsed: name:'%s'" % name
         res=metadata.isFieldUsed("%s/%s" % (pathOk, name))
         return res
 
@@ -176,8 +155,8 @@ class SipBuilder:
     def resolveField(self, name, metadata=None):
         if self.USED_METADATA_MAPPING.has_key(name):
             metaName=self.USED_METADATA_MAPPING[name]
-            if self.debug==1:
-                print " resolve '%s' in metadata name:%s"% (name, metaName)
+            if self.debug!=0:
+                print " resolveField: '%s' in metadata name:%s"% (name, metaName)
             try:
                 resolved=metadata.getMetadataValue(metaName)
             except Exception, e:
@@ -188,7 +167,7 @@ class SipBuilder:
             return resolved
         else:
             if self.debug==2:
-                print "metadata dump:\n%s" % metadata.toString()
+                print "resolveField: metadata dump:\n%s" % metadata.toString()
             return "UNKNOWN"
 
 
@@ -203,21 +182,21 @@ class SipBuilder:
             n=0
             result=''
             while pos>=0 and pos2>=0:
-                if self.debug>=1:
-                    print " @@@@ actual eval segment[%d]:'%s'" % (n, segment)
+                if self.debug!=0:
+                    print "### resolveEval: actual eval segment[%d]:'%s'" % (n, segment)
                 pos2=segment.find('$$', pos+2)
                 varName=segment[pos+2:pos2]
-                if self.debug==1:
-                    print " @@@@ resolve eval[%d]:'%s'" % (n, varName)
+                if self.debug!=0:
+                    print "### resolveEval: eval[%d]:'%s'" % (n, varName)
                 value=met.eval(varName)
-                if self.debug==1:
-                    print " @@@@ resolve eval:'%s'->'%s'" % (varName, value)
+                if self.debug!=0:
+                    print "### resolveEval: eval:'%s'->'%s'" % (varName, value)
                 result="%s%s%s" % (result, segment[0:pos], value)
                 segment=segment[pos2+2:]
                 pos=segment.find('$$')
             result="%s%s" % (result, segment)
-            if self.debug>=1:
-                print " @@@@ resolved eval:'%s'" % result
+            if self.debug!=0:
+                print "### resolveEval: resolved eval:'%s'" % result
             return result
         else:
             return segment
@@ -229,25 +208,25 @@ class SipBuilder:
     #
     def resolveVarname(self, segment, met=None):
             pos=segment.find('@')
-            if self.debug>=1:
-                print " @@@@ to be varName resolved:'%s'" % segment
+            if self.debug!=0:
+                print "### resolveVarname: to be varName resolved:'%s'" % segment
             pos2=pos
             n=0
             result=''
             while pos>=0 and pos2>=0:
-                if self.debug==1:
-                    print " @@@@ actual varName segment[%d]:'%s'" % (n, segment)
+                if self.debug!=0:
+                    print "### resolveVarname: actual varName segment[%d]:'%s'" % (n, segment)
                 pos2=segment.find('@', pos+1)
                 varName=segment[pos+1:pos2]
-                if self.debug==1:
-                    print " @@@@ resolve varname[%d]:'%s'" % (n, varName)
+                if self.debug!=0:
+                    print "### resolveVarname: resolve varname[%d]:'%s'" % (n, varName)
                 value=self.resolveField(varName, met)
-                if self.debug==1:
-                    print " @@@@ resolve varname:'%s'->'%s'" % (varName, value)
+                if self.debug!=0:
+                    print "### resolveVarname: resolve varname:'%s'->'%s'" % (varName, value)
                 result="%s%s%s" % (result, segment[0:pos], value)
                 segment=segment[pos2+1:]
                 pos=segment.find('@')
             result="%s%s" % (result, segment)
-            if self.debug>=1:
-                print " @@@@ varName resolved:'%s'" % result
+            if self.debug!=0:
+                print "### resolveVarname: varName resolved:'%s'" % result
             return result

@@ -221,7 +221,7 @@ class Dimap_Spot_Product(Directory_Product):
         # set scene center, from the only we have: start time
         tmp = "%sT%sZ" % (self.metadata.getMetadataValue(metadata.METADATA_START_DATE), self.metadata.getMetadataValue(metadata.METADATA_START_TIME))
         #self.metadata.setMetadataPair(metadata.METADATA_SCENE_CENTER, "%sZ" % tmp)
-        self.metadata.setMetadataPair(metadata.METADATA_SCENE_CENTER, tmp)
+        self.metadata.setMetadataPair(metadata.METADATA_SCENE_CENTER_TIME, tmp)
 
         # set start stop time from scene center
         #scene_center_date=datetime.strptime(tmp, '%Y-%m-%dT%H:%M:%S')

@@ -10,6 +10,12 @@ from sipBuilder import SipBuilder
 class SipMessageBuilder(SipBuilder):
 
     #
+    #
+    #
+    def buildMessage(self, metadata, currentTreePath):
+        return self._buildMessage(metadata, currentTreePath)
+
+    #
     # add to sip message with newline, resolve @xxx@ tags
     #
     def addToSipMessageLn(self, mess, segment, met=None):
@@ -37,10 +43,11 @@ class SipMessageBuilder(SipBuilder):
 
         try:
             res=self.__getattribute__(thisUsed)
-            print "@@@@@@@@@@@@@@@@@@@@ final 'this' for %s:'%s' used:'%s'" % (self, thisUsed, res)
+            if self.debug != 0:
+                print "### getThisUsed: final 'this' for %s:'%s' used:'%s'" % (self, thisUsed, res)
         except:
             res=self.__getattribute__('this')
-            print "@@@@@@@@@@@@@@@@@@@@ WARNING: typology '%s' not available in %s; use 'this':'this'" % (thisUsed, self)
+            print "### getThisUsed: INFO: typology '%s' not available in %s; use 'this':'this'" % (thisUsed, self)
 
         return res
     
@@ -49,24 +56,21 @@ class SipMessageBuilder(SipBuilder):
     # return the representation used
     #
     def getRepresentationUsed(self, metadata):
-        #return SipBuilder.TYPOLOGY_DEFAULT_REPRESENTATION
         typologySuffixUsed=metadata.getOtherInfo("TYPOLOGY_SUFFIX")
         res=None
         if typologySuffixUsed==None or typologySuffixUsed=='':
             representation_name=self.TYPOLOGY_DEFAULT_REPRESENTATION
         else:
             representation_name="%s_%s" % (self.TYPOLOGY_DEFAULT_REPRESENTATION, typologySuffixUsed)
-                
-        #print "@@@@@@@@@@@@@@@@@@@@ used typology:%s; rep name:%s" %  (typologySuffixUsed, representation_name)
-        #print "@@@@@@@@@@ self:%s" % self
-        #print "@@@@@@@@@@ self dict:%s" % self.__dict__
+
 
         try:
             res=self.__getattribute__(representation_name)
-            print "@@@@@@@@@@@@@@@@@@@@ final representation for %s:'%s' used:'%s'" % (self, representation_name, res)
+            if self.debug != 0:
+                print "### getRepresentationUsed: final representation for %s:'%s' used:'%s'" % (self, representation_name, res)
         except:
             res=self.__getattribute__(self.TYPOLOGY_DEFAULT_REPRESENTATION)
-            print "@@@@@@@@@@@@@@@@@@@@ WARNING: typology '%s' not available in %s; use:'%s'" % (representation_name, self, self.TYPOLOGY_DEFAULT_REPRESENTATION)
+            print "### getRepresentationUsed: WARNING: typology '%s' not available in %s; use:'%s'" % (representation_name, self, self.TYPOLOGY_DEFAULT_REPRESENTATION)
 
         return res
 
@@ -83,7 +87,7 @@ class SipMessageBuilder(SipBuilder):
     #
     #
     #
-    def _buildMessage(self, this, representation, metadata, currentTreePath):
+    def _buildMessage(self, metadata, currentTreePath):
         deepness=len(currentTreePath.split('/'))-1
         if self.debug!=0:
             print "\n\n==> buildMessage at currentTreePath:"+currentTreePath+"  deepness:%d on this:" % deepness
@@ -115,10 +119,8 @@ class SipMessageBuilder(SipBuilder):
             print  " => after this; mess is now:%s" % sipMessage
 
         representationToUse=self.getRepresentationUsed(metadata)
-        #print "@@@@@@@@@@@@@@@@@@@@@@@@@\n@@@@@@@@@@@@@@@@@@@@@@@@@\n@@@@@@@@@@@@@@@@@@@@@@@@@ typology index:%s" % index
             
         n=0
-        #for field in representation:
         for field in representationToUse:
             if self.debug!=0:
                 print "  => buildMessage on field[%d]:%s" % (n, field)
@@ -147,7 +149,6 @@ class SipMessageBuilder(SipBuilder):
                         fieldBis=field[0:pos]
                         
                     newCurrentTreePath = currentTreePath + "/" + field.replace('_',':')
-                    #print " @@@@@@@@@hello@@@@@@@@@@@@@@ newCurrentTreePath :%s" % (newCurrentTreePath)
                     
                     module = __import__(field)
                     class_ = getattr(module, fieldBis)
@@ -163,7 +164,7 @@ class SipMessageBuilder(SipBuilder):
 
         closureNeeded = 0;
         done = 0;
-        if len(representation) > 0: # need to write closing node
+        if len(representationToUse) > 0: # need to write closing node
             if len(thisToUse) == 1: # only starting node is given
                 if  not thisToUse[0].strip()[-2:] == '/>':  # and is not also a closing node
                     if self.debug!=0:

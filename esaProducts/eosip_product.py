@@ -122,6 +122,9 @@ class EOSIP_Product(Directory_Product):
         shortName=os.path.split(path)[1]
         # create browse metadata info
         bMet=browse_metadata.Browse_Metadata()
+        # set typology
+        bMet.setOtherInfo("TYPOLOGY_SUFFIX", self.metadata.getOtherInfo("TYPOLOGY_SUFFIX"))
+        
         # set xml node used map
         bMet.xmlNodeUsedMapping=self.xmlMappingBrowse
 
