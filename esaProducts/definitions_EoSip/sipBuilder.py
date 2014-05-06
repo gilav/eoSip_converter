@@ -28,6 +28,7 @@ EOSIP_METADATA_MAPPING={'responsible':metadata.METADATA_RESPONSIBLE,
                         'instrumentShortName':metadata.METADATA_INSTRUMENT,
                         'instrumentDescription':metadata.METADATA_INSTRUMENT_DESCRIPTION,
                         'sensorType':metadata.METADATA_SENSOR_TYPE,
+                        'operationalMode':metadata.METADATA_SENSOR_OPERATIONAL_MODE,
                         'orbitNumber':metadata.METADATA_ORBIT,
                         'orbitDirection':metadata.METADATA_ORBIT_DIRECTION,
                         'wrsLongitudeGrid':metadata.METADATA_WRS_LONGITUDE_GRID_NORMALISED,
@@ -50,14 +51,16 @@ EOSIP_METADATA_MAPPING={'responsible':metadata.METADATA_RESPONSIBLE,
                         'browseIdentifier':browse_metadata.BROWSE_METADATA_FILENAME,
                         'browseFileName':browse_metadata.BROWSE_METADATA_NAME,
                         'BrowseRectCoordList':browse_metadata.BROWSE_METADATA_RECT_COORDLIST,
-                        'colRowList':metadata.METADATA_FOOTPRINT_IMAGE_ROWCOL
+                        'colRowList':metadata.METADATA_FOOTPRINT_IMAGE_ROWCOL,
+                        'processingDate':metadata.METADATA_PROCESSING_TIME,
+                        'processingCenter':metadata.METADATA_PROCESSING_CENTER
                         }
 
 
 class SipBuilder:
     __metaclass__ =ABCMeta
 
-    debug=0
+    debug=1
     # the matadata to xml node mapping in use
     USED_METADATA_MAPPING=EOSIP_METADATA_MAPPING
 
@@ -142,9 +145,12 @@ class SipBuilder:
         if self.debug!=0:
             print "### isFieldUsed: pathOk:'%s'" % pathOk
         name=self.getFieldName(rep)
+        metDebug=metadata.debug
         if self.debug!=0:
             print "### isFieldUsed: name:'%s'" % name
+            metadata.debug=2
         res=metadata.isFieldUsed("%s/%s" % (pathOk, name))
+        metadata.debug=metDebug
         return res
 
 

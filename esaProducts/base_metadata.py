@@ -90,23 +90,29 @@ class Base_Metadata:
     # test if a field is used in the xml report
     #
     def isFieldUsed(self, path=None):
-        #print "###########################\n###########################\n isFieldUsed: path:'%s'  len(exclusion):%d" % (path, len(self.xmlNodeUsedMapping))
+        if self.debug>=2:
+            print "###########################\n###########################\n isFieldUsed: path:'%s'  len(exclusion):%d" % (path, len(self.xmlNodeUsedMapping))
         n=0
         for item in self.xmlNodeUsedMapping.keys():
-            #print "########################### exclusion[%d]:%s=%s." % (n, item, self.xmlNodeUsedMapping[item])
+            if self.debug>=2:
+                print "########################### exclusion[%d]:%s=%s." % (n, item, self.xmlNodeUsedMapping[item])
             n=n+1
             
         if self.xmlNodeUsedMapping.has_key(path):
-            print "   field at path:'%s' used flag:%s" % (path, self.xmlNodeUsedMapping[path])
+            if self.debug>=2:
+                print "   field at path:'%s' used flag:%s" % (path, self.xmlNodeUsedMapping[path])
             if self.xmlNodeUsedMapping[path]=='UNUSED':
-                #print "########################### UNUSED"
+                if self.debug>=2:
+                    print "########################### UNUSED"
                 return 0
             else:
-                #print "########################### USED"
+                if self.debug>=2:
+                    print "########################### USED"
                 return 1
         else:
-            #print "########################### NO MAPPING; USED"
-            #print "  field with path:'%s' has no used map entry" % path
+            if self.debug>=2:
+                print "########################### NO MAPPING; USED"
+                print "  field with path:'%s' has no used map entry" % path
             return 1
             
 

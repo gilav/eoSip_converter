@@ -299,6 +299,13 @@ class netCDF_reaper_Product(netCDF_Product):
         else:
             self.metadata.setMetadataPair(metadata.METADATA_ORBIT_DIRECTION, valid_values.ASCENDING)
 
+        # convert number to string,
+        tmp = self.metadata.getMetadataValue(metadata.METADATA_ORBIT)
+        self.metadata.setMetadataPair(metadata.METADATA_ORBIT, "%s" % tmp)
+        tmp = self.metadata.getMetadataValue(metadata.METADATA_TRACK)
+        self.metadata.setMetadataPair(metadata.METADATA_TRACK, "%s" % tmp)
+
+        
 
     def getFootprint(self, number=0, reduce=50):
         v=self.dataset.variables['latitude']

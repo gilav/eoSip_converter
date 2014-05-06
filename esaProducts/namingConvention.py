@@ -87,7 +87,7 @@ class NamingConvention(Product):
                 if self.debug!=0:
                     print "resV is now:%s"% res
             if tok=='<oooooo>':
-                tmp=formatUtils.normaliseNumber(met.getMetadataValue(metadata.METADATA_ORBIT), len(tok)-2)
+                tmp=formatUtils.normaliseNumber(met.getMetadataValue(metadata.METADATA_ORBIT), len(tok)-2, '0')
                 res="%s_%s" % (res, tmp)
                 if self.debug!=0:
                     print "resO is now:%s"% res

@@ -28,6 +28,7 @@ class Dimap_Tropforest_Product(Directory_Product):
     xmlMapping={metadata.METADATA_START_DATE:'Dataset_Sources/Source_Information/Scene_Source/IMAGING_DATE',
                 metadata.METADATA_START_TIME:'Dataset_Sources/Source_Information/Scene_Source/IMAGING_TIME',
                 metadata.METADATA_PROCESSING_TIME:'Production/DATASET_PRODUCTION_DATE',
+                metadata.METADATA_PROCESSING_CENTER:'Production/DATASET_PRODUCER_NAME',
                 metadata.METADATA_DATASET_NAME:'Dataset_Id/DATASET_NAME',
                 metadata.METADATA_PLATFORM:'Dataset_Sources/Source_Information/Scene_Source/MISSION',
                 metadata.METADATA_PLATFORM_ID:'Dataset_Sources/Source_Information/Scene_Source/MISSION_INDEX',
@@ -205,7 +206,7 @@ class Dimap_Tropforest_Product(Directory_Product):
     # - build type code
     #
     def refineMetadata(self):
-        #
+        # set platform Id
         if self.metadata.getMetadataValue(metadata.METADATA_PLATFORM)=='ALOS':
             self.metadata.setMetadataPair(metadata.METADATA_PLATFORM_ID, '1')
         elif self.metadata.getMetadataValue(metadata.METADATA_PLATFORM)=='KOMPSAT':
@@ -224,7 +225,10 @@ class Dimap_Tropforest_Product(Directory_Product):
         if self.metadata.getMetadataValue(metadata.METADATA_START_TIME)==None:
             self.metadata.setMetadataPair(metadata.METADATA_START_TIME, "00:00:00")
         if self.metadata.getMetadataValue(metadata.METADATA_STOP_TIME)==None:
-            self.metadata.setMetadataPair(metadata.METADATA_STOP_TIME, "00:00:00")  
+            self.metadata.setMetadataPair(metadata.METADATA_STOP_TIME, "00:00:00")
+
+        # set operationnalMode 
+            
         # 
         self.buildTypeCode() 
 

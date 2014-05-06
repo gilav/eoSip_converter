@@ -384,10 +384,18 @@ class EOSIP_Product(Directory_Product):
         
         # create zip
         zipf = zipfile.ZipFile(self.path, 'w')
-        # write product
+        
+        # write product itself
+        #
+        # two case:
+        # - source is already a zip file ==> just rename it
+        # - source is not a zip file ==> compress into a zip
         if self.debug!=0:
             print "  write EoSip content[0]; product itself:%s  as:%s" % (self.sourceProductPath, self.productName)
-        zipf.write(self.sourceProductPath, self.productName)
+        if self.sourceProductPath.lower()[-4:]==".zip":
+            zipf.write(self.sourceProductPath, self.productName, zipfile.ZIP_STORED)
+        else:
+            zipf.write(self.sourceProductPath, self.productName, zipfile.ZIP_STORED)
 
         # write browses images + reports
         for browsePath in self.sourceBrowsesPath:
