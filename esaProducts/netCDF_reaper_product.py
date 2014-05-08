@@ -287,6 +287,13 @@ class netCDF_reaper_Product(netCDF_Product):
         lastLat=self.dataset.__dict__[self.ATTRIBUTE__RA0_LAST_LAT]
         lastLon=self.dataset.__dict__[self.ATTRIBUTE__RA0_LAST_LONG]
 
+        # normalize metadata.METADATA_PROCESSING_TIME: from 17-DEC-2013 20:26:48Z to 2013-12-17T11:57:41Z
+        tmp = self.metadata.getMetadataValue(metadata.METADATA_PROCESSING_TIME)
+        toks=tmp.split(' ')
+        toksDate=toks[0].split('-')
+        tmp="%s-%s-%sT%s" % (toksDate[2],toksDate[1],toksDate[0],toks[1])
+        self.metadata.setMetadataPair(metadata.METADATA_PROCESSING_TIME, formatUtils.normaliseDateString(tmp))
+
         # get the footprint from the first/last coordinates
         #footprint="%s %s %s %s %s %s" % (firstLat, firstLon, lastLat, lastLon, firstLat, firstLon)
         footprint=self.getFootprint(0, 1)

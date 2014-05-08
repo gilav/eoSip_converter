@@ -53,7 +53,9 @@ EOSIP_METADATA_MAPPING={'responsible':metadata.METADATA_RESPONSIBLE,
                         'BrowseRectCoordList':browse_metadata.BROWSE_METADATA_RECT_COORDLIST,
                         'colRowList':metadata.METADATA_FOOTPRINT_IMAGE_ROWCOL,
                         'processingDate':metadata.METADATA_PROCESSING_TIME,
-                        'processingCenter':metadata.METADATA_PROCESSING_CENTER
+                        'processingCenter':metadata.METADATA_PROCESSING_CENTER,
+                        'cycleNumber':metadata.METADATA_CYCLE,
+                        'relativePassNumber':metadata.METADATA_RELATIVE_ORBIT
                         }
 
 

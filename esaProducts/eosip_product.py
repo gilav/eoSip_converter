@@ -394,8 +394,13 @@ class EOSIP_Product(Directory_Product):
             print "  write EoSip content[0]; product itself:%s  as:%s" % (self.sourceProductPath, self.productName)
         if self.sourceProductPath.lower()[-4:]==".zip":
             zipf.write(self.sourceProductPath, self.productName, zipfile.ZIP_STORED)
-        else:
-            zipf.write(self.sourceProductPath, self.productName, zipfile.ZIP_STORED)
+        else: # zip source product
+            #zipf.write(self.sourceProductPath, self.productName, zipfile.ZIP_STORED)
+            tmpProductZippedPath="%s/productZipped.zip" % (self.folder)
+            zipTmpProduct = zipfile.ZipFile(tmpProductZippedPath, 'w')
+            zipTmpProduct.write(self.sourceProductPath, os.path.split(self.sourceProductPath)[1], zipfile.ZIP_STORED)
+            zipTmpProduct.close()
+            zipf.write(tmpProductZippedPath, self.productName, zipfile.ZIP_STORED)
 
         # write browses images + reports
         for browsePath in self.sourceBrowsesPath:

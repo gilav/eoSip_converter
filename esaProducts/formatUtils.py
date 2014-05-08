@@ -295,7 +295,7 @@ if __name__ == '__main__':
         print normaliseTime(toks[1], 6)
 
         
-
+        print "normaliseDateString:%s" % normaliseDateString("17-DEC-2013 20:26:48Z")
         
             
     except Exception, e:
