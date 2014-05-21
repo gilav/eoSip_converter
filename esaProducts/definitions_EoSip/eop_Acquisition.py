@@ -16,3 +16,5 @@ class eop_Acquisition(SipMessageBuilder):
         "<gml:incidanceAngle>@incidanceAngle@</gml:incidanceAngle>",
         "<eop:instrumentZenithAngle>@instrumentZenithAngle@</eop:instrumentZenithAngle>",
         "<eop:instrumentElevationAngle>@instrumentElevationAngle@</eop:instrumentElevationAngle>"]
+
+    OPTIONAL = ["<gml:orbitNumber>@orbitNumber@</gml:orbitNumber>"]

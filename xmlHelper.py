@@ -9,6 +9,13 @@ import sys
 import xml.dom.minidom
 import StringIO
 
+LXML_READY=False
+try:
+    import lxml.etree as etree
+    LXML_READY=True
+except:
+    pass
+
 
 
 class XmlHelper:
@@ -241,13 +248,27 @@ class XmlHelper:
 
 
     #
-    # pretty print
+    # pretty print using minidom
     #
     def prettyPrint(self, node=None):
         if node==None:
             return self.domDoc.documentElement.toxml()
         else:
             return node.toxml()
+
+    #
+    # pretty print using minidom or lxml
+    #
+    def prettyPrintAll(self):
+        global LXML_READY
+        if not LXML_READY:
+            print "use minidom"
+            return self.domDoc.documentElement.toprettyxml()
+        else:
+            print "use LXML"
+            parser = etree.XMLParser(resolve_entities=False, strip_cdata=False, remove_blank_text=True)
+            document = etree.fromstring(self.data, parser)
+            return etree.tostring(document, encoding='utf-8', pretty_print=True)
 
 
 def main():
@@ -260,18 +281,20 @@ def main():
         helper.parseData()
         print "info:%s" % helper.info()
         
-        helper.getNodeByName(None, "List_of_Ipf_Procs")
-
-        resultList=[]
-        #helper.getNodeByPath(None, "Quality_Assesment/Quality_Parameter")
-        helper.getNodeByPath(None, "Quality_Assesment/Quality_Parameter", None, resultList)
-        print "result 1:%s" % resultList
-        print "result 1 text :%s" % helper.getNodeText(resultList[0])
-
+        #helper.getNodeByName(None, "List_of_Ipf_Procs")
         #resultList=[]
-        #helper.getNodeByPath(None, "List_of_Ipf_Procs/Ipf", None, resultList)
-        #print "result 2:%s" % resultList
-        
+        #helper.getNodeByPath(None, "Quality_Assesment/Quality_Parameter", None, resultList)
+        #print "result 1:%s" % resultList
+        #print "result 1 text :%s" % helper.getNodeText(resultList[0])
 
+    else:
+        path="C:/Users/glavaux/data/Development/python/xmls/KO2_OPER_EOC_PAN_1G_20110504T015124_20110504T015124_0001.XML"
+        helper.loadFile(path)
+        helper.parseData()
+        helper.info()
+
+        print "\n\nPretty print:\n%s" % helper.prettyPrintAll()
+        #print "\n\nPretty print:\n%s" % helper.indentXmlAll()
+        
 if __name__ == "__main__":
     main()

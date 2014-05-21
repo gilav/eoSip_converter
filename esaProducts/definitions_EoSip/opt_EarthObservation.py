@@ -6,7 +6,7 @@ class opt_EarthObservation(SipMessageBuilder):
     this = ["<opt:EarthObservation gml:id=\"@gmlId@_$$getNextCounter()$$\">", "</opt:EarthObservation>"]
 
     REPRESENTATION = [
-        "om_phenomeneTime",
+        "om_phenomenonTime",
         "om_resultTime",
         "om_procedure",
         "om_observedProperty",

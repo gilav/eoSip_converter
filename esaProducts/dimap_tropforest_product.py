@@ -195,6 +195,7 @@ class Dimap_Tropforest_Product(Directory_Product):
         self.extractQuality(helper, met)
 
         self.extractFootprint(helper, met)
+
                             
         return num_added
 
@@ -226,8 +227,6 @@ class Dimap_Tropforest_Product(Directory_Product):
             self.metadata.setMetadataPair(metadata.METADATA_START_TIME, "00:00:00")
         if self.metadata.getMetadataValue(metadata.METADATA_STOP_TIME)==None:
             self.metadata.setMetadataPair(metadata.METADATA_STOP_TIME, "00:00:00")
-
-        # set operationnalMode 
             
         # 
         self.buildTypeCode() 
@@ -351,6 +350,7 @@ class Dimap_Tropforest_Product(Directory_Product):
             country = helper.getNodeText(helper.getFirstNodeByPath(nodes[0], 'COUNTRY', None))
             met.setMetadataPair(metadata.METADATA_COUNTRY, country)
             met.addLocalAttribute("country", country)
+            met.addLocalAttribute("original_name", met.getMetadataValue(metadata.METADATA_DATASET_NAME))
             
 
         else:

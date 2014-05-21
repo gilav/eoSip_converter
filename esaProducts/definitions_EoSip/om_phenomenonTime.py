@@ -1,8 +1,8 @@
 from sipMessageBuilder import SipMessageBuilder
 
 
-class om_phenomeneTime(SipMessageBuilder):
+class om_phenomenonTime(SipMessageBuilder):
     
-    this = ["<om:phenomeneTime>"]
+    this = ["<om:phenomenonTime>"]
 
     REPRESENTATION = ["gml_TimePeriod"]

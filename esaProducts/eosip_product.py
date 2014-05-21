@@ -85,8 +85,6 @@ class EOSIP_Product(Directory_Product):
         self.extension=None
         #
         #
-        self.sipCreator=None
-        #
         self.productReportName=None
         self.reportFullPath=None
         self.browseFullPath=None
@@ -432,10 +430,10 @@ class EOSIP_Product(Directory_Product):
             helper=xmlHelper.XmlHelper()
             helper.parseData(data)
             # this will verify that xml is correct:
-            res=helper.prettyPrint()
+            res=helper.prettyPrintAll()
             #print "pretty print xml:\n%s" % res
             # keep original format, because is already indexed, to avoid mess with helper.prettyPrint()
-            res=data
+            #res=data
             #res=self.sanitizeXml(data)
         except Exception, e:
             # write it for debug

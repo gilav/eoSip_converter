@@ -11,8 +11,12 @@ import traceback
 import metadata, browse_metadata
 
 
+VALUE_UNKNOWN="UNKNOWN"
+VALUE_NONE="None"
+
 # default xml node mapping
 EOSIP_METADATA_MAPPING={'responsible':metadata.METADATA_RESPONSIBLE,
+                        'SIPCreator':metadata.METADATA_CREATOR,
                         'reportType':metadata.METADATA_REPORT_TYPE,
                         'generationTime':metadata.METADATA_GENERATION_TIME,
                         'gmlId':metadata.METADATA_PRODUCTNAME,
@@ -176,7 +180,7 @@ class SipBuilder:
         else:
             if self.debug==2:
                 print "resolveField: metadata dump:\n%s" % metadata.toString()
-            return "UNKNOWN"
+            return VALUE_UNKNOWN
 
 
     #

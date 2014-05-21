@@ -29,9 +29,12 @@ class ingester_tropforest(ingester.Ingester):
     
         #
         # Override
+        # this is the first function called by the base ingester
         #
         def createSourceProduct(self, processInfo):
             global debug,logger
+            # set ingester in processInfo for later use
+            processInfo.ingester=self
             dimapP = dimap_tropforest_product.Dimap_Tropforest_Product(processInfo.srcPath)
             processInfo.srcProduct = dimapP
 
@@ -100,6 +103,25 @@ class ingester_tropforest(ingester.Ingester):
             # build typecode, set stop datetime = start datetime
             met.setMetadataPair(metadata.METADATA_STOP_DATE, met.getMetadataValue(metadata.METADATA_START_DATE))
             met.setMetadataPair(metadata.METADATA_STOP_TIME, met.getMetadataValue(metadata.METADATA_START_TIME))
+
+            # get additionnal metadata from optionnal dataProvider:we want the orbit
+            if len(self.dataProviders)>0:
+                    print "@@@@@@@@@@@@@@@@@@@@ extract using dataProviders:%s" % self.dataProviders
+                    # look the one for the mission
+                    for item in self.dataProviders.keys():
+                            if item.find(met.getMetadataValue(metadata.METADATA_PLATFORM))>=0:
+                                    adataProvider=self.dataProviders[item]
+                                    print "@@@@@@@@@@@@@@@@@@@@ dataProviders match mission:%s" % adataProvider
+                                    # need to query using the product original filename like:N00-W075_AVN_20090804_PRO_0
+                                    orbit=adataProvider.getRowValue(met.getMetadataValue(metadata.METADATA_DATASET_NAME))
+                                    print "@@@@@@@@@@@@@@@@@@@@ orbit:%s" % orbit
+                                    if len(orbit.strip())==0:
+                                            orbit=None
+                                    met.setMetadataPair(metadata.METADATA_ORBIT, orbit)
+                                    break
+                                    
+                    
+
             # refine
             processInfo.srcProduct.refineMetadata()
 

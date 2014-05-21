@@ -179,6 +179,8 @@ class Ingester():
                 self.statsUtil=statsUtil.StatsUtil()
                 # resolved output folders
                 self.outputProductResolvedPaths=None
+                #
+                self.dataProviders={}
                 
 
 
@@ -188,7 +190,7 @@ class Ingester():
         def readConfig(self, path=None):
                 global CONFIG_NAME, __config, OUTSPACE, INBOX, TMPSPACE, LIST_TYPE, LIST_BUILD, FILES_NAMEPATTERN, FILES_EXTPATTERN, DIRS_NAMEPATTERN, DIRS_ISLEAF,\
                 DIRS_ISEMPTY, LIST_LIMIT, LIST_STARTDATE, LIST_STOPDATE, OUTPUT_EO_SIP_PATTERN, OUTPUT_RELATIVE_PATH_TREES, max_product_done,\
-                create_index,fixed_batch_name,TYPOLOGY,dataProviders
+                create_index,fixed_batch_name,TYPOLOGY #,dataProviders
 
                 if not os.path.exists(path):
                     raise Exception("cofiguration file:'%s' doesn't exists" % path)
@@ -283,13 +285,14 @@ class Ingester():
                                 if self.debug!=0:
                                     print " ############################ data provider[%d]:%s==>%s" % (n,item,value)
                                 aDataProvider = dataProvider.DataProvider(value)
-                                dataProviders[item]=aDataProvider
-                        except:
+                                self.dataProviders[item]=aDataProvider
+                        except Exception, e:
                             exc_type, exc_obj, exc_tb = sys.exc_info()
                             traceback.print_exc(file=sys.stdout)
+                            raise e
                         
                         self.dump()
-                        sys.exit(1)
+
                 except Exception, e:
                         print " Error in reading configuration:"
                         exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -311,7 +314,7 @@ class Ingester():
                 self.logger.info("   OUTPUT_RELATIVE_PATH_TREES: %s" % OUTPUT_RELATIVE_PATH_TREES)
                 self.logger.info("   eoSip typology: %s" % TYPOLOGY)
                 #if len(dataProviders) > 0:
-                self.logger.info("   additional data providers:%s" % dataProviders)
+                self.logger.info("   additional data providers:%s" % self.dataProviders)
                 #else:
                 #    print "   no dataprovider"
                 #raise Exception("STOP")
@@ -721,6 +724,8 @@ class Ingester():
                     self.logger.info("Error doing stats")
                     pass
                 print "\n\n\n\nLog:%s\n" % pInfo.prodLog
+
+                print "\n\n\n\nProcess info:%s\n" % pInfo.toString()
                 
                 
         #

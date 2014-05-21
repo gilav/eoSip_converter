@@ -5,7 +5,7 @@ class SIPInfo(SipMessageBuilder):
     
     this = ["<SIPInfo>"]
 
-    REPRESENTATION = ["<SIPCreator>@SIPCreator@</SIPCreator>\n"+
+    REPRESENTATION = ["<SIPCreator>@SIPCreator@</SIPCreator>",
                       "<SIPCreationTime>@generationTime@</SIPCreationTime>"]
 
     FIELDS = ['SIPCreator', 'SIPCreationTime']

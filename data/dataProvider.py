@@ -26,7 +26,7 @@ class DataProvider():
     dataReader=None
 
     #
-    debug=0
+    debug=2
 
 
     #
@@ -65,16 +65,11 @@ class DataProvider():
     # get a value
     #
     def getRowValue(self, k):
-        if self.lut.has_key(k):
-            return self.lut[k]
-        else:
-            return None
+        if self.debug>=1:
+            print " @@@@@@@@@@@@@@@@@@@@ DataProvider.getRowValue for:%s" % k
+        return self.dataReader.getRowValue(k)
 
 
-    #
-    #
-    #
-    #def 
 
         
 if __name__ == '__main__':

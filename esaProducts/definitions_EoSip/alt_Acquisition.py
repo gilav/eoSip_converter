@@ -19,3 +19,5 @@ class alt_Acquisition(SipMessageBuilder):
         "<alt:cycleNumber>@cycleNumber@</alt:cycleNumber>",
         "<alt:isSegment>@isSegment@</alt:isSegment>",
         "<alt:relativePassNumber>@relativePassNumber@</alt:relativePassNumber>"]
+
+    OPTIONAL = ["<gml:orbitNumber>@orbitNumber@</gml:orbitNumber>"]

@@ -6,7 +6,7 @@ class sar_EarthObservation(SipMessageBuilder):
     this = ["<sar:EarthObservation gml:id=\"@gmlId@_$$getNextCounter()$$\">", "</sar:EarthObservation>"]
 
     REPRESENTATION = [
-        "om_phenomeneTime",
+        "om_phenomenonTime",
         "om_resultTime",
         "om_procedure",
         "om_observedProperty",
