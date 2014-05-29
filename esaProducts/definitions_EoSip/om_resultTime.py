@@ -3,6 +3,6 @@ from sipMessageBuilder import SipMessageBuilder
 
 class om_resultTime(SipMessageBuilder):
     
-    this = ["<gml:resultTime>"]
+    this = ["<om:resultTime>"]
 
     REPRESENTATION = ["gml_TimeInstant"]

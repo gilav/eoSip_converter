@@ -6,6 +6,7 @@
 import sys
 import traceback
 from base_metadata import Base_Metadata
+import sipBuilder
 
 BROWSE_METADATA_BROWSE_CHOICE='BROWSE_METADATA_BROWSE_CHOICE'
 BROWSE_METADATA_IDENTIFIER='BROWSE_METADATA_IDENTIFIER'
@@ -72,7 +73,8 @@ class Browse_Metadata(Base_Metadata):
         if self.dict.has_key(name):
             return self.dict[name]
         else:
-            return "NOT-PRESENT"
+            return sipBuilder.VALUE_NOT_PRESENT
+            #return "NOT-PRESENT"
 
 
     def getNextCounter(self):

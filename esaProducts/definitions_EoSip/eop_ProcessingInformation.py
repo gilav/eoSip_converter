@@ -5,12 +5,19 @@ class eop_ProcessingInformation(SipMessageBuilder):
     
     this = ["<eop:ProcessingInformation>"]
 
-    #this_ALT = ["<alt:ProcessingInformation>"]
 
     REPRESENTATION = ["<eop:processingCenter>@processingCenter@</eop:processingCenter>",
                       "<eop:processingDate>@processingDate@</eop:processingDate>",
-                      "<eop:processingMode>@processingMode@</eop:processingMode>",
                       "<eop:processorName>@processorName@</eop:processorName>",
-                      "<eop:processorVersion>@processorVersion@</eop:processorVersion>"]
+                      "<eop:processorVersion>@processorVersion@</eop:processorVersion>",
+                      "<eop:processingLevel>@processingLevel@</eop:processingLevel>",
+                      "<eop:nativeProductFormat>@nativeProductFormat@</eop:nativeProductFormat>",
+                      "<eop:processingMode>@processingMode@</eop:processingMode>"]
 
-    #REPRESENTATION_ALT = ["<alt:processingMode>@processingMode@</alt:processingMode>"]
+    OPTIONAL = ["<eop:processingCenter>@processingCenter@</eop:processingCenter>",
+                      "<eop:processingDate>@processingDate@</eop:processingDate>",
+                      "<eop:processorName>@processorName@</eop:processorName>",
+                      "<eop:processorVersion>@processorVersion@</eop:processorVersion>",
+                      "<eop:processingLevel>@processingLevel@</eop:processingLevel>",
+                      "<eop:nativeProductFormat>@nativeProductFormat@</eop:nativeProductFormat>",
+                      "<eop:processingMode>@processingMode@</eop:processingMode>"]

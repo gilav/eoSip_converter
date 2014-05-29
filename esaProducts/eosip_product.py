@@ -25,7 +25,8 @@ from namingConvention import NamingConvention
 import definitions_EoSip
 import xmlHelper
 import browse_metadata, metadata
-from definitions_EoSip import rep_metadataReport, rep_browseReport, SIPInfo
+#from definitions_EoSip import rep_metadataReport, rep_browseReport, SIPInfo
+from definitions_EoSip import eop_EarthObservation, alt_EarthObservation, sar_EarthObservation, opt_EarthObservation, lmb_EarthObservation, atm_EarthObservation, rep_browseReport, SIPInfo
 
 
 
@@ -171,26 +172,42 @@ class EOSIP_Product(Directory_Product):
             print " Eo-Sip metadata dump:\n%s" % self.metadata.toString()
 
         # make the report xml data
-        productReportBuilder=rep_metadataReport.rep_metadataReport()
+        #productReportBuilder=rep_metadataReport.rep_metadataReport()
+        #xmldata=productReportBuilder.buildMessage(self.metadata, "rep:metadataReport")
+        # change for OGC spec: root node is the specialized EarthObservation
+        ##productReportBuilder=eop_EarthObservation.eop_EarthObservation()
         self.metadata.debug=1
-        #typologyUsed = self.metadata.getOtherInfo("TYPOLOGY_SUFFIX")
-        #if typologyUsed=='':
-        xmldata=productReportBuilder.buildMessage(self.metadata, "rep:metadataReport")
+        typologyUsed = self.metadata.getOtherInfo("TYPOLOGY_SUFFIX")
+        print "############## typologyUsed:"+typologyUsed
+        if typologyUsed=='':
+            typologyUsed='EOP'
+            
+        if typologyUsed=='EOP':
+            productReportBuilder=eop_EarthObservation.eop_EarthObservation()
+        elif typologyUsed=='OPT':
+            productReportBuilder=opt_EarthObservation.opt_EarthObservation()
+        elif typologyUsed=='ALT':
+            productReportBuilder=apt_EarthObservation.apt_EarthObservation()
+        elif typologyUsed=='LMB':
+            productReportBuilder=lmb_EarthObservation.lmb_EarthObservation()
+        elif typologyUsed=='SAR':
+             productReportBuilder=sar_EarthObservation.sar_EarthObservation()
+        xmldata=productReportBuilder.buildMessage(self.metadata, "%s:EarthObservation" % typologyUsed.lower())
 
         # add the local attributes
         attr=self.metadata.getLocalAttribute()
         print " @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ length localattributes:%s" % len(attr)
         if len(attr) > 0:
             n=0
-            res="<eop:vendorSpecific>"
+            res="" #<eop:vendorSpecific><eop:SpecificInformation>"
             for adict in attr:
                 key=adict.keys()[0]
                 value=adict[key]
                 print " @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ localattributes[%d]: %s=%s" % (n, key, value)
-                res = "%s<eop:SpecificInformation><eop:localAttribute>%s</eop:localAttribute><eop:localValue>%s</eop:localValue></eop:SpecificInformation>" % (res, key, value)
+                res = "%s<eop:vendorSpecific><eop:SpecificInformation><eop:localAttribute>%s</eop:localAttribute><eop:localValue>%s</eop:localValue></eop:SpecificInformation></eop:vendorSpecific>" % (res, key, value)
                     
                 n=n+1
-            res="%s</eop:vendorSpecific>" % res
+            #res="%s</eop:SpecificInformation></eop:vendorSpecific>" % res
             print " @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ localattributes block:%s" % res
             pos = xmldata.find("<LOCAL_ATTR></LOCAL_ATTR>")
             if pos >= 0:
@@ -204,7 +221,7 @@ class EOSIP_Product(Directory_Product):
         self.productReport=self.formatXml(xmldata, self.folder, 'product_report')
         if self.debug!=0:
             print " product report content:\n%s" % self.productReport
-        ext=definitions_EoSip.getDefinition("XML_EXT")
+        ext=definitions_EoSip.getDefinition("MD_EXT")
         reportName="%s.%s" % (self.productShortName, ext)
         if self.debug!=0:
             print "   product report name:%s" % (reportName)

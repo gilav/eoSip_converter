@@ -8,3 +8,7 @@ class eop_Instrument(SipMessageBuilder):
 
     REPRESENTATION = ["<eop:shortName>@instrumentShortName@</eop:shortName>",
                       "<eop:description>@instrumentDescription@</eop:description>"]
+
+
+    OPTIONAL = ["<eop:shortName>@instrumentShortName@</eop:shortName>",
+                "<eop:description>@instrumentDescription@</eop:description>"]

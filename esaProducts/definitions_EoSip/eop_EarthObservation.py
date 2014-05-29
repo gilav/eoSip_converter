@@ -2,12 +2,12 @@ import os,sys,inspect
 import logging
 #
 
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-parentdir = os.path.dirname(currentdir)
-try:
-    sys.path.index(parentdir)
-except:
-    sys.path.insert(0,parentdir)
+#currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+#parentdir = os.path.dirname(currentdir)
+#try:
+#    sys.path.index(parentdir)
+#except:
+#    sys.path.insert(0,parentdir)
 
 from metadata import Metadata
 from definitions_EoSip.sipMessageBuilder import SipMessageBuilder
@@ -15,7 +15,7 @@ from definitions_EoSip.sipMessageBuilder import SipMessageBuilder
 
 class eop_EarthObservation(SipMessageBuilder):
     
-    this = ["<eop:EarthObservation gml:id=\"@gmlId@_$$getNextCounter()$$\">", "</eop:EarthObservation>"]
+    this = ["<eop:EarthObservation gml:id=\"@gmlId@_$$getNextCounter()$$\" xmlns:eop=\"http://www.opengis.net/eop/2.1\" xmlns:gml=\"http://www.opengis.net/gml/3.2\" xmlns:om=\"http://www.opengis.net/om/2.0\" xmlns:ows=\"http://www.opengis.net/ows/2.0\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">", "</eop:EarthObservation>"]
 
     REPRESENTATION = [
         "om_phenomenonTime",

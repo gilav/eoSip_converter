@@ -7,8 +7,8 @@ class sar_Acquisition(SipMessageBuilder):
 
     REPRESENTATION = ["<gml:orbitNumber>@orbitNumber@</gml:orbitNumber>",
         "<gml:orbitDirection>@orbitDirection@</gml:orbitDirection>",
-        "<gml:wrsLongitudeGrid>@wrsLongitudeGrid@</gml:wrsLongitudeGrid>",
-        "<gml:wrsLatitudeGrid>@wrsLatitudeGrid@</gml:wrsLatitudeGrid>",
+        "<gml:wrsLongitudeGrid codeSpace=\"\">@wrsLongitudeGrid@</gml:wrsLongitudeGrid>",
+        "<gml:wrsLatitudeGrid codeSpace=\"\">@wrsLatitudeGrid@</gml:wrsLatitudeGrid>",
         "<sar:polarisationMode>@polarisationMode@</sar:polarisationMode>",
         "<sar:polarisationChannels>@polarisationChannels@</sar:polarisationChannels>",
         "<sar:antennaLookDirection>@antennaLookDirection@</sar:antennaLookDirection>",

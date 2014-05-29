@@ -8,6 +8,7 @@ __BROWSE_JPEG_EXT='BI.%s' % __JPEG_EXT
 __PNG_EXT='PNG'
 __BROWSE_PNG_EXT='BI.%s' % __PNG_EXT
 __XML_EXT='XML'
+__MD_EXT='MD.%s' % __XML_EXT
 __QR_EXT='QR.%s' % __XML_EXT
 __SI_EXT='SI.%s' % __XML_EXT
 __PACKAGE_EXT='ZIP'

@@ -1,8 +1,9 @@
 import os,sys,inspect
 import logging
 
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-sys.path.insert(0,currentdir)
+# to be able to import all the definition in this folder:
+#currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+#sys.path.insert(0,currentdir)
 
 import sipBuilder
 from sipBuilder import SipBuilder
@@ -15,6 +16,7 @@ class SipMessageBuilder(SipBuilder):
     def buildMessage(self, metadata, currentTreePath):
         return self._buildMessage(metadata, currentTreePath)
 
+
     #
     # add to sip message with newline, resolve @xxx@ tags
     #
@@ -24,6 +26,7 @@ class SipMessageBuilder(SipBuilder):
             return tmp
         else:
             return "%s\n" % tmp
+    
     #
     # add to sip message, resolve @xxx@ tags
     #
@@ -34,12 +37,15 @@ class SipMessageBuilder(SipBuilder):
                 tmp=self.resolveEval(segment, met)
                 found=True
                 if tmp.find(sipBuilder.VALUE_UNKNOWN)>0:
-                    print "@@@@@@@@@@@\n@@@@@@@@@@@@@@\n@@@@@@@@@@@@@ field '%s' is UNKNOWN 0:" % segment
+                    print "@@@@@@@@@@@\n@@@@@@@@@@@@@@\n@@@@@@@@@@@@@ field '%s' is UNKNOWN 0. optional=%s" % (segment, optional)
                     found=False
                 if tmp.find(sipBuilder.VALUE_NONE)>0:
-                    print "@@@@@@@@@@@\n@@@@@@@@@@@@@@\n@@@@@@@@@@@@@ field '%s' is NONE 1:" % segment
+                    print "@@@@@@@@@@@\n@@@@@@@@@@@@@@\n@@@@@@@@@@@@@ field '%s' is NONE 0. optional=%s" % (segment, optional)
                     found=False
-                if found:
+                if tmp.find(sipBuilder.VALUE_NOT_PRESENT)>0:
+                    print "@@@@@@@@@@@\n@@@@@@@@@@@@@@\n@@@@@@@@@@@@@ field '%s' is NOT_PRESENT 0. optional=%s" % (segment, optional)
+                    found=False
+                if found or optional==False:
                     return "%s%s" % (mess, tmp)
                 else:
                     return mess
@@ -48,17 +54,20 @@ class SipMessageBuilder(SipBuilder):
                 tmp = self.resolveEval(tmp1, met)
                 found=True
                 if tmp.find(sipBuilder.VALUE_UNKNOWN)>0:
-                    print "@@@@@@@@@@@\n@@@@@@@@@@@@@@\n@@@@@@@@@@@@@ field '%s' is UNKNOWN 1:" % segment
+                    print "@@@@@@@@@@@\n@@@@@@@@@@@@@@\n@@@@@@@@@@@@@ field '%s' is UNKNOWN 1. optional=%s" % (segment, optional)
                     found=False
                 if tmp.find(sipBuilder.VALUE_NONE)>0:
-                    print "@@@@@@@@@@@\n@@@@@@@@@@@@@@\n@@@@@@@@@@@@@ field '%s' is NONE 1:" % segment
+                    print "@@@@@@@@@@@\n@@@@@@@@@@@@@@\n@@@@@@@@@@@@@ field '%s' is NONE 1. optional=%s" % (segment, optional)
                     found=False
-                if found:
+                if tmp.find(sipBuilder.VALUE_NOT_PRESENT)>0:
+                    print "@@@@@@@@@@@\n@@@@@@@@@@@@@@\n@@@@@@@@@@@@@ field '%s' is NOT_PRESENT 1. optional=%s" % (segment, optional)
+                    found=False
+                if found or optional==False:
                     return "%s%s" % (mess, tmp)
                 else:
                     return mess
         else:
-            raise Exception("can not add to None sipMessage")
+            raise Exception("can not add to sipMessage which is None")
 
 
     #
@@ -85,9 +94,9 @@ class SipMessageBuilder(SipBuilder):
         typologySuffixUsed=metadata.getOtherInfo("TYPOLOGY_SUFFIX")
         res=None
         if typologySuffixUsed==None or typologySuffixUsed=='':
-            representation_name=self.TYPOLOGY_DEFAULT_REPRESENTATION
+            representation_name=sipBuilder.TYPOLOGY_DEFAULT_REPRESENTATION
         else:
-            representation_name="%s_%s" % (self.TYPOLOGY_DEFAULT_REPRESENTATION, typologySuffixUsed)
+            representation_name="%s_%s" % (sipBuilder.TYPOLOGY_DEFAULT_REPRESENTATION, typologySuffixUsed)
 
 
         try:
@@ -95,8 +104,8 @@ class SipMessageBuilder(SipBuilder):
             if self.debug != 0:
                 print "### getRepresentationUsed: final representation for %s:'%s' used:'%s'" % (self, representation_name, res)
         except:
-            res=self.__getattribute__(self.TYPOLOGY_DEFAULT_REPRESENTATION)
-            print "### getRepresentationUsed: WARNING: typology '%s' not available in %s; use:'%s'" % (representation_name, self, self.TYPOLOGY_DEFAULT_REPRESENTATION)
+            res=self.__getattribute__(sipBuilder.TYPOLOGY_DEFAULT_REPRESENTATION)
+            print "### getRepresentationUsed: WARNING: typology '%s' not available in %s; use:'%s'" % (representation_name, self, sipBuilder.TYPOLOGY_DEFAULT_REPRESENTATION)
 
         return res
     
@@ -178,8 +187,15 @@ class SipMessageBuilder(SipBuilder):
                     #except:
                     #    optional=None
                     #    #print "@@@@@@@ %s no optional" % self
+
+                    # find if field is in OPTIONAL
+                    try:
+                        index=optional.index(field)
+                        flag_optional=True
+                    except:
+                        flag_optional=False
                         
-                    sipMessage=self.addToSipMessageLn(sipMessage, field, metadata, optional)
+                    sipMessage=self.addToSipMessageLn(sipMessage, field, metadata, flag_optional)
 
                 else: # other class
                     if self.debug!=0:

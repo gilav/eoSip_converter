@@ -17,8 +17,8 @@ import metadata
 import browse_metadata
 import formatUtils
 from datetime import datetime, timedelta
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-sys.path.insert(0,currentdir)
+#currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+#sys.path.insert(0,currentdir)
 import imageUtil
 
 class Dimap_Spot_Product(Directory_Product):

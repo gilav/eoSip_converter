@@ -17,6 +17,11 @@ class NamingConvention(Product):
     PATTERN_GENERIC='<yyyymmddThhmmss>_<YYYYMMDDTHHMMSS>_<vvvv>'
     PATTERN_WRS_SCENE='<yyyymmddThhmmss>_<YYYYMMDDTHHMMSS>_<oooooo>_<tttt>_<ffff>_<vvvv>'
     PATTERN_WRS_STRIPLINE='<yyyymmddThhmmss>_<YYYYMMDDTHHMMSS>_<oooooo>_<tttt>_<vvvv>'
+    #
+    # following used in OGC branch:
+    #
+    PATTERN_OGC='<yyyymmddThhmmss>_<YYYYMMDDTHHMMSS>_<oooooo>_<tttt>_<ffff>'
+    #
     usedPattern=None
 
     debug=0

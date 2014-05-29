@@ -6,13 +6,20 @@
 # Contains also the matadata_name to xml node mapping
 #
 from abc import ABCMeta, abstractmethod
-import sys
+import sys,os,inspect
 import traceback
+
+# to be able to import metadata
+#currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+#parentdir = os.path.dirname(currentdir)
+print "SYS_PATH:%s" % sys.path
+#sys.path.insert(0,parentdir)
 import metadata, browse_metadata
 
 
 VALUE_UNKNOWN="UNKNOWN"
 VALUE_NONE="None"
+VALUE_NOT_PRESENT="NOT-PRESENT"
 
 # default xml node mapping
 EOSIP_METADATA_MAPPING={'responsible':metadata.METADATA_RESPONSIBLE,
@@ -38,8 +45,9 @@ EOSIP_METADATA_MAPPING={'responsible':metadata.METADATA_RESPONSIBLE,
                         'wrsLongitudeGrid':metadata.METADATA_WRS_LONGITUDE_GRID_NORMALISED,
                         'wrsLatitudeGrid':metadata.METADATA_WRS_LATITUDE_GRID_NORMALISED,
                         'illuminationAzimuthAngle':metadata.METADATA_SUN_AZIMUTH,
+                        'instrumentElevationAngle':metadata.METADATA_INSTRUMENT_ZENITH_ANGLE,
                         'illuminationElevationAngle':metadata.METADATA_SUN_ELEVATION,
-                        'incidanceAngle':metadata.METADATA_INSTRUMENT_INCIDENCE_ANGLE,
+                        'incidenceAngle':metadata.METADATA_INSTRUMENT_INCIDENCE_ANGLE,
                         'instrumentZenithAngle':metadata.METADATA_INSTRUMENT_ZENITH_ANGLE,
                         'instrumentElevationAngle':metadata.METADATA_INSTRUMENT_ELEVATION_ANGLE,
                         'productSize':metadata.METADATA_PRODUCT_SIZE,
@@ -63,20 +71,21 @@ EOSIP_METADATA_MAPPING={'responsible':metadata.METADATA_RESPONSIBLE,
                         }
 
 
+TYPOLOGY_EOP=0
+TYPOLOGY_SAR=1
+TYPOLOGY_OPT=2
+TYPOLOGY_LMB=3
+TYPOLOGY_ALT=4
+TYPOLOGY_LIST=[TYPOLOGY_EOP, TYPOLOGY_SAR, TYPOLOGY_OPT, TYPOLOGY_LMB, TYPOLOGY_ALT]
+TYPOLOGY_REPRESENTATION_SUFFIX=['EOP', 'SAR', 'OPT', 'LMB', 'ALT']
+TYPOLOGY_DEFAULT_REPRESENTATION='REPRESENTATION'
+
 class SipBuilder:
-    __metaclass__ =ABCMeta
+    __metaclass__=ABCMeta
 
     debug=1
     # the matadata to xml node mapping in use
     USED_METADATA_MAPPING=EOSIP_METADATA_MAPPING
-
-
-    TYPOLOGY_EOP=0
-    TYPOLOGY_SAR=1
-    TYPOLOGY_OPT=2
-    TYPOLOGY_LIST=[TYPOLOGY_EOP, TYPOLOGY_SAR, TYPOLOGY_OPT]
-    TYPOLOGY_REPRESENTATION_SUFFIX=['EOP', 'SAR', 'OPT']
-    TYPOLOGY_DEFAULT_REPRESENTATION='REPRESENTATION'
 
 
     def __init__(self):

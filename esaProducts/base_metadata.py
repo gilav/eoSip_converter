@@ -6,6 +6,8 @@
 from abc import ABCMeta, abstractmethod
 import sys
 import traceback
+#from definitions_EoSip import sipBuilder
+#from sipBuilder import SipBuilder
 
 
 
@@ -21,11 +23,11 @@ class Base_Metadata:
     # the mapping of nodes used in xml report. keys is node path
     xmlNodeUsedMapping={}
     # the typology of xml report in use: 'eop:EarthObservation', 'sar:EarthObservation', 'opt:EarthObservation'
-    TYPOLOGY_LIST=["eop_EarthObservation", "sar_EarthObservation", "opt_EarthObservation"]
-    TYPOLOGY_eop_EarthObservation=0;
-    TYPOLOGY_sar_EarthObservation=1;
-    TYPOLOGY_opt_EarthObservation=2;
-    xmlTypology_used=0
+    #TYPOLOGY_LIST=["eop_EarthObservation", "sar_EarthObservation", "opt_EarthObservation"]
+    #TYPOLOGY_eop_EarthObservation=0;
+    #TYPOLOGY_sar_EarthObservation=1;
+    #TYPOLOGY_opt_EarthObservation=2;
+    #xmlTypology_used=0
 
 
     #
@@ -57,11 +59,11 @@ class Base_Metadata:
     #
     # use a xml typology
     #
-    def useXmlTypology(self, n=TYPOLOGY_eop_EarthObservation):
-        if n < len(TYPOLOGY_LIST):
-            xmlTypology_used=n
-        else:
-            raise "typology unknown:%d" % n
+    #def useXmlTypology(self, n=TYPOLOGY_eop_EarthObservation):
+    #    if n < len(TYPOLOGY_LIST):
+    #        xmlTypology_used=n
+    #    else:
+    #        raise "typology unknown:%d" % n
         
 
     #

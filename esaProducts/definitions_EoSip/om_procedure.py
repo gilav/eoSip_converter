@@ -10,3 +10,5 @@ class om_procedure(SipMessageBuilder):
 
     REPRESENTATION_ALT = ["alt_EarthObservationEquipment"]
 
+    REPRESENTATION_OPT = ["opt_EarthObservationEquipment"]
+

@@ -6,6 +6,7 @@
 import sys
 import traceback
 from base_metadata import Base_Metadata
+import sipBuilder
 
 
 METADATA_ACQUISITION_CENTER='METADATA_ACQUISITION_CENTER'
@@ -148,7 +149,8 @@ class Metadata(Base_Metadata):
         if self.dict.has_key(name):
             return self.dict[name]
         else:
-            return "NOT-PRESENT"
+            return sipBuilder.VALUE_NOT_PRESENT
+            #return "NOT-PRESENT"
 
     #
     #

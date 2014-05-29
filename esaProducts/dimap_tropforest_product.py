@@ -209,11 +209,18 @@ class Dimap_Tropforest_Product(Directory_Product):
     def refineMetadata(self):
         # set platform Id
         if self.metadata.getMetadataValue(metadata.METADATA_PLATFORM)=='ALOS':
-            self.metadata.setMetadataPair(metadata.METADATA_PLATFORM_ID, '1')
+            if self.metadata.getMetadataValue(metadata.METADATA_PLATFORM_ID)==None:
+                self.metadata.setMetadataPair(metadata.METADATA_PLATFORM_ID, '1')
+            if self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT)==None:
+                self.metadata.setMetadataPair(metadata.METADATA_INSTRUMENT, 'AV2')
         elif self.metadata.getMetadataValue(metadata.METADATA_PLATFORM)=='KOMPSAT':
+            if self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT)==None:
+                self.metadata.setMetadataPair(metadata.METADATA_INSTRUMENT, 'EOC')
             if self.metadata.getMetadataValue(metadata.METADATA_PLATFORM_ID)==None:
                 self.metadata.setMetadataPair(metadata.METADATA_PLATFORM_ID, '2')
         elif self.metadata.getMetadataValue(metadata.METADATA_PLATFORM)=='Deimos':
+            if self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT)==None:
+                self.metadata.setMetadataPair(metadata.METADATA_INSTRUMENT, 'SLIM6')
             if self.metadata.getMetadataValue(metadata.METADATA_PLATFORM_ID)==None:
                 self.metadata.setMetadataPair(metadata.METADATA_PLATFORM_ID, '1')
 
@@ -227,6 +234,10 @@ class Dimap_Tropforest_Product(Directory_Product):
             self.metadata.setMetadataPair(metadata.METADATA_START_TIME, "00:00:00")
         if self.metadata.getMetadataValue(metadata.METADATA_STOP_TIME)==None:
             self.metadata.setMetadataPair(metadata.METADATA_STOP_TIME, "00:00:00")
+
+        # set orbit to 000000 if None
+        if self.metadata.getMetadataValue(metadata.METADATA_ORBIT)==None:
+            self.metadata.setMetadataPair(metadata.METADATA_ORBIT, "000000")
             
         # 
         self.buildTypeCode() 
