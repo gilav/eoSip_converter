@@ -90,7 +90,9 @@ class EOSIP_Product(Directory_Product):
         self.reportFullPath=None
         self.browseFullPath=None
         self.sipFullPath=None
-        #self.typology_suffix=None
+        # 
+        self.processInfo=None
+
 
     #
     #
@@ -100,7 +102,18 @@ class EOSIP_Product(Directory_Product):
         self.xmlMappingBrowse=dict2
         # put it in metadata
         self.metadata.xmlNodeUsedMapping=dict1
-        
+
+    #
+    #
+    #
+    def setProcessInfo(self, p):
+        self.processInfo=p
+
+    #
+    #
+    #
+    def getProcessInfo(self):
+        return self.processInfo
 
     #
     #
@@ -134,11 +147,14 @@ class EOSIP_Product(Directory_Product):
         if pos >=0:
             tmp=tmp[0:pos]
         bMet.setMetadataPair(browse_metadata.BROWSE_METADATA_NAME, tmp)
+        # set matadata for browse: these one are the same as for product
         bMet.setMetadataPair(metadata.METADATA_REFERENCE_SYSTEM_IDENTIFIER, self.metadata.getMetadataValue(metadata.METADATA_REFERENCE_SYSTEM_IDENTIFIER))
         bMet.setMetadataPair(metadata.METADATA_START_DATE, self.metadata.getMetadataValue(metadata.METADATA_START_DATE))
         bMet.setMetadataPair(metadata.METADATA_START_TIME, self.metadata.getMetadataValue(metadata.METADATA_START_TIME))
         bMet.setMetadataPair(metadata.METADATA_STOP_DATE, self.metadata.getMetadataValue(metadata.METADATA_STOP_DATE))
         bMet.setMetadataPair(metadata.METADATA_STOP_TIME, self.metadata.getMetadataValue(metadata.METADATA_STOP_TIME))
+        #
+        bMet.setMetadataPair(browse_metadata.BROWSE_METADATA_BROWSE_TYPE, self.metadata.getMetadataValue(metadata.METADATA_TYPECODE))
         #
         bMet.setMetadataPair('METADATA_GENERATION_TIME', self.metadata.getMetadataValue(metadata.METADATA_GENERATION_TIME))
         bMet.setMetadataPair('METADATA_RESPONSIBLE', self.metadata.getMetadataValue('METADATA_RESPONSIBLE'))
@@ -260,8 +276,8 @@ class EOSIP_Product(Directory_Product):
             bmet=self.browse_metadata_dict[browsePath]
             if self.debug!=0:
                 print " build browse metadata report[%d]:%s\n%s" % (n, browsePath, bmet.toString())
+                
             #
-            
             browseReportName="%s.%s" % (bmet.getMetadataValue(browse_metadata.BROWSE_METADATA_NAME), definitions_EoSip.getDefinition('XML_EXT'))
             bmet.setMetadataPair(browse_metadata.BROWSE_METADATA_REPORT_NAME, browseReportName)
             allBrowseReportNames.append(browseReportName)
@@ -271,13 +287,18 @@ class EOSIP_Product(Directory_Product):
             browseReportBuilder=rep_browseReport.rep_browseReport()
             #browseReportBuilder.debug=1
             browseReport=self.formatXml(browseReportBuilder.buildMessage(bmet, "rep:browseReport"), self.folder, 'browse_report_%d' % i)
-            # add BROWSE_CHOICE block
-            browseReport=browseReport.replace('<BROWSE_CHOICE></BROWSE_CHOICE>', bmet.getMetadataValue(browse_metadata.METADATA_BROWSE_CHOICE))
+            
+            # add BROWSE_CHOICE block, original block may have be altered by prettyprint...
+            if browseReport.find('<BROWSE_CHOICE></BROWSE_CHOICE>')>0:
+                browseReport=browseReport.replace('<BROWSE_CHOICE></BROWSE_CHOICE>', bmet.getMetadataValue(browse_metadata.METADATA_BROWSE_CHOICE))
+            elif browseReport.find('<BROWSE_CHOICE/>')>0:
+                browseReport=browseReport.replace('<BROWSE_CHOICE/>', bmet.getMetadataValue(browse_metadata.METADATA_BROWSE_CHOICE))
             if self.debug!=0:
                 print " browse report content:\n%s" % browseReport
 
-            #
+            # test
             browseReport=self.sanitizeXml(browseReport)
+            browseReport=self.formatXml(browseReport)
             
             #
             # write it

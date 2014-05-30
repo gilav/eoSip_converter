@@ -26,6 +26,11 @@ import imageUtil
 
 class ingester_tropforest(ingester.Ingester):
 
+        #
+        # propare metadata from a browse report generation
+        #
+        def prepareBrowseMetadata(self, processInfo):
+                pass
     
         #
         # Override
@@ -130,14 +135,17 @@ class ingester_tropforest(ingester.Ingester):
         #
         #
         def makeBrowseChoiceBlock(self, processInfo, metadata):
+
             # create browse choice for browse metadata report
             reportBuilder=rep_rectifiedBrowse.rep_rectifiedBrowse()
             print "###\n###\n### BUILD BROWSE CHOICE FROM METADATA:%s" % (processInfo.destProduct.metadata.toString())
             browseChoiceBlock=reportBuilder.buildMessage(processInfo.destProduct.metadata, "rep:rectifiedBrowse").strip()
-            if self.debug==0:
+            if self.debug!=55:
                     print "browseChoiceBlock:%s" % (browseChoiceBlock)
             metadata.setMetadataPair(browse_metadata.METADATA_BROWSE_CHOICE, browseChoiceBlock)
-
+            #print "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+            #sys.exit()
+           
 
         #
         # Override
@@ -171,6 +179,7 @@ class ingester_tropforest(ingester.Ingester):
                             self.logger.error(errorMsg)
                             processInfo.addLog("%s" %  (errorMsg))
                             processInfo.addLog("%s" %  (traceback.format_exc()))
+                            print "ERROR: make browse error: %s\n%s" % (errorMsg, traceback.format_exc())
                     except Exception, ee:
                             self.logger.error("  problem adding browse generation error in processInfo")
                             pass

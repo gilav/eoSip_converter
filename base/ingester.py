@@ -24,11 +24,24 @@ import string
 import traceback
 
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+# import parent
 parentdir = os.path.dirname(currentdir)
 try:
     sys.path.index(parentdir)
 except:
     sys.path.insert(0,parentdir)
+
+# import parent/esaProducts
+try:
+    sys.path.index("%s/esaProducts" % parentdir)
+except:
+    sys.path.insert(0,"%s/esaProducts" % parentdir)
+
+# import parent/esaProducts/definitions_EoSip
+try:
+    sys.path.index("%s/esaProducts/definitions_EoSip" % parentdir)
+except:
+    sys.path.insert(0,"%s/esaProducts/definitions_EoSip" % parentdir) 
 import ConfigParser
 
     
@@ -42,6 +55,7 @@ from esaProducts import formatUtils
 import indexCreator
 import statsUtil
 from data import dataProvider
+import sipBuilder
 
 
 #
@@ -272,9 +286,21 @@ class Ingester():
                         # eoSip
                         try:
                             TYPOLOGY = __config.get(SETTING_eosip, SETTING_EOSIP_TYPOLOGY)
-                        except:
-                            TYPOLOGY = ''
-                            pass
+                            # is it supported
+                            try:
+                                sipBuilder.TYPOLOGY_REPRESENTATION_SUFFIX.index(TYPOLOGY)
+                            except:
+                                raise Exception("typology not supported:'%s'" % TYPOLOGY)
+                        except Exception, e:
+                            if TYPOLOGY==None:
+                                TYPOLOGY = sipBuilder.TYPOLOGY_REPRESENTATION_SUFFIX[0]
+                            else:
+                                print " Error in reading configuration:"
+                                exc_type, exc_obj, exc_tb = sys.exc_info()
+                                traceback.print_exc(file=sys.stdout)
+                                raise e
+                                #TYPOLOGY = sipBuilder.TYPOLOGY_REPRESENTATION_SUFFIX[0]
+                                #pass
 
                         # dataProvider
                         try:
@@ -452,29 +478,40 @@ class Ingester():
 
                 # get report metadata used node map, taken from configuration file
                 # : is replaced replaced by _
-                xmlMappingMetadataSrc=dict(__config.items(SETTING_metadataReport_usedMap))
-                xmlMappingMetadata={}
-                n=0
-                for key in xmlMappingMetadataSrc.keys():
-                    value=xmlMappingMetadataSrc[key]
-                    key=key.replace('_',':')
-                    if self.debug!=0:
-                            print "METADATA node used[%d]:%s=%s" % (n, key, value)
-                    xmlMappingMetadata[key]=value
-                    n=n+1
+                try:
+                    xmlMappingMetadata={}
+                    xmlMappingMetadataSrc=dict(__config.items(SETTING_metadataReport_usedMap))
+                    n=0
+                    for key in xmlMappingMetadataSrc.keys():
+                        value=xmlMappingMetadataSrc[key]
+                        key=key.replace('_',':')
+                        if self.debug!=0:
+                                print "METADATA node used[%d]:%s=%s" % (n, key, value)
+                        xmlMappingMetadata[key]=value
+                        n=n+1
+                except:
+                    print " WARNING: something happend when reading report used node map:"
+                    exc_type, exc_obj, exc_tb = sys.exc_info()
+                    traceback.print_exc(file=sys.stdout)
+
+                    
                 # get report browse used node map, taken from configuration file
                 # : is replaced replaced by _
-                xmlMappingBrowseSrc=dict(__config.items(SETTING_browseReport_usedMap))
-                xmlMappingBrowse={}
-                n=0
-                for key in xmlMappingBrowseSrc.keys():
-                    value=xmlMappingBrowseSrc[key]
-                    key=key.replace('_',':')
-                    if self.debug!=0:
-                            print "BROWSE METADATA node used[%d]:%s=%s" % (n, key, value)
-                    xmlMappingBrowse[key]=value
-                    n=n+1
-                
+                try:
+                    xmlMappingBrowse={}
+                    xmlMappingBrowseSrc=dict(__config.items(SETTING_browseReport_usedMap))
+                    n=0
+                    for key in xmlMappingBrowseSrc.keys():
+                        value=xmlMappingBrowseSrc[key]
+                        key=key.replace('_',':')
+                        if self.debug!=0:
+                                print "BROWSE METADATA node used[%d]:%s=%s" % (n, key, value)
+                        xmlMappingBrowse[key]=value
+                        n=n+1
+                except:
+                    print " WARNING: something happend when reading report browse used node map:"
+                    exc_type, exc_obj, exc_tb = sys.exc_info()
+                    traceback.print_exc(file=sys.stdout)
 
         #
         #
@@ -655,6 +692,8 @@ class Ingester():
 
                 # instanciate destination product
                 self.createDestinationProduct(pInfo)
+                # set processInfo into destination product, to make it access things like the serProduct or ingester
+                pInfo.destProduct.setProcessInfo(pInfo)
                 # set the EOP typology used
                 met.setOtherInfo("TYPOLOGY_SUFFIX", TYPOLOGY)
 
@@ -692,6 +731,8 @@ class Ingester():
                 pInfo.addLog("  Sip report file built:%s" %  (tmp))
                 self.logger.info("  Sip report file built:%s" %  (tmp))
 
+                # prepare browse metadata
+                #self.prepareBrowseMetadata(pInfo)
                 # browse reports
                 tmp=pInfo.destProduct.buildBrowsesReportFile()
                 n=0
@@ -779,3 +820,9 @@ class Ingester():
                 raise Exception("abstractmethod")
                 
 
+        #
+        # should be abstract
+        #
+        #@abstractmethod
+        #def prepareBrowseMetadata(self, processInfo):
+        #        raise Exception("abstractmethod")
