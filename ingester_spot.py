@@ -92,6 +92,36 @@ class ingester_spot(ingester.Ingester):
             # build typecode, set stop datetime = start datetime
             met.setMetadataPair(metadata.METADATA_STOP_DATE, met.getMetadataValue(metadata.METADATA_START_DATE))
             met.setMetadataPair(metadata.METADATA_STOP_TIME, met.getMetadataValue(metadata.METADATA_START_TIME))
+            
+            # get additionnal metadata from optionnal dataProvider:we want the track and frame
+            # dataProvider key are METADATA_TRACK or METADATA_FRAME
+            if len(self.dataProviders)>0:
+                    print "@@@@@@@@@@@@@@@@@@@@ extract using dataProviders:%s" % self.dataProviders
+                    # look the one for the mission
+                    for item in self.dataProviders.keys():
+                            print "@@@@@@@@@@@@@@@@@@@@ doing dataProviders item:%s" % item
+                            if item == metadata.METADATA_TRACK:
+                                    adataProvider=self.dataProviders[item]
+                                    print "@@@@@@@@@@@@@@@@@@@@ dataProviders match TRACK:%s" % adataProvider
+                                    # need to query using the product original filename like:N00-W075_AVN_20090804_PRO_0
+                                    track=adataProvider.getRowValue(met.getMetadataValue(metadata.METADATA_ORIGINAL_NAME))
+                                    print "@@@@@@@@@@@@@@@@@@@@ track:%s" % track
+                                    if track != None and len(track.strip())==0:
+                                            track=None
+                                    met.setMetadataPair(metadata.METADATA_TRACK, track)
+
+                            elif item == metadata.METADATA_FRAME:
+                                    adataProvider=self.dataProviders[item]
+                                    print "@@@@@@@@@@@@@@@@@@@@ dataProviders match FRAME:%s" % adataProvider
+                                    # need to query using the product original filename like:N00-W075_AVN_20090804_PRO_0
+                                    frame=adataProvider.getRowValue(met.getMetadataValue(metadata.METADATA_ORIGINAL_NAME))
+                                    print "@@@@@@@@@@@@@@@@@@@@ frame:%s" % frame
+                                    if frame != None and len(frame.strip())==0:
+                                            frame=None
+                                    met.setMetadataPair(metadata.METADATA_FRAME, frame)
+                                    break
+
+            
             # refine
             processInfo.srcProduct.refineMetadata()
 
@@ -99,7 +129,7 @@ class ingester_spot(ingester.Ingester):
         #
         # Override
         # copy the source browse image into work folder
-        # construct the browse_metadatareport footprint block: it is the rep:footprint for spot
+        # construct the browse_metadatareport footprint block(BROWSE_CHOICE): it is the rep:footprint for spot
         #
         def makeBrowses(self,processInfo):
             try:
@@ -114,16 +144,28 @@ class ingester_spot(ingester.Ingester):
 
                     # create browse choice for browse metadata report
                     bmet=processInfo.destProduct.browse_metadata_dict[browseDestPath]
-                    print "######\n######\n%s" % dir(definitions_EoSip)
+                    #print "######\n######\n%s" % dir(definitions_EoSip)
 
                     
-                    reportBuilder=rep_footprint.rep_footprint()
+                    footprintBuilder=rep_footprint.rep_footprint()
                     #
                     print "###\n###\n### BUILD BROWSE CHOICE FROM METADATA:%s" % (processInfo.destProduct.metadata.toString())
-                    browseChoiceBlock=reportBuilder.buildMessage(processInfo.destProduct.metadata, "rep:browseReport/rep:browse/rep:footprint").strip()
+                    browseChoiceBlock=footprintBuilder.buildMessage(processInfo.destProduct.metadata, "rep:browseReport/rep:browse/rep:footprint").strip()
                     if self.debug!=-1:
                             print "browseChoiceBlock:%s" % (browseChoiceBlock)
-                    bmet.setMetadataPair(browse_metadata.METADATA_BROWSE_CHOICE, browseChoiceBlock)
+                    bmet.setMetadataPair(browse_metadata.BROWSE_METADATA_BROWSE_CHOICE, browseChoiceBlock)
+
+                    # set the browse type (if not default one(i.e. product type code))for the product metadata report BROWSES block
+                    # if specified in configuration
+                    tmp = processInfo.srcProduct.metadata.getMetadataValue(metadata.METADATA_BROWSES_TYPE)
+                    if tmp != None:
+                            bmet.setMetadataPair(metadata.METADATA_BROWSES_TYPE, tmp)
+
+                    # idem for METADATA_CODESPACE_REFERENCE_SYSTEM
+                    tmp = processInfo.srcProduct.metadata.getMetadataValue(metadata.METADATA_CODESPACE_REFERENCE_SYSTEM)
+                    if tmp != None:
+                            bmet.setMetadataPair(metadata.METADATA_CODESPACE_REFERENCE_SYSTEM, tmp)
+                    
 
             except Exception, e:
                     exc_type, exc_obj, exc_tb = sys.exc_info()

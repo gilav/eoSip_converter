@@ -83,9 +83,11 @@ class csvData():
 if __name__ == '__main__':
     try:
         csvd = csvData()
-        csvd.openFile("C:/Users/glavaux/Shared/LITE/testData/TropForest/status_AVNIR_qc_Final.csv", 'New_Filename', 'Orbit')
-        print "get N02-W062_KOM_20101110_PRO_0 Orbit:%s" % csvd.getRowValue('N00-W075_AVN_20090804_PRO_0')
-        print "get toto Orbit:%s" % csvd.getRowValue('toto')
+        #csvd.openFile("C:/Users/glavaux/Shared/LITE/testData/TropForest/status_AVNIR_qc_Final.csv", 'New_Filename', 'Orbit')
+        csvd.openFile("C:/Users/glavaux/Shared/LITE/Spot/MMMC_SPOT_export.csv", 'DATASET_ID', 'TRACK')
+        #print "get N02-W062_KOM_20101110_PRO_0 Orbit:%s" % csvd.getRowValue('N00-W075_AVN_20090804_PRO_0')
+        print "get N02-57172150608221305471J0_1A_DVD.ZIP track:%s" % csvd.getRowValue('57172150608221305471J0_1A_DVD.ZIP')
+        #print "get toto Orbit:%s" % csvd.getRowValue('toto')
         
     except Exception, e:
         print " Error"

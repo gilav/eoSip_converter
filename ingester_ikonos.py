@@ -120,7 +120,18 @@ class ingester_ikonos(ingester.Ingester):
                     browseChoiceBlock=reportBuilder.buildMessage(processInfo.destProduct.metadata, "rep:browseReport/rep:browse/rep:footprint").strip()
                     if self.debug!=-1:
                             print "browseChoiceBlock:%s" % (browseChoiceBlock)
-                    bmet.setMetadataPair(browse_metadata.METADATA_BROWSE_CHOICE, browseChoiceBlock)
+                    bmet.setMetadataPair(browse_metadata.BROWSE_METADATA_BROWSE_CHOICE, browseChoiceBlock)
+
+                    # set the browse type (if not default one(i.e. product type code))for the product metadata report BROWSES block
+                    # if specified in configuration
+                    tmp = processInfo.srcProduct.metadata.getMetadataValue(metadata.METADATA_BROWSES_TYPE)
+                    if tmp != None:
+                            bmet.setMetadataPair(metadata.METADATA_BROWSES_TYPE, tmp)
+
+                    # idem for METADATA_CODESPACE_REFERENCE_SYSTEM
+                    tmp = processInfo.srcProduct.metadata.getMetadataValue(metadata.METADATA_CODESPACE_REFERENCE_SYSTEM)
+                    if tmp != None:
+                            bmet.setMetadataPair(metadata.METADATA_CODESPACE_REFERENCE_SYSTEM, tmp)
                     
             except Exception, e:
                     exc_type, exc_obj, exc_tb = sys.exc_info()

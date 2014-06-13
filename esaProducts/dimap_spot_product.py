@@ -40,6 +40,7 @@ class Dimap_Spot_Product(Directory_Product):
                 metadata.METADATA_SOFTWARE_NAME:'Production/Production_Facility/SOFTWARE_NAME',
                 metadata.METADATA_SOFTWARE_VERSION:'Production/Production_Facility/SOFTWARE_VERSION',
                 metadata.METADATA_DATASET_NAME:'Dataset_Id/DATASET_NAME',
+                metadata.METADATA_ORBIT:'Dataset_Sources/Source_Information/Scene_Source/Imaging_Parameters/REVOLUTION_NUMBER',
                 metadata.METADATA_PLATFORM:'Dataset_Sources/Source_Information/Scene_Source/MISSION',
                 metadata.METADATA_PLATFORM_ID:'Dataset_Sources/Source_Information/Scene_Source/MISSION_INDEX',
                 metadata.METADATA_INSTRUMENT:'Dataset_Sources/Source_Information/Scene_Source/INSTRUMENT',
@@ -54,16 +55,22 @@ class Dimap_Spot_Product(Directory_Product):
                 metadata.METADATA_SUN_ELEVATION:'Dataset_Sources/Source_Information/Scene_Source/SUN_ELEVATION',
                 metadata.METADATA_REFERENCE_SYSTEM_IDENTIFIER:'Coordinate_Reference_System/Horizontal_CS/HORIZONTAL_CS_CODE'
                 }
-    
+    #
+    #
+    #
     def __init__(self, path):
         Directory_Product.__init__(self, path)
         print " init class Dimap_Spot_Product"
 
-        
+    #
+    #
+    #
     def getMetadataInfo(self):
         return self.metadata_data
 
-
+    #
+    #
+    #
     def extractToPath(self, folder=None):
         global METADATA_NAME,PREVIEW_NAME
         if not os.path.exists(folder):
@@ -104,6 +111,9 @@ class Dimap_Spot_Product(Directory_Product):
 
 
 
+    #
+    #
+    #
     def buildTypeCode(self):
         if (self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)=='HRV'):
             if self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)=='1' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='P':
@@ -141,6 +151,9 @@ class Dimap_Spot_Product(Directory_Product):
             raise Exception("Product type UNKNOWN")
 
        
+    #
+    #
+    #
     def extractMetadata(self, met=None):
         self.debug=1
         if met==None:
@@ -190,6 +203,10 @@ class Dimap_Spot_Product(Directory_Product):
         self.extractQuality(helper, met)
 
         self.extractFootprint(helper, met)
+
+        # keep the original product name, add it to local attributes
+        met.addLocalAttribute("original_name", self.origName)
+        #met.addLocalAttribute(metadata.METADATA_ORIGINAL_NAME, self.origName)
                             
         return num_added
 
@@ -233,6 +250,7 @@ class Dimap_Spot_Product(Directory_Product):
         #self.metadata.setMetadataPair(metadata.METADATA_STOP_DATE, scene_end.strftime('%Y-%m-%d'))
         #self.metadata.setMetadataPair(metadata.METADATA_STOP_TIME, scene_end.strftime('%H:%M:%S.%f'))
 
+        # new:
         start=formatUtils.datePlusMsec(tmp, -4512)
         stop=formatUtils.datePlusMsec(tmp, 4512)
         toks=start.split('T')
@@ -242,10 +260,14 @@ class Dimap_Spot_Product(Directory_Product):
         self.metadata.setMetadataPair(metadata.METADATA_STOP_DATE, toks[0])
         self.metadata.setMetadataPair(metadata.METADATA_STOP_TIME, toks[1][0:-1])
         
+        
         # 
         self.buildTypeCode()
 
 
+    #
+    #
+    #
     def extractQuality(self, helper, met):
         #helper.setDebug(1)
         quality=[]
@@ -355,12 +377,18 @@ class Dimap_Spot_Product(Directory_Product):
         return footprint, rowCol
         
 
+    #
+    #
+    #
     def toString(self):
         res="tif file:%s" % self.TIF_FILE_NAME
         res="%s\nxml file:%s" % (res, self.XML_FILE_NAME)
         return res
 
 
+    #
+    #
+    #
     def dump(self):
         res="tif file:%s" % self.TIF_FILE_NAME
         res="%s\nxml file:%s" % (res, self.XML_FILE_NAME)

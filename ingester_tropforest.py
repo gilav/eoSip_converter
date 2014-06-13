@@ -110,17 +110,18 @@ class ingester_tropforest(ingester.Ingester):
             met.setMetadataPair(metadata.METADATA_STOP_TIME, met.getMetadataValue(metadata.METADATA_START_TIME))
 
             # get additionnal metadata from optionnal dataProvider:we want the orbit
+            # the dataprovider key is the mission name (KOMPSAT, AVNIR, DEIMOS)
             if len(self.dataProviders)>0:
                     print "@@@@@@@@@@@@@@@@@@@@ extract using dataProviders:%s" % self.dataProviders
                     # look the one for the mission
                     for item in self.dataProviders.keys():
                             if item.find(met.getMetadataValue(metadata.METADATA_PLATFORM))>=0:
                                     adataProvider=self.dataProviders[item]
-                                    print "@@@@@@@@@@@@@@@@@@@@ dataProviders match mission:%s" % adataProvider
+                                    print "@@@@@@@@@@@@@@@@@@@@ dataProviders match PLATFORM '%s':%s" % (met.getMetadataValue(metadata.METADATA_PLATFORM), adataProvider)
                                     # need to query using the product original filename like:N00-W075_AVN_20090804_PRO_0
                                     orbit=adataProvider.getRowValue(met.getMetadataValue(metadata.METADATA_DATASET_NAME))
                                     print "@@@@@@@@@@@@@@@@@@@@ orbit:%s" % orbit
-                                    if len(orbit.strip())==0:
+                                    if orbit != None and len(orbit.strip())==0:
                                             orbit=None
                                     met.setMetadataPair(metadata.METADATA_ORBIT, orbit)
                                     break
@@ -142,7 +143,7 @@ class ingester_tropforest(ingester.Ingester):
             browseChoiceBlock=reportBuilder.buildMessage(processInfo.destProduct.metadata, "rep:rectifiedBrowse").strip()
             if self.debug!=55:
                     print "browseChoiceBlock:%s" % (browseChoiceBlock)
-            metadata.setMetadataPair(browse_metadata.METADATA_BROWSE_CHOICE, browseChoiceBlock)
+            metadata.setMetadataPair(browse_metadata.BROWSE_METADATA_BROWSE_CHOICE, browseChoiceBlock)
             #print "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
             #sys.exit()
            
@@ -169,6 +170,18 @@ class ingester_tropforest(ingester.Ingester):
                     #        print "browseChoiceBlock:%s" % (browseChoiceBlock)
                     #bmet.setMetadataPair(browse_metadata.METADATA_BROWSE_CHOICE, browseChoiceBlock)
                     self.makeBrowseChoiceBlock(processInfo, bmet)
+
+
+                    # set the browse type (if not default one(i.e. product type code))for the product metadata report BROWSES block
+                    # if specified in configuration
+                    tmp = processInfo.srcProduct.metadata.getMetadataValue(metadata.METADATA_BROWSES_TYPE)
+                    if tmp != None:
+                            bmet.setMetadataPair(metadata.METADATA_BROWSES_TYPE, tmp)
+
+                    # idem for METADATA_CODESPACE_REFERENCE_SYSTEM
+                    tmp = processInfo.srcProduct.metadata.getMetadataValue(metadata.METADATA_CODESPACE_REFERENCE_SYSTEM)
+                    if tmp != None:
+                            bmet.setMetadataPair(metadata.METADATA_CODESPACE_REFERENCE_SYSTEM, tmp)
         
                     processInfo.addLog("  browse image created:%s" %  (browseDestPath))
                     self.logger.info("  browse image created:%s" % browseDestPath)

@@ -14,6 +14,8 @@ Supported products are at this time:
 History:
 ========
 
+2014-05-29: Tropforest is now OGC
+
 2014-05-21: Will move to OGC only spec (drop NgEO). So probably this is the last NgEo uupdate
 
 2014-05-14:

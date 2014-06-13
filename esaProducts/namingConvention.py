@@ -6,7 +6,6 @@
 import os, sys
 import logging
 from product import Product
-#from metadata import Metadata
 import metadata
 import formatUtils
 
@@ -25,16 +24,25 @@ class NamingConvention(Product):
     usedPattern=None
 
     debug=0
-    
+
+    #
+    #
+    #
     def __init__(self, p=PATTERN_GENERIC):
         if p[0]!='<':
             self.usedPattern=eval("NamingConvention.%s" % p)
         else:
             self.usedPattern=p
 
+    #
+    #
+    #
     def setDebug(self, d):
         self.debug=d
 
+    #
+    #
+    #
     def buildProductName(self, met=None, ext=None):
         if self.debug!=0:
             print " NamingConvention.buildProductName, pattern used:%s" % self.usedPattern
@@ -69,6 +77,9 @@ class NamingConvention(Product):
         return res
 
 
+    #
+    #
+    #
     def buildInstance(self, met=None):
         res=''
         for tok in self.usedPattern.split('_'):
@@ -97,18 +108,21 @@ class NamingConvention(Product):
                 if self.debug!=0:
                     print "resO is now:%s"% res
             if tok=='<tttt>':
-                tmp=formatUtils.normaliseNumber(met.getMetadataValue(metadata.METADATA_TRACK), len(tok)-2)
+                tmp=formatUtils.normaliseNumber(met.getMetadataValue(metadata.METADATA_TRACK), len(tok)-2, '0')
                 res="%s_%s" % (res, tmp)
                 if self.debug!=0:
                     print "resT is now:%s"% res
             if tok=='<ffff>':
-                tmp=formatUtils.normaliseNumber(met.getMetadataValue(metadata.METADATA_FRAME), len(tok)-2)
+                tmp=formatUtils.normaliseNumber(met.getMetadataValue(metadata.METADATA_FRAME), len(tok)-2, '0')
                 res="%s_%s" % (res, tmp)
                 if self.debug!=0:
                     print "resF is now:%s"% res
         return res
 
 
+    #
+    #
+    #
     def normaliseTime_NOT_USED(self, s=None, max=-1, pad='0'):
         if s != None:
             return s.replace(':', '')
@@ -117,7 +131,9 @@ class NamingConvention(Product):
             while len(s)<max:
              s="%s%s" % (s, pad)
             return s
-                
+    #
+    #
+    #
     def normaliseNumber_NOT_USED(self, s=None, max=-1, pad=' '):
         if self.debug==1:
             print "normaliseNumber:%s"% s

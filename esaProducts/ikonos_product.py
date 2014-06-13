@@ -232,7 +232,6 @@ class Ikonos_Product(Directory_Product):
     # - need to build the rowCol 
     #
     def extractFootprint(self, helper, met):
-        # build the browse choice:
         # there are 5 coords
         met.setMetadataPair(browse_metadata.BROWSE_METADATA_FOOTPRINT_NUMBER_NODES, "5")
 

@@ -26,7 +26,7 @@ import definitions_EoSip
 import xmlHelper
 import browse_metadata, metadata
 #from definitions_EoSip import rep_metadataReport, rep_browseReport, SIPInfo
-from definitions_EoSip import eop_EarthObservation, alt_EarthObservation, sar_EarthObservation, opt_EarthObservation, lmb_EarthObservation, atm_EarthObservation, rep_browseReport, SIPInfo
+from definitions_EoSip import eop_EarthObservation, alt_EarthObservation, sar_EarthObservation, opt_EarthObservation, lmb_EarthObservation, atm_EarthObservation, rep_browseReport, eop_browse, SIPInfo
 
 
 
@@ -39,9 +39,9 @@ class EOSIP_Product(Directory_Product):
     # xml tag that have to be replaced
     # BROWSE_CHOICE is in browse report
     # LOCAL_ATTR is in metadata report
-    NODES_AS_TEXT_BLOCK=["<BROWSE_CHOICE></BROWSE_CHOICE>","<LOCAL_ATTR></LOCAL_ATTR>"]
+    NODES_AS_TEXT_BLOCK=["<BROWSE_CHOICE/>","<LOCAL_ATTR/>","<BROWSES/>","<BROWSE_CHOICE></BROWSE_CHOICE>","<LOCAL_ATTR></LOCAL_ATTR>","<BROWSES></BROWSES>"]
     # default replace text, if None it can not be defaulted.
-    NODES_AS_TEXT_BLOCK_DEFAULT=[None,""]
+    NODES_AS_TEXT_BLOCK_DEFAULT=["","","","","",""]
 
 
     #
@@ -192,7 +192,7 @@ class EOSIP_Product(Directory_Product):
         #xmldata=productReportBuilder.buildMessage(self.metadata, "rep:metadataReport")
         # change for OGC spec: root node is the specialized EarthObservation
         ##productReportBuilder=eop_EarthObservation.eop_EarthObservation()
-        self.metadata.debug=1
+        #self.metadata.debug=1
         typologyUsed = self.metadata.getOtherInfo("TYPOLOGY_SUFFIX")
         print "############## typologyUsed:"+typologyUsed
         if typologyUsed=='':
@@ -209,6 +209,23 @@ class EOSIP_Product(Directory_Product):
         elif typologyUsed=='SAR':
              productReportBuilder=sar_EarthObservation.sar_EarthObservation()
         xmldata=productReportBuilder.buildMessage(self.metadata, "%s:EarthObservation" % typologyUsed.lower())
+
+
+        # add the BROWSE block. just for first browse at this time. TODO: loop all browses? 
+        bmet=self.browse_metadata_dict.values()[0]
+        print "%%%%%%%%%%%%%%%%%%%% BMET DUMP:%s" % bmet.dump()
+
+        
+        browseBlockBuilder=eop_browse.eop_browse()
+        #browseReportBuilder.debug=1
+        browseBlock=browseBlockBuilder.buildMessage(bmet, "eop:browse")
+        if self.debug<10:
+            print " browseBlock content:\n%s" % browseBlock
+        if xmldata.find('<BROWSES></BROWSES>')>0:
+            xmldata=xmldata.replace('<BROWSES></BROWSES>', browseBlock)
+        elif xmldata.find('<BROWSES/>')>0:
+            xmldata=xmldata.replace('<BROWSES/>', browseBlock)
+
 
         # add the local attributes
         attr=self.metadata.getLocalAttribute()
@@ -232,9 +249,12 @@ class EOSIP_Product(Directory_Product):
                 print " @@@@@@@@@@@@@@@@@@@@@@@@@ !!!!!!!!!!!!!!!!!!! no <LOCAL_ATTR></LOCAL_ATTR> block found"
             
         
+
+        # sanitize test
+        tmp=self.productReport=self.sanitizeXml(xmldata)
         
         # verify xml, build file name
-        self.productReport=self.formatXml(xmldata, self.folder, 'product_report')
+        self.productReport=self.formatXml(tmp, self.folder, 'product_report')
         if self.debug!=0:
             print " product report content:\n%s" % self.productReport
         ext=definitions_EoSip.getDefinition("MD_EXT")
@@ -243,7 +263,7 @@ class EOSIP_Product(Directory_Product):
             print "   product report name:%s" % (reportName)
 
         # sanitize test
-        self.productReport=self.sanitizeXml(self.productReport)
+        #self.productReport=self.sanitizeXml(self.productReport)
             
         # write it
         self.reportFullPath="%s/%s" % (self.folder,reportName)
@@ -290,15 +310,15 @@ class EOSIP_Product(Directory_Product):
             
             # add BROWSE_CHOICE block, original block may have be altered by prettyprint...
             if browseReport.find('<BROWSE_CHOICE></BROWSE_CHOICE>')>0:
-                browseReport=browseReport.replace('<BROWSE_CHOICE></BROWSE_CHOICE>', bmet.getMetadataValue(browse_metadata.METADATA_BROWSE_CHOICE))
+                browseReport=browseReport.replace('<BROWSE_CHOICE></BROWSE_CHOICE>', bmet.getMetadataValue(browse_metadata.BROWSE_METADATA_BROWSE_CHOICE))
             elif browseReport.find('<BROWSE_CHOICE/>')>0:
-                browseReport=browseReport.replace('<BROWSE_CHOICE/>', bmet.getMetadataValue(browse_metadata.METADATA_BROWSE_CHOICE))
+                browseReport=browseReport.replace('<BROWSE_CHOICE/>', bmet.getMetadataValue(browse_metadata.BROWSE_METADATA_BROWSE_CHOICE))
             if self.debug!=0:
                 print " browse report content:\n%s" % browseReport
 
             # test
             browseReport=self.sanitizeXml(browseReport)
-            browseReport=self.formatXml(browseReport)
+            browseReport=self.formatXml(browseReport, self.folder, 'browse')
             
             #
             # write it

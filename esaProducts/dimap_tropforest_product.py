@@ -101,6 +101,9 @@ class Dimap_Tropforest_Product(Directory_Product):
         self.EXTRACTED_PATH=folder
 
 
+    #
+    #
+    #
     def extractGridFromFile(self,value):
         if value==None:
             raise Exception("value (lat/lon) is None")
@@ -195,6 +198,10 @@ class Dimap_Tropforest_Product(Directory_Product):
         self.extractQuality(helper, met)
 
         self.extractFootprint(helper, met)
+
+        # keep the original product name, add it to local attributes
+        #met.addLocalAttribute("original_name", met.getMetadataValue(metadata.METADATA_DATASET_NAME))
+        met.addLocalAttribute("original_name", self.origName)
 
                             
         return num_added
@@ -361,7 +368,6 @@ class Dimap_Tropforest_Product(Directory_Product):
             country = helper.getNodeText(helper.getFirstNodeByPath(nodes[0], 'COUNTRY', None))
             met.setMetadataPair(metadata.METADATA_COUNTRY, country)
             met.addLocalAttribute("country", country)
-            met.addLocalAttribute("original_name", met.getMetadataValue(metadata.METADATA_DATASET_NAME))
             
 
         else:

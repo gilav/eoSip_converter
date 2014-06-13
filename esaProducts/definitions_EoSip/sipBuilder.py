@@ -12,7 +12,7 @@ import traceback
 # to be able to import metadata
 #currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 #parentdir = os.path.dirname(currentdir)
-print "SYS_PATH:%s" % sys.path
+#print "SYS_PATH:%s" % sys.path
 #sys.path.insert(0,parentdir)
 import metadata, browse_metadata
 
@@ -60,6 +60,8 @@ EOSIP_METADATA_MAPPING={'responsible':metadata.METADATA_RESPONSIBLE,
                         'coordList':metadata.METADATA_FOOTPRINT,
                         'numberOfNodes':'BROWSE_METADATA_FOOTPRINT_NUMBER_NODES',
                         'browseType':browse_metadata.BROWSE_METADATA_BROWSE_TYPE,
+                        'browsesType':metadata.METADATA_BROWSES_TYPE,
+                        'codeSpace_referenceSystemIdentifier':metadata.METADATA_CODESPACE_REFERENCE_SYSTEM,
                         'browseImageType':browse_metadata.BROWSE_METADATA_IMAGE_TYPE,
                         'browseIdentifier':browse_metadata.BROWSE_METADATA_FILENAME,
                         'browseFileName':browse_metadata.BROWSE_METADATA_NAME,
@@ -68,7 +70,8 @@ EOSIP_METADATA_MAPPING={'responsible':metadata.METADATA_RESPONSIBLE,
                         'processingDate':metadata.METADATA_PROCESSING_TIME,
                         'processingCenter':metadata.METADATA_PROCESSING_CENTER,
                         'cycleNumber':metadata.METADATA_CYCLE,
-                        'relativePassNumber':metadata.METADATA_RELATIVE_ORBIT
+                        'relativePassNumber':metadata.METADATA_RELATIVE_ORBIT,
+                        'snowCoverPercentage':metadata.METADATA_SNOW_COVERAGE
                         }
 
 
@@ -84,7 +87,7 @@ TYPOLOGY_DEFAULT_REPRESENTATION='REPRESENTATION'
 class SipBuilder:
     __metaclass__=ABCMeta
 
-    debug=1
+    debug=0
     # the matadata to xml node mapping in use
     USED_METADATA_MAPPING=EOSIP_METADATA_MAPPING
 
