@@ -26,7 +26,7 @@ class DataProvider():
     dataReader=None
 
     #
-    debug=2
+    debug=0
 
 
     #
@@ -66,7 +66,7 @@ class DataProvider():
     #
     def getRowValue(self, k):
         if self.debug>=1:
-            print " @@@@@@@@@@@@@@@@@@@@ DataProvider.getRowValue for:%s" % k
+            print " DataProvider.getRowValue for:%s" % k
         return self.dataReader.getRowValue(k)
 
 

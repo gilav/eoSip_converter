@@ -3,6 +3,7 @@
 # 
 #
 #
+import sys
 import subprocess
 import traceback
 from subprocess import call,Popen, PIPE
@@ -16,7 +17,7 @@ except:
     pass
 
 
-debug=0
+debug=1
 externalConverterCommand="/bin/sh -c \"/usr/bin/gm convert -verbose -scale 25%"
 
 
@@ -64,73 +65,137 @@ def get_image_size(fname):
 #
 def makeJpeg(src=None, dest=None, resizePercent=-1, w=-1, h=-1, enhance=None):
     if PilReady==1:
-        makeJpegPil(src, dest, resizePercent, w, h, enhance)
+        try:
+            makeJpegPil(src, dest, resizePercent, w, h, enhance)
+        except Exception, e:
+            print " can not make jpeg using PIL:"
+            if debug!=0:
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                traceback.print_exc(file=sys.stdout)
+            try:
+                externalMakeJpeg(src, dest)
+            except Exception, e:
+                print " Error making jpeg using external call:"
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                traceback.print_exc(file=sys.stdout)
+                #raise e
+                pass
     else:
-        externalMakeJpeg2(src, dest)
-
-
-#
-#
-#
-def externalMakeJpeg2(src=None, dest=None):
-    src=src.replace("//","/")
-    dest=dest.replace("//","/")
-    if debug!=0:
-        print " external resize image:%s into:%s" % (src, dest)
-    command="%s %s %s\"" % (externalConverterCommand, src, dest)
-    print "command:%s" % command
-    retval = subprocess.call(command, shell=True)
-    print "  retval:%s" % retval
-    if retval!=0:
-        raise Exception("Error externalMakeJpeg:")
-    if debug!=0:
-        print "  jpeg saved as:%s" % dest
+        try:
+            externalMakeJpeg(src, dest)
+        except Exception, e:
+            print " Error making jpeg using external call:"
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            traceback.print_exc(file=sys.stdout)
+            #raise e
+            pass
         
+
 #
 #
 #
 def externalMakeJpeg(src=None, dest=None):
-    src=src.replace("//","/")
-    dest=dest.replace("//","/")
-    if debug!=0:
-        print " external resize image:%s into:%s" % (src, dest)
-    command="%s %s %s" % (externalConverterCommand, src, dest)
-    print "command:%s" % command
-    toks=externalConverterCommand.split(" ")
-    p = Popen(toks, shell=True, stdout=PIPE, stderr=PIPE)
-    out,err=p.communicate()
-    retval = p.returncode
-    print "  retval:%s" % retval
-    if retval!=0:
-        raise Exception("Error externalMakeJpeg:%s\n%s" % (out.rstrip(),err.rstrip()))
-    if debug!=0:
-        print "  jpeg saved as:%s" % dest
+    try:
+        src=src.replace("//","/")
+        dest=dest.replace("//","/")
+        if debug!=0:
+            print " external resize image:%s into:%s" % (src, dest)
+        command="%s %s %s\"" % (externalConverterCommand, src, dest)
+        if debug!=0:
+            print "command:%s" % command
+        retval = subprocess.call(command, shell=True)
+        if debug!=0:
+            print "  retval:%s" % retval
+        if retval!=0:
+            raise Exception("Error externalMakeJpeg:")
+        if debug!=0:
+            print "  jpeg saved as:%s" % dest
+    except Exception, e:
+        print " externalMakeJpeg error:"
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        traceback.print_exc(file=sys.stdout)
+        raise e
+    
+#
+# NOT USED
+#
+def externalMakeJpeg__(src=None, dest=None):
+    try:
+        src=src.replace("//","/")
+        dest=dest.replace("//","/")
+        if debug!=0:
+            print " external resize image:%s into:%s" % (src, dest)
+        command="%s %s %s" % (externalConverterCommand, src, dest)
+        print "command:%s" % command
+        toks=externalConverterCommand.split(" ")
+        p = Popen(toks, shell=True, stdout=PIPE, stderr=PIPE)
+        out,err=p.communicate()
+        retval = p.returncode
+        print "  retval:%s" % retval
+        if retval!=0:
+            raise Exception("Error externalMakeJpeg:%s\n%s" % (out.rstrip(),err.rstrip()))
+        if debug!=0:
+            print "  jpeg saved as:%s" % dest
+    except Exception, e:
+        print " externalMakeJpeg error:"
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        traceback.print_exc(file=sys.stdout)
+        raise e
 
+
+#
+#
+#
+def splitBands(img=None):
+    newIm=None
+    try:
+        r, g, b, a = img.split()
+        if debug!=0:
+            print "  im splitted"
+        newIm = Image.merge("RGB", (r, g, b))
+    except:
+        r, g, b = img.split()
+        if debug!=0:
+            print "  im splitted"
+        newIm = Image.merge("RGB", (r, g, b))
+    return newIm
+    
 #
 #
 #
 def makeJpegPil(src=None, dest=None, resizePercent=-1, w=-1, h=-1, enhance=None):
     try:
-        if debug!=0:
+        if debug==0:
             print " internal resize image:%s into:%s; percent:%s" % (src, dest, resizePercent)
         im = Image.open(src)
-        if debug!=0:
+        if debug==0:
             print "  src image readed:%s" % im.info
 
+        img=None
         if enhance != None:
             converter = ImageEnhance.Contrast(im)
-            img = converter.enhance(1.5)
-            r, g, b, a = img.split()
-            if debug!=0:
-                print "  im splitted"
-            newIm = Image.merge("RGB", (r, g, b))
+            newIm = converter.enhance(1.5)
+            
+            #r, g, b, a = img.split()
+            #if debug!=0:
+            #    print "  im splitted"
+            #newIm = Image.merge("RGB", (r, g, b))
+            #newIm = splitBands(img)
         else:
-            r, g, b, a = im.split()
-            if debug!=0:
-                print "  im splitted"
-            newIm = Image.merge("RGB", (r, g, b))
+            #try:       
+            #    r, g, b, a = im.split()
+            #    if debug!=0:
+            #        print "  im splitted rgba"
+            #    newIm = Image.merge("RGB", (r, g, b))
+            #except:
+            #    r, g, b = im.split()
+            #    if debug!=0:
+            #        print "  im splitted rgb"
+            #    newIm = Image.merge("RGB", (r, g, b))
+            newIm = im.copy()
+            
         if debug!=0:
-            print "  newIm merged"
+            print "  newIm:%s" % newIm
 
         width, height = im.size
         newSize=None
@@ -150,14 +215,18 @@ def makeJpegPil(src=None, dest=None, resizePercent=-1, w=-1, h=-1, enhance=None)
             newIm.save(dest, "JPEG")
         if debug!=0:
             print "  jpeg saved as:%s" % dest
-    except:
-        print " !!!!!!!!!!!!!!!!!!!!! FAKE IMAGE GENERATED, to be removed in operation !!!!!!!!!!!!!!!!!!!!!!!!"
-        fd=open(dest, "w")
-        fd.write('0')
-        fd.close()
+    except Exception, e:
+        print " Error making jpeg:"
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        traceback.print_exc(file=sys.stdout)
+        #print " !!!!!!!!!!!!!!!!!!!!! FAKE IMAGE GENERATED, to be removed in operation !!!!!!!!!!!!!!!!!!!!!!!!"
+        raise e
+        #fd=open(dest, "w")
+        #fd.write('0')
+        #fd.close()
 
     
 if __name__ == '__main__':
-    src="C:/Users/glavaux/Shared/LITE/TropForest-example/AVNIR/N00-E113_AVN_20090517_PRO_0.tif"
+    src="C:/Users/glavaux/Shared/LITE/tmp/unzipped/N11-E078_AVN_20090626_PRO_0.tif"
     dest="C:/Users/glavaux/Shared/LITE/TropForest-example/AVNIR/test.jpg"
     ok=makeJpeg(src, dest, 50)

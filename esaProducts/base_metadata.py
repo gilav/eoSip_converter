@@ -6,41 +6,49 @@
 from abc import ABCMeta, abstractmethod
 import sys
 import traceback
+from cStringIO import StringIO
 #from definitions_EoSip import sipBuilder
 #from sipBuilder import SipBuilder
 
-
+# type of metadata:
+METADATATYPE_PRODUCT='METADATATYPE_PRODUCT'
+METADATATYPE_BROWSE='METADATATYPE_BROWSE'
+METADATATYPE_BASE='METADATATYPE_BASE'
 
 class Base_Metadata:
+    # type of metadata:
+    #METADATATYPE_PRODUCT='METADATATYPE_PRODUCT'
+    #METADATATYPE_BROWSE='METADATATYPE_BROWSE'
+    #METADATATYPE_BASE='METADATATYPE_BASE'
+    
     #
     counter=0
     #
     debug=0
     # the metadata dictionnary
-    dict=None
+    #dict=None
     # the localAttibutes
-    localAttributes=[]
+    #localAttributes=[]
     # the mapping of nodes used in xml report. keys is node path
     xmlNodeUsedMapping={}
-    # the typology of xml report in use: 'eop:EarthObservation', 'sar:EarthObservation', 'opt:EarthObservation'
-    #TYPOLOGY_LIST=["eop_EarthObservation", "sar_EarthObservation", "opt_EarthObservation"]
-    #TYPOLOGY_eop_EarthObservation=0;
-    #TYPOLOGY_sar_EarthObservation=1;
-    #TYPOLOGY_opt_EarthObservation=2;
-    #xmlTypology_used=0
 
 
     #
     #
     #
     def __init__(self):
+        global METADATATYPE_BASE
         # metadata dictionnary
         self.dict={}
+        self.dict['__METADATATYPE__']=METADATATYPE_BASE
         # a counter, can be used to increment the gml_id in the xml reports
         self.counter=0
         # other info
         self.otherInfo={}
+        # the localAttibutes
+        self.localAttributes=[]
         print ' init Base_Metadata done'
+        
 
 
     #
@@ -55,16 +63,6 @@ class Base_Metadata:
     def getOtherInfo(self, key):
         return self.otherInfo[key]
     
-
-    #
-    # use a xml typology
-    #
-    #def useXmlTypology(self, n=TYPOLOGY_eop_EarthObservation):
-    #    if n < len(TYPOLOGY_LIST):
-    #        xmlTypology_used=n
-    #    else:
-    #        raise "typology unknown:%d" % n
-        
 
     #
     # add a local attributes
@@ -121,25 +119,22 @@ class Base_Metadata:
     #
     #
     #
-    def dump(self):
-        res='Dict:\n'
+    def toString(self):
+        out=StringIO()
+        print >>out, '\n##################################\n#### START Metadata Info #########\n### Dict:'
         for item in sorted(self.dict.keys()):
-            res="%s%s=%s\n" % (res, item, self.dict[item])
+            print >>out, "%s=%s" % (item, self.dict[item])
         if len(self.xmlNodeUsedMapping.keys())>0:
-            res='%s\nXml used mapping:\n' % res
+            print >>out, "\n### Xml used mapping:"
             for item in sorted(self.xmlNodeUsedMapping.keys()):
-                res="%s%s=%s\n" % (res, item, self.xmlNodeUsedMapping[item])
-        print res
+                print >>out, "%s=%s" % (item, self.xmlNodeUsedMapping[item])
+        print >>out, "#### END Metadata Info ###########\n##################################"
+        return out.getvalue()
+
 
     #
     #
     #
-    def toString(self):
-        res='Dict:\n'
-        for item in sorted(self.dict.keys()):
-            res="%s%s=%s\n" % (res, item, self.dict[item])
-        if len(self.xmlNodeUsedMapping.keys())>0:
-            res='%s\nXml used mapping:\n' % res
-            for item in sorted(self.xmlNodeUsedMapping.keys()):
-                res="%s%s=%s\n" % (res, item, self.xmlNodeUsedMapping[item])
-        return res
+    def dump(self):
+        print self.toString()
+        

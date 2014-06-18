@@ -184,6 +184,7 @@ class XmlHelper:
                     if self.DEBUG!=0:
                         print "  getNodeByPath: non-deep-ok node[%d] name:%s match" % (n, node.localName)
                     self.getNodeByPath(node, nextPath, attr, result)
+                n=n+1
 
         else: #deepest ok level reached
             # look for the node
@@ -196,6 +197,7 @@ class XmlHelper:
                     if self.DEBUG!=0:
                         print "  getNodeByPath: deep-ok node[%d] name:%s match" % (n, node.localName)
                     result.append(node)
+                n=n+1
 
     #
     # info
@@ -213,6 +215,8 @@ class XmlHelper:
     # get a node text content
     #
     def getNodeText(self, node):
+        #if node==None:
+        #    return None
         res = None
         n=0
         for anode in node.childNodes:
@@ -262,10 +266,12 @@ class XmlHelper:
     def prettyPrintAll(self):
         global LXML_READY
         if not LXML_READY:
-            print "use minidom"
+            if self.DEBUG!=0:
+                print "use minidom"
             return self.domDoc.documentElement.toprettyxml()
         else:
-            print "use LXML"
+            if self.DEBUG!=0:
+                print "use LXML"
             parser = etree.XMLParser(resolve_entities=False, strip_cdata=False, remove_blank_text=True)
             document = etree.fromstring(self.data, parser)
             return etree.tostring(document, encoding='utf-8', pretty_print=True)

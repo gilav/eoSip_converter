@@ -37,13 +37,13 @@ class SipMessageBuilder(SipBuilder):
                 tmp=self.resolveEval(segment, met)
                 found=True
                 if tmp.find(sipBuilder.VALUE_UNKNOWN)>0:
-                    print "@@@@@@@@@@@\n@@@@@@@@@@@@@@\n@@@@@@@@@@@@@ field '%s' is UNKNOWN 0. optional=%s" % (segment, optional)
+                    if self.debug != 0:print "@@@@@@@@@@@\n@@@@@@@@@@@@@@\n@@@@@@@@@@@@@ field '%s' is UNKNOWN 0. optional=%s" % (segment, optional)
                     found=False
                 if tmp.find(sipBuilder.VALUE_NONE)>0:
-                    print "@@@@@@@@@@@\n@@@@@@@@@@@@@@\n@@@@@@@@@@@@@ field '%s' is NONE 0. optional=%s" % (segment, optional)
+                    if self.debug != 0:print "@@@@@@@@@@@\n@@@@@@@@@@@@@@\n@@@@@@@@@@@@@ field '%s' is NONE 0. optional=%s" % (segment, optional)
                     found=False
                 if tmp.find(sipBuilder.VALUE_NOT_PRESENT)>0:
-                    print "@@@@@@@@@@@\n@@@@@@@@@@@@@@\n@@@@@@@@@@@@@ field '%s' is NOT_PRESENT 0. optional=%s" % (segment, optional)
+                    if self.debug != 0:print "@@@@@@@@@@@\n@@@@@@@@@@@@@@\n@@@@@@@@@@@@@ field '%s' is NOT_PRESENT 0. optional=%s" % (segment, optional)
                     found=False
                 if found or optional==False:
                     return "%s%s" % (mess, tmp)
@@ -54,13 +54,13 @@ class SipMessageBuilder(SipBuilder):
                 tmp = self.resolveEval(tmp1, met)
                 found=True
                 if tmp.find(sipBuilder.VALUE_UNKNOWN)>0:
-                    print "@@@@@@@@@@@\n@@@@@@@@@@@@@@\n@@@@@@@@@@@@@ field '%s' is UNKNOWN 1. optional=%s" % (segment, optional)
+                    if self.debug != 0:print "@@@@@@@@@@@\n@@@@@@@@@@@@@@\n@@@@@@@@@@@@@ field '%s' is UNKNOWN 1. optional=%s" % (segment, optional)
                     found=False
                 if tmp.find(sipBuilder.VALUE_NONE)>0:
-                    print "@@@@@@@@@@@\n@@@@@@@@@@@@@@\n@@@@@@@@@@@@@ field '%s' is NONE 1. optional=%s" % (segment, optional)
+                    if self.debug != 0:print "@@@@@@@@@@@\n@@@@@@@@@@@@@@\n@@@@@@@@@@@@@ field '%s' is NONE 1. optional=%s" % (segment, optional)
                     found=False
                 if tmp.find(sipBuilder.VALUE_NOT_PRESENT)>0:
-                    print "@@@@@@@@@@@\n@@@@@@@@@@@@@@\n@@@@@@@@@@@@@ field '%s' is NOT_PRESENT 1. optional=%s" % (segment, optional)
+                    if self.debug != 0:print "@@@@@@@@@@@\n@@@@@@@@@@@@@@\n@@@@@@@@@@@@@ field '%s' is NOT_PRESENT 1. optional=%s" % (segment, optional)
                     found=False
                 if found or optional==False:
                     return "%s%s" % (mess, tmp)
@@ -82,7 +82,8 @@ class SipMessageBuilder(SipBuilder):
                 print "### getThisUsed: final 'this' for %s:'%s' used:'%s'" % (self, thisUsed, res)
         except:
             res=self.__getattribute__('this')
-            print "### getThisUsed: INFO: typology '%s' not available in %s; use 'this':'this'" % (thisUsed, self)
+            if self.debug != 0:
+                print "### getThisUsed: INFO: typology '%s' not available in %s; use 'this':'this'" % (thisUsed, self)
 
         return res
     
@@ -105,7 +106,8 @@ class SipMessageBuilder(SipBuilder):
                 print "### getRepresentationUsed: final representation for %s:'%s' used:'%s'" % (self, representation_name, res)
         except:
             res=self.__getattribute__(sipBuilder.TYPOLOGY_DEFAULT_REPRESENTATION)
-            print "### getRepresentationUsed: WARNING: typology '%s' not available in %s; use:'%s'" % (representation_name, self, sipBuilder.TYPOLOGY_DEFAULT_REPRESENTATION)
+            if self.debug != 0:
+                print "### getRepresentationUsed: WARNING: typology '%s' not available in %s; use:'%s'" % (representation_name, self, sipBuilder.TYPOLOGY_DEFAULT_REPRESENTATION)
 
         return res
     

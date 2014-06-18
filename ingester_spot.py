@@ -108,6 +108,8 @@ class ingester_spot(ingester.Ingester):
                                     print "@@@@@@@@@@@@@@@@@@@@ track:%s" % track
                                     if track != None and len(track.strip())==0:
                                             track=None
+                                    else:
+                                            track='0000'
                                     met.setMetadataPair(metadata.METADATA_TRACK, track)
 
                             elif item == metadata.METADATA_FRAME:
@@ -118,6 +120,8 @@ class ingester_spot(ingester.Ingester):
                                     print "@@@@@@@@@@@@@@@@@@@@ frame:%s" % frame
                                     if frame != None and len(frame.strip())==0:
                                             frame=None
+                                    else:
+                                            frame='0000'
                                     met.setMetadataPair(metadata.METADATA_FRAME, frame)
                                     break
 

@@ -112,15 +112,18 @@ class ingester_tropforest(ingester.Ingester):
             # get additionnal metadata from optionnal dataProvider:we want the orbit
             # the dataprovider key is the mission name (KOMPSAT, AVNIR, DEIMOS)
             if len(self.dataProviders)>0:
-                    print "@@@@@@@@@@@@@@@@@@@@ extract using dataProviders:%s" % self.dataProviders
+                    if self.debug!=0:
+                            print " extract using dataProviders:%s" % self.dataProviders
                     # look the one for the mission
                     for item in self.dataProviders.keys():
                             if item.find(met.getMetadataValue(metadata.METADATA_PLATFORM))>=0:
                                     adataProvider=self.dataProviders[item]
-                                    print "@@@@@@@@@@@@@@@@@@@@ dataProviders match PLATFORM '%s':%s" % (met.getMetadataValue(metadata.METADATA_PLATFORM), adataProvider)
+                                    if self.debug!=0:
+                                            print " dataProviders match PLATFORM '%s':%s" % (met.getMetadataValue(metadata.METADATA_PLATFORM), adataProvider)
                                     # need to query using the product original filename like:N00-W075_AVN_20090804_PRO_0
                                     orbit=adataProvider.getRowValue(met.getMetadataValue(metadata.METADATA_DATASET_NAME))
-                                    print "@@@@@@@@@@@@@@@@@@@@ orbit:%s" % orbit
+                                    if self.debug!=0:
+                                            print " orbit:%s" % orbit
                                     if orbit != None and len(orbit.strip())==0:
                                             orbit=None
                                     met.setMetadataPair(metadata.METADATA_ORBIT, orbit)
@@ -139,9 +142,10 @@ class ingester_tropforest(ingester.Ingester):
 
             # create browse choice for browse metadata report
             reportBuilder=rep_rectifiedBrowse.rep_rectifiedBrowse()
-            print "###\n###\n### BUILD BROWSE CHOICE FROM METADATA:%s" % (processInfo.destProduct.metadata.toString())
+            if self.debug!=0:
+                    print "###\n###\n### BUILD BROWSE CHOICE FROM METADATA:%s" % (processInfo.destProduct.metadata.toString())
             browseChoiceBlock=reportBuilder.buildMessage(processInfo.destProduct.metadata, "rep:rectifiedBrowse").strip()
-            if self.debug!=55:
+            if self.debug!=0:
                     print "browseChoiceBlock:%s" % (browseChoiceBlock)
             metadata.setMetadataPair(browse_metadata.BROWSE_METADATA_BROWSE_CHOICE, browseChoiceBlock)
             #print "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
@@ -196,7 +200,8 @@ class ingester_tropforest(ingester.Ingester):
                     except Exception, ee:
                             self.logger.error("  problem adding browse generation error in processInfo")
                             pass
-                    #raise e
+                    raise e
+
 
         #
         # Override

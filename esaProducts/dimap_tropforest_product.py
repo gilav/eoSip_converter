@@ -225,7 +225,7 @@ class Dimap_Tropforest_Product(Directory_Product):
                 self.metadata.setMetadataPair(metadata.METADATA_INSTRUMENT, 'EOC')
             if self.metadata.getMetadataValue(metadata.METADATA_PLATFORM_ID)==None:
                 self.metadata.setMetadataPair(metadata.METADATA_PLATFORM_ID, '2')
-        elif self.metadata.getMetadataValue(metadata.METADATA_PLATFORM)=='Deimos':
+        elif self.metadata.getMetadataValue(metadata.METADATA_PLATFORM)=='DEIMOS':
             if self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT)==None:
                 self.metadata.setMetadataPair(metadata.METADATA_INSTRUMENT, 'SLIM6')
             if self.metadata.getMetadataValue(metadata.METADATA_PLATFORM_ID)==None:
@@ -249,18 +249,32 @@ class Dimap_Tropforest_Product(Directory_Product):
         # 
         self.buildTypeCode() 
 
+    #
+    # extract quality for deimos
+    #
+    def extractDeimosQuality(self, helper, met):
+        tmp = self.EXTRACTED_PATH+'/'+self.XML_FILE_NAME
+        tmp = tmp.replace('.met', '.XML')
+        if self.debug!=0:
+        	print "############@@@@@@@@@@@@@@@@@ deimos .XML file=%s" % tmp
+        fd=open(tmp, 'r')
+        data=fd.read()
+        fd.close()
 
-    #
-    #
-    #
-    def extractQuality(self, helper, met):
+        helper=xmlHelper.XmlHelper()
+        helper.setData(data);
+        helper.parseData()
+        
         #helper.setDebug(1)
         quality=[]
         helper.getNodeByPath(None, 'Quality_Assesment/Quality_Parameter/QUALITY_PARAMETER_DESC', None, quality)
         index=-1
+        if self.debug!=0:
+        	print "############@@@@@@@@@@@@@@@@@ 0 quality=%d" % len(quality)
         n=0
         for item in quality:
-            #print "############@@@@@@@@@@@@@@@@@ quality[%d]=%s" % (n, helper.getNodeText(item))
+            if self.debug!=0:
+            	    print "############@@@@@@@@@@@@@@@@@ quality[%d]=%s" % (n, helper.getNodeText(item))
             if helper.getNodeText(item)=='QC2 - % Clouds':
                 index=n
             n=n+1
@@ -270,10 +284,53 @@ class Dimap_Tropforest_Product(Directory_Product):
         quality=[]
         qualityValue=None
         helper.getNodeByPath(None, 'Quality_Assesment/Quality_Parameter/QUALITY_PARAMETER_VALUE', None, quality)
-        #print "############@@@@@@@@@@@@@@@@@ quality=%d" % len(quality)
+        if self.debug!=0:
+        	print "############@@@@@@@@@@@@@@@@@ 1 quality=%d" % len(quality)
         n=0;
         for item in quality:
-            #print "############@@@@@@@@@@@@@@@@@ quality[%d]=%s" % (n, helper.getNodeText(item))
+            if self.debug!=0:
+            	    print "############@@@@@@@@@@@@@@@@@ quality[%d]=%s" % (n, helper.getNodeText(item))
+            if index==n:
+                qualityValue=helper.getNodeText(item)
+            n=n+1
+        #print "############@@@@@@@@@@@@@@@@@ cloud qualityValue=%s" % (qualityValue)
+        met.setMetadataPair(metadata.METADATA_CLOUD_COVERAGE, qualityValue)
+        return 1 
+        
+    #
+    # extract quality for kompsat and avnir
+    #
+    def extractQuality(self, helper, met):
+        # for deimos we use the .met xml. but the cloud cover is only in the .xml. 
+        if met.getMetadataValue(metadata.METADATA_PLATFORM)=='DEIMOS':
+            self.extractDeimosQuality(helper, met)
+            return 1
+        
+        #helper.setDebug(1)
+        quality=[]
+        helper.getNodeByPath(None, 'Quality_Assesment/Quality_Parameter/QUALITY_PARAMETER_DESC', None, quality)
+        index=-1
+        if self.debug!=0:
+        	print "############@@@@@@@@@@@@@@@@@ 0 quality=%d" % len(quality)
+        n=0
+        for item in quality:
+            if self.debug!=0:
+            	    print "############@@@@@@@@@@@@@@@@@ quality[%d]=%s" % (n, helper.getNodeText(item))
+            if helper.getNodeText(item)=='QC2 - % Clouds':
+                index=n
+            n=n+1
+        #print "############@@@@@@@@@@@@@@@@@ want quality value at index:%d" % index
+
+        
+        quality=[]
+        qualityValue=None
+        helper.getNodeByPath(None, 'Quality_Assesment/Quality_Parameter/QUALITY_PARAMETER_VALUE', None, quality)
+        if self.debug!=0:
+        	print "############@@@@@@@@@@@@@@@@@ 1 quality=%d" % len(quality)
+        n=0;
+        for item in quality:
+            if self.debug!=0:
+            	    print "############@@@@@@@@@@@@@@@@@ quality[%d]=%s" % (n, helper.getNodeText(item))
             if index==n:
                 qualityValue=helper.getNodeText(item)
             n=n+1
@@ -308,6 +365,7 @@ class Dimap_Tropforest_Product(Directory_Product):
                     print " posList:%s" % ccw
                 met.setMetadataPair(metadata.METADATA_FOOTPRINT, ccw)
             except:
+                #self.debug=1
                 # for Deimos products
                 #helper.setDebug(1)
                 # get the UTM zone and number
@@ -319,15 +377,15 @@ class Dimap_Tropforest_Product(Directory_Product):
                 zoneNumber=lastTok[0:-1]
                 if self.debug!=0:
                     print " ################# utm info:'%s'; zone:'%s'; zone number:'%s'" % (utmInfo, zone, zoneNumber)
-                nodes=[]
+                nodes2=[]
                 footprint=''
-                helper.getNodeByPath(None, 'Dataset_Frame/Vertex', None, nodes)
+                helper.getNodeByPath(None, 'Dataset_Frame/Vertex', None, nodes2)
                 #
                 # keep first + 2th and 4th point to close the polygon and make the rectBrose BL/UR corners
                 #
-                if len(nodes)!=0:
+                if len(nodes2)!=0:
                     n=0
-                    for vertex in nodes:
+                    for vertex in nodes2:
                         x_m=helper.getNodeText(helper.getFirstNodeByPath(vertex, 'FRAME_X', None))
                         y_m=helper.getNodeText(helper.getFirstNodeByPath(vertex, 'FRAME_Y', None))
                         if self.debug!=0:
@@ -361,14 +419,19 @@ class Dimap_Tropforest_Product(Directory_Product):
                     # should be in lower left lat/lon + upper right lat/lon.
                     met.setMetadataPair(browse_metadata.BROWSE_METADATA_RECT_COORDLIST, "%s %s %s %s" % (second_lat, second_lon, fourth_lat , fourth_lon))
                 else:
-                    print " ERROR: Dataset_Frame/Vertex not found:%d" % len(nodes)
-                    raise Exception(" ERROR: Dataset_Frame/Vertex not found:%d" % len(nodes))
+                    print " ERROR: Dataset_Frame/Vertex not found:%d" % len(nodes2)
+                    raise Exception(" ERROR: Dataset_Frame/Vertex not found:%d" % len(nodes2))
 
             # extract also COUNTRY, add it to local attributes
-            country = helper.getNodeText(helper.getFirstNodeByPath(nodes[0], 'COUNTRY', None))
-            met.setMetadataPair(metadata.METADATA_COUNTRY, country)
-            met.addLocalAttribute("country", country)
-            
+            # Deimos doesn't have this info
+            if met.getMetadataValue(metadata.METADATA_PLATFORM)!='DEIMOS':
+                print "@@@@@@@@@@@@@ nodes=%s" % nodes
+                print "@@@@@@@@@@@@@ nodes[0]=%s" % nodes[0]
+                helper.setDebug(1)
+                country = helper.getNodeText(helper.getFirstNodeByPath(nodes[0], 'COUNTRY', None))
+                met.setMetadataPair(metadata.METADATA_COUNTRY, country)
+                met.addLocalAttribute("country", country)
+
 
         else:
             print " ERROR: Geoposition/Geoposition_Insert has not 1 subnode but:%d" % len(nodes)

@@ -5,6 +5,7 @@
 #
 import sys
 import traceback
+import base_metadata
 from base_metadata import Base_Metadata
 import sipBuilder
 
@@ -35,6 +36,7 @@ class Browse_Metadata(Base_Metadata):
     
     def __init__(self, defaults=None):
         Base_Metadata.__init__(self)
+        self.dict['__METADATATYPE__']=base_metadata.METADATATYPE_BROWSE
         for item in self.METADATA_FIELDS:
             self.dict[item] = None
         if defaults!=None:

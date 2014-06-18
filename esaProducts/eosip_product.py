@@ -19,6 +19,7 @@ import os, sys
 import logging
 import zipfile
 import traceback
+from cStringIO import StringIO
 from product import Product
 from directory_product import Directory_Product
 from namingConvention import NamingConvention
@@ -229,24 +230,23 @@ class EOSIP_Product(Directory_Product):
 
         # add the local attributes
         attr=self.metadata.getLocalAttribute()
-        print " @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ length localattributes:%s" % len(attr)
+        #print " @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ length localattributes:%s" % len(attr)
         if len(attr) > 0:
             n=0
             res="" #<eop:vendorSpecific><eop:SpecificInformation>"
             for adict in attr:
                 key=adict.keys()[0]
                 value=adict[key]
-                print " @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ localattributes[%d]: %s=%s" % (n, key, value)
+                #print " @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ localattributes[%d]: %s=%s" % (n, key, value)
                 res = "%s<eop:vendorSpecific><eop:SpecificInformation><eop:localAttribute>%s</eop:localAttribute><eop:localValue>%s</eop:localValue></eop:SpecificInformation></eop:vendorSpecific>" % (res, key, value)
                     
                 n=n+1
-            #res="%s</eop:SpecificInformation></eop:vendorSpecific>" % res
-            print " @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ localattributes block:%s" % res
+            #print " @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ localattributes block:%s" % res
             pos = xmldata.find("<LOCAL_ATTR></LOCAL_ATTR>")
             if pos >= 0:
                 xmldata=xmldata.replace("<LOCAL_ATTR></LOCAL_ATTR>", res)
-            else:
-                print " @@@@@@@@@@@@@@@@@@@@@@@@@ !!!!!!!!!!!!!!!!!!! no <LOCAL_ATTR></LOCAL_ATTR> block found"
+            #else:
+            #    print " @@@@@@@@@@@@@@@@@@@@@@@@@ !!!!!!!!!!!!!!!!!!! no <LOCAL_ATTR></LOCAL_ATTR> block found"
             
         
 
@@ -533,33 +533,37 @@ class EOSIP_Product(Directory_Product):
     # 
     #
     def info(self):
-        #raise Exception("STOP")
-        print "\n\n##################################"
-        print "#### START EOSIP Product Info ####"
-        print "package name:%s" % self.packageName
-        print "  Content:"
-        print "   product name:%s" % self.productName
-        print "   source product path:%s" % self.sourceProductPath
-        print "   product shortName:%s" % self.productShortName
-        print "   product tmpFolder:%s" % self.folder
+        out=StringIO()
+        print >>out, "\n\n##################################"
+        print >>out, "#### START EOSIP Product Info ####"
+        print >>out, "package name:%s" % self.packageName
+        print >>out, "  Content:"
+        print >>out, "   product name:%s" % self.productName
+        print >>out, "   source product path:%s" % self.sourceProductPath
+        print >>out, "   product shortName:%s" % self.productShortName
+        print >>out, "   product tmpFolder:%s" % self.folder
+        
         if len(self.sourceBrowsesPath)==0:
-            print "   no sourceBrowsesPath"
+            print >>out, "   no sourceBrowsesPath"
         else:
             n=0
             for item in self.sourceBrowsesPath:
-                print "   sourceBrowsesPath[%d]:%s" % (n, item)
+                print >>out, "   sourceBrowsesPath[%d]:%s" % (n, item)
                 n=n+1
         if len(self.browsesReportInfo)==0:
-            print "   no browse report"
+            print >>out, "   no browse report"
         else:
             n=0
             for item in self.browsesReportInfo:
-                print "   browse report info[%d]:%s" % (n, item)
+                print >>out, "   browse report info[%d]:%s" % (n, item)
                 n=n+1
-        print "   reportFullPath;%s" % self.reportFullPath
-        print "   browseFullPath;%s" % self.browseFullPath
-        print "   sipFullPath;%s" % self.sipFullPath
-        print "#### END EOSIP Product Info   ####\n##################################\n"
+                
+        print >>out, "   reportFullPath;%s" % self.reportFullPath
+        print >>out, "   browseFullPath;%s" % self.browseFullPath
+        print >>out, "   sipFullPath;%s" % self.sipFullPath
+        print >>out, "#### END EOSIP Product Info ####\n##################################\n"
+        return out.getvalue()
+
 
 
 

@@ -5,6 +5,7 @@
 #
 import sys
 import traceback
+import base_metadata
 from base_metadata import Base_Metadata
 import sipBuilder
 
@@ -98,10 +99,9 @@ class Metadata(Base_Metadata):
     #
     def __init__(self, defaults=None):
         Base_Metadata.__init__(self)
-        # metadata dictionnary
-        #self.dict={}
+        self.dict['__METADATATYPE__']=base_metadata.METADATATYPE_PRODUCT
         # a counter, can be used to increment the gml_id in the xml reports
-        self.counter=0
+        #self.counter=0
         # other info
         #self.otherInfo={}
         #
