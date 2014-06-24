@@ -10,5 +10,9 @@ class eop_EarthObservationMetaData(SipMessageBuilder):
                       "<eop:acquisitionType>@acquisitionType@</eop:acquisitionType>",
                       "<eop:productType>@productType@</eop:productType>",
                       "<eop:status>@status@</eop:status>",
+                      "eop_downlinkedTo",
                       "eop_processing",
                       "<LOCAL_ATTR></LOCAL_ATTR>"]
+
+
+    CONDITIONS = {"eop_downlinkedTo":"FILLED__acquisitionStation"}

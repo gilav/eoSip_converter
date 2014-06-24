@@ -14,6 +14,14 @@ Supported products are at this time:
 History:
 ========
 
+2014-06-24: 
+ - TropForest + Spot + Ikonos ok
+ - add conditions in xml block definition. to be able to not create the 'empty' branch
+
+2014-06-18: 
+ - add batchname to index filename.
+ - save product and browse metadata in working folder
+
 2014-05-29: Tropforest is now OGC
 
 2014-05-21: Will move to OGC only spec (drop NgEO). So probably this is the last NgEo uupdate

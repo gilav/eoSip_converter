@@ -17,6 +17,8 @@ import traceback
 import metadata, browse_metadata
 
 
+VALUE_OPTIONAL="OPTIONAL"
+VALUE_CONDITIONS="CONDITIONS"
 VALUE_UNKNOWN="UNKNOWN"
 VALUE_NONE="None"
 VALUE_NOT_PRESENT="NOT-PRESENT"
@@ -69,9 +71,12 @@ EOSIP_METADATA_MAPPING={'responsible':metadata.METADATA_RESPONSIBLE,
                         'colRowList':metadata.METADATA_FOOTPRINT_IMAGE_ROWCOL,
                         'processingDate':metadata.METADATA_PROCESSING_TIME,
                         'processingCenter':metadata.METADATA_PROCESSING_CENTER,
+                        'processorName':metadata.METADATA_SOFTWARE_NAME,
+                        'processorVersion':metadata.METADATA_SOFTWARE_VERSION,
                         'cycleNumber':metadata.METADATA_CYCLE,
                         'relativePassNumber':metadata.METADATA_RELATIVE_ORBIT,
-                        'snowCoverPercentage':metadata.METADATA_SNOW_COVERAGE
+                        'snowCoverPercentage':metadata.METADATA_SNOW_COVERAGE,
+                        'sceneCenter':metadata.METADATA_SCENE_CENTER
                         }
 
 
@@ -99,7 +104,34 @@ class SipBuilder:
     def buildMessage(self, representation, metadata, currentTreePath):
         raise Exception("abstractmethod")
 
-        
+
+    #
+    # condition value is like:"FILLED__acquisitionStation"
+    #
+    def checkConditions(self, metadata=None, condition=None):
+        try:
+            result=False
+            pos = condition.find('__')
+            operator=condition[0:pos]
+            metaName=condition[pos+2:]
+            print "################################## checkConditions: operator:'%s'  varname='%s'" % (operator, metaName)
+            if metadata.dict.has_key(metaName):
+                resolved=metadata.getMetadataValue(metaName)
+                if operator=="FILLED":
+                    if resolved!=None and resolved!=VALUE_NONE and resolved!=VALUE_UNKNOWN and resolved!=VALUE_NOT_PRESENT:
+                        result=true
+                else:
+                    raise Exception("unknown condition operator:'%s'" % operator)
+            else:
+                print "################################## checkConditions: metaName not in metadata:'%s'" % metaName
+            print "################################## checkConditions: returns:%s" % result
+            return result
+        except Exception, e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            print "################################## checkConditions: ERROR:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc())
+            raise e
+            
+
     #
     # return a field name, from:
     # - field xml representation like: "<gml:orbitNumber>@orbitNumber@</gml:orbitNumber>" ==> gml:orbitNumber

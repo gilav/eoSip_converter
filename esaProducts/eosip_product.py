@@ -419,7 +419,7 @@ class EOSIP_Product(Directory_Product):
     #
     # wtite the Eo-Sip product in a folder.
     #
-    def writeToFolder(self, p=None):
+    def writeToFolder(self, p=None, overwrite=None):
         if self.packageName==None:
             raise Exception("Eo-Sip product has no package name")
         if self.debug==0:
@@ -429,6 +429,10 @@ class EOSIP_Product(Directory_Product):
         self.path="%s%s" % (p, self.packageName)
         if self.debug==0:
             print " full eoSip path:%s" % self.path
+
+        # already exists?
+        if os.path.exists(self.path) and (overwrite==None or overwrite!='1'):
+                raise Exception("refuse to overwite existing product:%s" % self.path)
 
         # create folder neeedd
         if not os.path.exists(p):

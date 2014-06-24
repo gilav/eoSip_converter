@@ -53,7 +53,9 @@ class Dimap_Spot_Product(Directory_Product):
                 metadata.METADATA_VIEWING_ANGLE:'Dataset_Sources/Source_Information/Scene_Source/VIEWING_ANGLE',
                 metadata.METADATA_SUN_AZIMUTH:'Dataset_Sources/Source_Information/Scene_Source/SUN_AZIMUTH',
                 metadata.METADATA_SUN_ELEVATION:'Dataset_Sources/Source_Information/Scene_Source/SUN_ELEVATION',
-                metadata.METADATA_REFERENCE_SYSTEM_IDENTIFIER:'Coordinate_Reference_System/Horizontal_CS/HORIZONTAL_CS_CODE'
+                metadata.METADATA_REFERENCE_SYSTEM_IDENTIFIER:'Coordinate_Reference_System/Horizontal_CS/HORIZONTAL_CS_CODE',
+                metadata.METADATA_SCENE_CENTER_LON:'Dataset_Frame/Scene_Center/FRAME_LON',
+                metadata.METADATA_SCENE_CENTER_LAT:'Dataset_Frame/Scene_Center/FRAME_LAT'
                 }
     #
     #
@@ -155,7 +157,7 @@ class Dimap_Spot_Product(Directory_Product):
     #
     #
     def extractMetadata(self, met=None):
-        self.debug=1
+        #self.debug=1
         if met==None:
             raise Exception("metadate is None")
 
@@ -206,7 +208,6 @@ class Dimap_Spot_Product(Directory_Product):
 
         # keep the original product name, add it to local attributes
         met.addLocalAttribute("original_name", self.origName)
-        #met.addLocalAttribute(metadata.METADATA_ORIGINAL_NAME, self.origName)
                             
         return num_added
 
@@ -235,12 +236,31 @@ class Dimap_Spot_Product(Directory_Product):
         tmp = self.metadata.getMetadataValue(metadata.METADATA_SUN_ELEVATION)
         self.metadata.setMetadataPair(metadata.METADATA_SUN_ELEVATION, formatUtils.EEEtoNumber(tmp))
 
-        # set scene center, from the only we have: start time
+        tmp = self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_INCIDENCE_ANGLE)
+        self.metadata.setMetadataPair(metadata.METADATA_INSTRUMENT_INCIDENCE_ANGLE, formatUtils.EEEtoNumber(tmp))
+
+        # fix production date: from 2008-10-01T14:52:01.000000 to 2008-10-01T14:52:01Z
+        tmp = self.metadata.getMetadataValue(metadata.METADATA_DATASET_PRODUCTION_DATE)
+        pos = tmp.find('.')
+        if pos > 0:
+            tmp="%sZ" % tmp[0:pos]
+        self.metadata.setMetadataPair(metadata.METADATA_DATASET_PRODUCTION_DATE, tmp)
+
+        # set scene center coordinate
+        tmp = self.metadata.getMetadataValue(metadata.METADATA_SCENE_CENTER_LON)
+        tmp=formatUtils.EEEtoNumber(tmp)
+        self.metadata.setMetadataPair(metadata.METADATA_SCENE_CENTER_LON, tmp)
+        tmp1 = self.metadata.getMetadataValue(metadata.METADATA_SCENE_CENTER_LAT)
+        tmp1=formatUtils.EEEtoNumber(tmp1)
+        self.metadata.setMetadataPair(metadata.METADATA_SCENE_CENTER_LAT, tmp1)
+        self.metadata.setMetadataPair(metadata.METADATA_SCENE_CENTER, "%s %s" % (tmp1,tmp))
+
+        # set scene center time, from the only we have: start time
         tmp = "%sT%sZ" % (self.metadata.getMetadataValue(metadata.METADATA_START_DATE), self.metadata.getMetadataValue(metadata.METADATA_START_TIME))
         #self.metadata.setMetadataPair(metadata.METADATA_SCENE_CENTER, "%sZ" % tmp)
         self.metadata.setMetadataPair(metadata.METADATA_SCENE_CENTER_TIME, tmp)
 
-        # set start stop time from scene center
+        # set start stop time from scene center time
         #scene_center_date=datetime.strptime(tmp, '%Y-%m-%dT%H:%M:%S')
         #print " @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ sceneCenter=%s; %s" % (tmp,scene_center_date.strftime('%Y-%m-%dT%H:%M:%S'))
         #scene_start=scene_center_date - timedelta(seconds=4, milliseconds=512)
@@ -328,7 +348,7 @@ class Dimap_Spot_Product(Directory_Product):
         footprint=""
         rowCol=""
         nodes=[]
-        helper.setDebug(1)
+        #helper.setDebug(1)
         helper.getNodeByPath(None, 'Dataset_Frame', None, nodes)
         if len(nodes)==1:
             vertexList=helper.getNodeChildrenByName(nodes[0], 'Vertex')

@@ -91,7 +91,7 @@ class ingester_reaper(ingester.Ingester):
         # take the first rule and put the product in the resulting folder
         # create link for the other rules if any
         #
-        def output_eoSip(self, processInfo, basePath, pathRules):
+        def output_eoSip(self, processInfo, basePath, pathRules, overwrite=None):
                 self.logger.info("  output_eoSip: basePath=%s" %  (basePath))
                 # copy eoSip in first path
                 # make links in other paths
@@ -103,7 +103,7 @@ class ingester_reaper(ingester.Ingester):
                         firstPath=outputProductResolvedPaths[0]
                         processInfo.addLog("  Eo-Sip product writen in folder:%s\n" %  (firstPath))
                         self.logger.info("  Eo-Sip product writen in folder:%s\n" %  (firstPath))
-                        processInfo.destProduct.writeToFolder(firstPath)
+                        processInfo.destProduct.writeToFolder(firstPath, overwrite)
 
                         # output link in other path
                         i=0
@@ -111,7 +111,7 @@ class ingester_reaper(ingester.Ingester):
                                 if i>0:
                                         otherPath="%s" % (item)
                                         self.logger.info("  eoSip product tree path[%d] is:%s" %(i, item))
-                                        processInfo.destProduct.writeToFolder(basePath)
+                                        processInfo.destProduct.writeToFolder(basePath, overwrite)
                                         processInfo.addLog("  Eo-Sip product link writen in folder[%d]:%s\n" %  (i, otherPath))
                                         self.logger.info("  Eo-Sip product link writen in folder[%d]:%s\n" %  (i, otherPath))
                                 i=i+1

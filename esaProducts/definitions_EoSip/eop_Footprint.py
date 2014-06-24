@@ -17,4 +17,5 @@ class eop_Footprint(SipMessageBuilder):
 "</gml:Polygon>",
 "</gml:surfaceMember>",
 "</gml:MultiSurface>",
-"</eop:multiExtentOf>"]
+"</eop:multiExtentOf>",
+"eop_centerOf"]

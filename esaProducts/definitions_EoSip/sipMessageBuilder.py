@@ -159,13 +159,21 @@ class SipMessageBuilder(SipBuilder):
 
         representationToUse=self.getRepresentationUsed(metadata)
             
-        # find if there are OPTIONAL in classe
+        # find if there are OPTIONAL in classe definition
         try:
-            optional=self.__getattribute__("OPTIONAL")
+            optional=self.__getattribute__(sipBuilder.VALUE_OPTIONAL)
             #print "@@@@@@@ %s has optional !!!" % self
         except:
             optional=None
             #print "@@@@@@@ %s no optional" % self
+
+        # find if there are CONDITIONS in classe definition
+        try:
+            conditions=self.__getattribute__(sipBuilder.VALUE_CONDITIONS)
+            print "@@@@@@@@@@@@@@@@@@@@@ %s has conditions !!!" % self
+        except:
+            conditions=None
+            print "@@@@@@@ %s no conditions" % self
 
         n=0
         for field in representationToUse:
@@ -182,13 +190,6 @@ class SipMessageBuilder(SipBuilder):
                         raise Exception("field is malformed, wrong end:'%s'" % field.__dict__)
                     sipMessage="%s%s" %  (sipMessage, self.makeIndent(deepness))
 
-                    # find if there are OPTIONAL in classe
-                    #try:
-                    #    optional=self.__getattribute__("OPTIONAL")
-                    #    #print "@@@@@@@ %s has optional !!!" % self
-                    #except:
-                    #    optional=None
-                    #    #print "@@@@@@@ %s no optional" % self
 
                     # find if field is in OPTIONAL
                     try:
@@ -202,22 +203,41 @@ class SipMessageBuilder(SipBuilder):
                 else: # other class
                     if self.debug!=0:
                         print "  is in another class"
-                    #
-                    # windows workarround on filename upercase problem
-                    #
-                    fieldBis=field
-                    pos=field.find('@')
-                    if pos >0:
-                        fieldBis=field[0:pos]
+
+                    # test if there is a condition on this field and is yes if it's met
+                    condOk=True
+                    if conditions!=None:
+                        try:
+                            key=conditions.keys().index(field)
+                            condOk=False
+                            cond=conditions[field]
+                            condOk=self.checkConditions(metadata,cond)
+                            print "######################################### CONDITION:'%s'" % cond
+                        except Exception, e:
+                            #print "CONDITIONS ERROR:\n%s" % traceback.format_exc()
+                            pass
+                            
+
+                    if condOk==True:
+                        #
+                        # windows workarround on filename upercase problem
+                        #
+                        fieldBis=field
+                        pos=field.find('@')
+                        if pos >0:
+                            fieldBis=field[0:pos]
+                            
+                        newCurrentTreePath = currentTreePath + "/" + field.replace('_',':')
                         
-                    newCurrentTreePath = currentTreePath + "/" + field.replace('_',':')
-                    
-                    module = __import__(field)
-                    class_ = getattr(module, fieldBis)
-                    instance = class_()
-                    
-                    block=instance.buildMessage(metadata, newCurrentTreePath)
-                    sipMessage=self.addToSipMessage(sipMessage, block, metadata)
+                        module = __import__(field)
+                        class_ = getattr(module, fieldBis)
+                        instance = class_()
+                        
+                        block=instance.buildMessage(metadata, newCurrentTreePath)
+                        sipMessage=self.addToSipMessage(sipMessage, block, metadata)
+                        
+                    else:
+                        print "############################################################ CONDITIONS not ok:'%s'" % conditions 
             else:
                 if self.debug!=0:
                     print "    FIELD UNUSED:%s" % field

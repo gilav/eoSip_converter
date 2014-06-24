@@ -121,6 +121,7 @@ OUTPUT_EO_SIP_PATTERN=None
 SETTING_MAX_PRODUCTS_DONE='MAX_PRODUCTS_DONE'
 SETTING_CREATE_INDEX='CREATE_INDEX'
 SETTING_FIXED_BATCH_NAME='FIXED_BATCH_NAME'
+SETTING_PRODUCT_OVERWRITE='PRODUCT_OVERWRITE'
 # eoSip
 SETTING_EOSIP_TYPOLOGY='TYPOLOGY'
 # data
@@ -147,6 +148,7 @@ mission_metadatas={}
 max_product_done=None
 create_index=0
 fixed_batch_name=None
+product_overwrite=0
 # data provider stuff
 dataProviders={}
 
@@ -204,7 +206,7 @@ class Ingester():
         def readConfig(self, path=None):
                 global CONFIG_NAME, __config, OUTSPACE, INBOX, TMPSPACE, LIST_TYPE, LIST_BUILD, FILES_NAMEPATTERN, FILES_EXTPATTERN, DIRS_NAMEPATTERN, DIRS_ISLEAF,\
                 DIRS_ISEMPTY, LIST_LIMIT, LIST_STARTDATE, LIST_STOPDATE, OUTPUT_EO_SIP_PATTERN, OUTPUT_RELATIVE_PATH_TREES, max_product_done,\
-                create_index,fixed_batch_name,TYPOLOGY #,dataProviders
+                create_index,fixed_batch_name,product_overwrite,TYPOLOGY #,dataProviders
 
                 if not os.path.exists(path):
                     raise Exception("cofiguration file:'%s' doesn't exists" % path)
@@ -283,6 +285,11 @@ class Ingester():
                         except:
                             pass
 
+                        try:
+                            product_overwrite = __config.get(SETTING_workflowp, SETTING_PRODUCT_OVERWRITE)
+                        except:
+                            pass
+
                         # eoSip
                         try:
                             TYPOLOGY = __config.get(SETTING_eosip, SETTING_EOSIP_TYPOLOGY)
@@ -336,6 +343,7 @@ class Ingester():
                 self.logger.info("   Max product done limit: %s" % max_product_done)
                 self.logger.info("   Create index: %s" % create_index)
                 self.logger.info("   Fixed batch name: %s" % fixed_batch_name)
+                self.logger.info("   Product overwrite: %s" % product_overwrite)
                 self.logger.info("   OUTPUT_EO_SIP_PATTERN: %s" % OUTPUT_EO_SIP_PATTERN)
                 self.logger.info("   OUTPUT_RELATIVE_PATH_TREES: %s" % OUTPUT_RELATIVE_PATH_TREES)
                 self.logger.info("   eoSip typology: %s" % TYPOLOGY)
@@ -404,6 +412,7 @@ class Ingester():
                     os.makedirs(tmpPath)
                     processInfo.addLog("  working folder created:%s\n" % (tmpPath))
                 processInfo.workFolder=tmpPath
+                return tmpPath
                 
         #
         #
@@ -590,7 +599,7 @@ class Ingester():
                                     print " ERROR adding error in log:%s  %s" %  (exc_type, exc_obj)
 
                                 try:
-                                        prodLogPath="%s/bad_ingestion_%d.log" % (aProcessInfo.workFolder, num)
+                                        prodLogPath="%s/bad_conversion_%d.log" % (aProcessInfo.workFolder, num)
                                         fd=open(prodLogPath, 'w')
                                         fd.write(aProcessInfo.prodLog)
                                         fd.close()
@@ -632,7 +641,7 @@ class Ingester():
                     tmp=self.indexCreator.getIndexesText()
                     if self.debug!=0:
                         print "\n\nINDEX:\n%s"  % tmp
-                    path="%s/%s" % (OUTSPACE, 'index.txt')
+                    path="%s/%s" % (OUTSPACE, '%s_index.txt' % fixed_batch_name)
                     fd=open(path, "w")
                     fd.write(tmp)
                     fd.close()
@@ -671,7 +680,7 @@ class Ingester():
         #
         #
         def doOneProduct(self, pInfo):
-                global OUTPUT_EO_SIP_PATTERN, OUTSPACE
+                global product_overwrite, OUTPUT_EO_SIP_PATTERN, OUTSPACE
 
                 startProcessing=time.time()
                 self.verifySourceProduct(pInfo)
@@ -683,6 +692,7 @@ class Ingester():
                 self.prepareProducts(pInfo)
                 # create empty metadata
                 met=metadata.Metadata(mission_metadatas)
+                met.setMetadataPair(metadata.METADATA_ORIGINAL_NAME, pInfo.srcProduct.origName)
                 if self.debug!=0:
                         print "\n###  initial metadata dump:\n%s" % met.toString()
                 #
@@ -731,8 +741,7 @@ class Ingester():
                 pInfo.addLog("  Sip report file built:%s" %  (tmp))
                 self.logger.info("  Sip report file built:%s" %  (tmp))
 
-                # prepare browse metadata
-                #self.prepareBrowseMetadata(pInfo)
+
                 # browse reports
                 tmp=pInfo.destProduct.buildBrowsesReportFile()
                 n=0
@@ -746,11 +755,30 @@ class Ingester():
                 pInfo.addLog("  Product report file built:%s" % tmp)
                 self.logger.info("  Product report file built:%s" % tmp)
 
-                #
-                pInfo.destProduct.info()
+                # display some info
+                print pInfo.destProduct.info()
                 
                 # output Eo-Sip product
-                self.output_eoSip(pInfo, OUTSPACE, OUTPUT_RELATIVE_PATH_TREES)
+                self.output_eoSip(pInfo, OUTSPACE, OUTPUT_RELATIVE_PATH_TREES, product_overwrite)
+
+                # save metadata in working folder
+                pName=pInfo.destProduct.packageName
+                pos = pName.find('.')
+                if pos >0:
+                    pName=pName[0:pos]
+                
+                metFile="%s/metadata-product__%s.txt" % (workfolder, pName)
+                fd=open(metFile, 'w')
+                fd.write(pInfo.destProduct.metadata.toString())
+                fd.close()
+                # also browse metadata
+                n=0
+                for item in pInfo.destProduct.browse_metadata_dict.values():
+                    metFile="%s/metadata-browse-%d__%s.txt" % (workfolder, n, pName)
+                    fd=open(metFile, 'w')
+                    fd.write(item.toString())
+                    fd.close()
+                    
 
                 processingDuration=time.time()-startProcessing
                 # compute stats
@@ -816,7 +844,7 @@ class Ingester():
         # should be abstract
         #
         @abstractmethod
-        def output_eoSip(self, processInfo, basePath, pathRules):
+        def output_eoSip(self, processInfo, basePath, pathRules, overwrite):
                 raise Exception("abstractmethod")
                 
 

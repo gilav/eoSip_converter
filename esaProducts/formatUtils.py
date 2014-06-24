@@ -20,7 +20,7 @@ monthDict2={'JAN':'01', 'FEB':'02', 'MAR':'03', 'APR':'04', 'MAY':'05', 'JUN':'0
 DEFAULT_DATE_PATTERN="%Y-%m-%dT%H:%M:%SZ"
 DEFAULT_DATE_PATTERN_MSEC="%Y-%m-%dT%H:%M:%S.000Z"
 
-debug=0
+debug=1
 
 #
 #

@@ -86,9 +86,13 @@ class SectionDocument:
             name=self.lines[posLine][0:pos].strip()
             if self.debug!=0:
                 print "  getValue: name:'%s'" % name
-            value=self.lines[posLine][pos+1:].replace('\n','')
+            value=self.lines[posLine][pos+1:]
             if self.debug!=0:
-                print "  getValue: found:'%s'" % value
+                print "  getValue 00: found:'%s'" % value
+            value=value.replace('\n','')
+            value=value.replace('\r','')
+            if self.debug!=0:
+                print "  getValue 11: found:'%s'" % value
             return value
         else:
             raise Exception("no ':' in line:%s" % self.lines[posLine])
@@ -133,9 +137,13 @@ class SectionDocument:
                     if self.debug!=0:
                         print "  getValue: name:'%s'" % name
                     if key==name:
-                        value=self.lines[posLine][pos+1:].replace('\n','')
+                        value=self.lines[posLine][pos+1:]
                         if self.debug!=0:
-                            print "  getValue: found:'%s'" % value
+                            print "  getValue 0: found:'%s'" % value
+                        value=value.replace('\n','')
+                        value=value.replace('\r','')
+                        if self.debug!=0:
+                            print "  getValue 1: found:'%s'" % value
                         break
             posLine=posLine+1
             if value==None:

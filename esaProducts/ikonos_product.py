@@ -1,6 +1,6 @@
 # -*- coding: cp1252 -*-
 #
-# this class represent a Dimap product (ZIP directory product)
+# this class represent a Ikonos product (ZIP directory product)
 #  it contains:
 #
 #
@@ -168,6 +168,9 @@ class Ikonos_Product(Directory_Product):
         self.metadata.setMetadataPair(metadata.METADATA_START_TIME, "%s:00" % toks[1])
         self.metadata.setMetadataPair(metadata.METADATA_STOP_DATE, toks[0])
         self.metadata.setMetadataPair(metadata.METADATA_STOP_TIME, "%s:00" % toks[1])
+
+        # set processing time as product stop time
+        self.metadata.setMetadataPair(metadata.METADATA_PROCESSING_TIME, "%sT%s:00Z" % (toks[0],toks[1]))
         
         # supress the degrees
         tmp=self.metadata.getMetadataValue(metadata.METADATA_FOOTPRINT).replace(" degrees","").replace("|","").strip()
@@ -202,9 +205,10 @@ class Ikonos_Product(Directory_Product):
             tmp="UTM%s%s" % (toks[2].strip(), toks[1].strip())
             self.metadata.setMetadataPair(metadata.METADATA_REFERENCE_SYSTEM_IDENTIFIER, tmp)
         
-        #
+        # strip cloud coverage value
         tmp=self.metadata.getMetadataValue(metadata.METADATA_CLOUD_COVERAGE).strip()
         self.metadata.setMetadataPair(metadata.METADATA_CLOUD_COVERAGE, tmp)
+
 
         self.extractQuality(None, self.metadata)
 
