@@ -20,7 +20,7 @@ from esaProducts import dimap_spot_product, eosip_product
 from esaProducts import metadata, browse_metadata
 from esaProducts import definitions_EoSip,formatUtils
 #from definitions_EoSip import rep_rectifiedBrowse
-from definitions_EoSip import rep_footprint
+from definitions_EoSip import rep_footprint, sipBuilder
 import imageUtil
 
 
@@ -96,72 +96,108 @@ class ingester_spot(ingester.Ingester):
             # extrack track frome from DATASET_ID. is like: SCENE 4 020-263 07/05/26 11:33:41 1 I
             try:
                     trackFrame=met.getMetadataValue(metadata.METADATA_DATASET_NAME).split(' ')[2]
-                    print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ trackFrame:%s" % trackFrame
-                    if trackFrame!=None and trackFrame.find('-')>0:
+                    #print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ trackFrame:%s" % trackFrame
+                    if 1==1 and trackFrame!=None and trackFrame.find('-')>0:
                             track=trackFrame.split('-')[0]
-                            track=formatUtils.normaliseNumber(track, 4, '0')
+                            # supress possible /
+                            if track.find('/')>0:
+                                    #print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ track has /:'%s'"  % track
+                                    track=track[0:track.find('/')-1]
+                            track=formatUtils.normaliseNumber(track, 3, '0')
                             frame=trackFrame.split('-')[1]
-                            frame=formatUtils.normaliseNumber(frame, 4, '0')
+                            # supress possible /
+                            if frame.find('/')>0:
+                                    #print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ frame has /:'%s'"  % frame
+                                    frame=frame[0:track.find('/')-1]
+                            frame=formatUtils.normaliseNumber(frame, 3, '0')
                             met.setMetadataPair(metadata.METADATA_TRACK, track)
                             met.setMetadataPair(metadata.METADATA_FRAME, frame)
                             met.setMetadataPair('METADATA_WRS_LONGITUDE_GRID_NORMALISED', track)
                             met.setMetadataPair('METADATA_WRS_LATITUDE_GRID_NORMALISED', frame)
                                     
-                    else:
-                            print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ no - in trackFrame:%s" % trackFrame
+                    #else:
+                            #print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ no - in trackFrame:%s" % trackFrame
                             
             except Exception, e:
                     exc_type, exc_obj, exc_tb = sys.exc_info()
-                    print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ Error %s  %s\n%s" %  (exc_type, exc_obj, traceback.format_exc())
+                    print "Error %s  %s\n%s" %  (exc_type, exc_obj, traceback.format_exc())
                 
             
             
             
             # get additionnal metadata from optionnal dataProvider:we want the track and frame
             # dataProvider key are METADATA_TRACK or METADATA_FRAME
+            productId=None
             if len(self.dataProviders)>0:
-                    print "@@@@@@@@@@@@@@@@@@@@ extract using dataProviders:%s" % self.dataProviders
+                    #print "@@@@@@@@@@@@@@@@@@@@ extract using dataProviders:%s" % self.dataProviders
+                    #print "@@@@@@@@@@@@@@@@@@@@         key:%s" % met.getMetadataValue(metadata.METADATA_ORIGINAL_NAME)
                     # look the one for the mission
                     for item in self.dataProviders.keys():
-                            print "@@@@@@@@@@@@@@@@@@@@ doing dataProviders item:%s" % item
-                            if item == metadata.METADATA_TRACK:
+                            #print "@@@@@@@@@@@@@@@@@@@@ doing dataProviders item:%s" % item
+                            if item == metadata.METADATA_TRACK:  # fiel is mandatory
                                     # what value do we have?
                                     tmp = met.getMetadataValue(metadata.METADATA_TRACK)
-                                    print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ current TRACK:%s" % tmp
-                                    if tmp==None:
-                                            print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ current TRACK is None"
+                                    #print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ current TRACK:%s" % tmp
+                                    if tmp==None or tmp==sipBuilder.VALUE_NOT_PRESENT:
+                                            #print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ current TRACK is:%s" % tmp
                                             adataProvider=self.dataProviders[item]
-                                            print "@@@@@@@@@@@@@@@@@@@@ dataProviders match TRACK:%s" % adataProvider
+                                            #print "@@@@@@@@@@@@@@@@@@@@ dataProviders match TRACK:%s" % adataProvider
                                             # need to query using the product original filename like:N00-W075_AVN_20090804_PRO_0
                                             track=adataProvider.getRowValue(met.getMetadataValue(metadata.METADATA_ORIGINAL_NAME))
-                                            print "@@@@@@@@@@@@@@@@@@@@ track:%s" % track
+                                            #print "@@@@@@@@@@@@@@@@@@@@ track:%s" % track
                                             if track != None and len(track.strip())==0:
-                                                    track=None
-                                            else:
                                                     track='0000'
                                             met.setMetadataPair(metadata.METADATA_TRACK, track)
 
-                            elif item == metadata.METADATA_FRAME:
+                            elif item == metadata.METADATA_FRAME:  # fiel is mandatory
                                     # what value do we have?
                                     tmp = met.getMetadataValue(metadata.METADATA_FRAME)
-                                    print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ current FRAME:%s" % tmp
-                                    if tmp==None:
-                                            print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ current FRAME is None"
+                                    #print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ current FRAME:%s" % tmp
+                                    if tmp==None or tmp==sipBuilder.VALUE_NOT_PRESENT:
+                                            print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ current FRAME is:%s" % tmp
                                             adataProvider=self.dataProviders[item]
-                                            print "@@@@@@@@@@@@@@@@@@@@ dataProviders match FRAME:%s" % adataProvider
+                                            #print "@@@@@@@@@@@@@@@@@@@@ dataProviders match FRAME:%s" % adataProvider
                                             # need to query using the product original filename like:N00-W075_AVN_20090804_PRO_0
                                             frame=adataProvider.getRowValue(met.getMetadataValue(metadata.METADATA_ORIGINAL_NAME))
-                                            print "@@@@@@@@@@@@@@@@@@@@ frame:%s" % frame
+                                            #print "@@@@@@@@@@@@@@@@@@@@ frame:%s" % frame
                                             if frame != None and len(frame.strip())==0:
-                                                    frame=None
-                                            else:
                                                     frame='0000'
                                             met.setMetadataPair(metadata.METADATA_FRAME, frame)
 
-
-            
+                            elif item == metadata.METADATA_PRODUCT_ID: # this is just a test
+                                    # what value do we have?
+                                    tmp = met.getMetadataValue(metadata.METADATA_PRODUCT_ID)
+                                    #print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ current PRODUCT_ID:%s" % tmp
+                                    if tmp==None or tmp==sipBuilder.VALUE_NOT_PRESENT:
+                                            try:
+                                                    #print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ current PRODUCT_ID is:%s" % tmp
+                                                    adataProvider=self.dataProviders[item]
+                                                    #print "@@@@@@@@@@@@@@@@@@@@ dataProviders match PRODUCT_ID:%s" % adataProvider
+                                                    # need to query using the product original filename like:N00-W075_AVN_20090804_PRO_0
+                                                    # productId is like: SP4-070526113337-9.HRI1_X__1P
+                                                    productId=adataProvider.getRowValue(met.getMetadataValue(metadata.METADATA_ORIGINAL_NAME))
+                                                    #print "@@@@@@@@@@@@@@@@@@@@ productId:%s" % productId
+                                                    if productId==None:
+                                                            raise Exception("%s has no PRODUCT_ID in csv file" % met.getMetadataValue(metadata.METADATA_ORIGINAL_NAME))
+                                                    if productId != None and len(productId.strip())==0:
+                                                            productId='N/A'
+                                                    met.setMetadataPair(metadata.METADATA_PRODUCT_ID, productId)
+                                            except:
+                                                    pass
+                                                    
             # refine
             processInfo.srcProduct.refineMetadata()
+
+            # do a check: look if it's equal to metadata.METADATA_TYPECODE
+            if productId!=None:
+                    pos = productId.find('.')
+                    if pos>0:
+                            tmp1=productId[pos+1:]
+                            tmp=met.getMetadataValue(metadata.METADATA_TYPECODE)
+                            self.saveInfo("typeCodes.txt", tmp1)
+                            if tmp!=tmp1:
+                                    raise Exception("Mismatch: metadata.METADATA_TYPECODE vs metadata.METADATA_PRODUCT_ID[.*]:'%s'<==>'%s'" % (tmp, tmp1))
+
 
 
         #
@@ -173,7 +209,7 @@ class ingester_spot(ingester.Ingester):
             try:
                     browseSrcPath=processInfo.srcProduct.preview_path
                     browseExtension=definitions_EoSip.getBrowseExtension(0, definitions_EoSip.getDefinition('BROWSE_JPEG_EXT'))
-                    browseDestPath="%s/%s.%s" % (processInfo.eosipTmpFolder, processInfo.destProduct.productShortName, browseExtension)
+                    browseDestPath="%s/%s.%s" % (processInfo.eosipTmpFolder, processInfo.destProduct.packageName, browseExtension)
                     shutil.copyfile(browseSrcPath, browseDestPath)
                     processInfo.destProduct.addSourceBrowse(browseDestPath, [])
                     processInfo.addLog("  browse image created:%s" %  (browseDestPath))
@@ -234,6 +270,26 @@ class ingester_spot(ingester.Ingester):
                         self.logger.info("  Eo-Sip product writen in folder:%s\n" %  (firstPath))
                         processInfo.destProduct.writeToFolder(firstPath, overwrite)
 
+                        # copy the browse FOR TEST
+                        try:
+                                if len(processInfo.destProduct.sourceBrowsesPath)>0:
+                                        tmp=os.path.split(processInfo.destProduct.sourceBrowsesPath[0])[1]
+                                        tmpb=tmp.split('.')[-1]
+                                        tmpa=tmp.split('.')[0:-1]
+                                        thumbnail = "%s.TN.%s" % ("".join(tmpa),tmpb)
+                                        processInfo.destProduct.metadata.setMetadataPair(metadata.METADATA_THUMBNAIL,thumbnail)
+                                        thumbnail="%s/%s" % (firstPath, thumbnail)
+                                        #shutil.copyfile("%s" % (processInfo.destProduct.sourceBrowsesPath[0]), "%s/%s" % (firstPath,tmp))
+                                        imageUtil.makeJpeg("%s" % (processInfo.destProduct.sourceBrowsesPath[0]), thumbnail, 25 )
+                                        print "####################################### %s/%s_TN.%s" % (firstPath,tmpa,tmpb)
+                                
+                                else:
+                                        print "There is no brose to move to final folder"
+                        except:
+                                print " thubnail Error"
+                                exc_type, exc_obj, exc_tb = sys.exc_info()
+                                traceback.print_exc(file=sys.stdout)
+
                         # output link in other path
                         i=0
                         for item in outputProductResolvedPaths:
@@ -249,12 +305,7 @@ if __name__ == '__main__':
     try:
         if len(sys.argv) > 1:
             ingester = ingester_spot()
-            #ingester.debug=1
-            ingester.readConfig(sys.argv[1])
-            ingester.makeFolders()
-            ingester.getMissionDefaults()
-            ingester.findProducts()
-            ingester.processProducts()
+            ingester.starts(sys.argv)
             
         else:
             print "syntax: python ingester_xxx.py configuration_file.cfg"

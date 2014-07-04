@@ -52,7 +52,7 @@ from esaProducts import metadata
 from esaProducts import definitions_EoSip
 import imageUtil
 from esaProducts import formatUtils
-import indexCreator
+import indexCreator, shopcartCreator
 import statsUtil
 from data import dataProvider
 import sipBuilder
@@ -118,8 +118,11 @@ SETTING_OUTPUT_EO_SIP_PATTERN='OUTPUT_EO_SIP_PATTERN'
 OUTPUT_RELATIVE_PATH_TREES=None
 OUTPUT_EO_SIP_PATTERN=None
 # workflow
+SETTING_VERIFY_SRC_PRODUCT='VERIFY_SRC_PRODUCT'
 SETTING_MAX_PRODUCTS_DONE='MAX_PRODUCTS_DONE'
 SETTING_CREATE_INDEX='CREATE_INDEX'
+SETTING_CREATE_SHOPCART='CREATE_SHOPCART'
+SETTING_INDEX_ADDED_FIELD='INDEX_ADDED_FIELD'
 SETTING_FIXED_BATCH_NAME='FIXED_BATCH_NAME'
 SETTING_PRODUCT_OVERWRITE='PRODUCT_OVERWRITE'
 # eoSip
@@ -145,8 +148,11 @@ FINAL_PATH_LIST=[]
 # mission stuff
 mission_metadatas={}
 # workflow stuff
+verify_product=1
 max_product_done=None
 create_index=0
+create_shopcart=0
+index_added=None
 fixed_batch_name=None
 product_overwrite=0
 # data provider stuff
@@ -192,6 +198,7 @@ class Ingester():
                 self.runStopTime=None
                 #
                 self.indexCreator=None
+                self.shopcartCreator=None
                 self.statsUtil=statsUtil.StatsUtil()
                 # resolved output folders
                 self.outputProductResolvedPaths=None
@@ -206,7 +213,7 @@ class Ingester():
         def readConfig(self, path=None):
                 global CONFIG_NAME, __config, OUTSPACE, INBOX, TMPSPACE, LIST_TYPE, LIST_BUILD, FILES_NAMEPATTERN, FILES_EXTPATTERN, DIRS_NAMEPATTERN, DIRS_ISLEAF,\
                 DIRS_ISEMPTY, LIST_LIMIT, LIST_STARTDATE, LIST_STOPDATE, OUTPUT_EO_SIP_PATTERN, OUTPUT_RELATIVE_PATH_TREES, max_product_done,\
-                create_index,fixed_batch_name,product_overwrite,TYPOLOGY #,dataProviders
+                create_index,create_shopcart,index_added,verify_product,fixed_batch_name,product_overwrite,TYPOLOGY #,dataProviders
 
                 if not os.path.exists(path):
                     raise Exception("cofiguration file:'%s' doesn't exists" % path)
@@ -272,6 +279,10 @@ class Ingester():
 
                         # workflow
                         try:
+                            verify_product= __config.get(SETTING_workflowp, SETTING_VERIFY_SRC_PRODUCT)
+                        except:
+                            pass
+                        try:
                             max_product_done = __config.get(SETTING_workflowp, SETTING_MAX_PRODUCTS_DONE)
                         except:
                             pass
@@ -279,12 +290,18 @@ class Ingester():
                             create_index = __config.get(SETTING_workflowp, SETTING_CREATE_INDEX)
                         except:
                             pass
-
+                        try:
+                            create_shopcart = __config.get(SETTING_workflowp, SETTING_CREATE_SHOPCART)
+                        except:
+                            pass
+                        try:
+                            index_added = __config.get(SETTING_workflowp, SETTING_INDEX_ADDED_FIELD)
+                        except:
+                            pass
                         try:
                             fixed_batch_name = __config.get(SETTING_workflowp, SETTING_FIXED_BATCH_NAME)
                         except:
                             pass
-
                         try:
                             product_overwrite = __config.get(SETTING_workflowp, SETTING_PRODUCT_OVERWRITE)
                         except:
@@ -332,7 +349,18 @@ class Ingester():
                         traceback.print_exc(file=sys.stdout)
                         raise e
 
-                
+        #
+        #
+        #
+        def starts(self, argv):
+            self.readConfig(sys.argv[1])
+            self.makeFolders()
+            self.getMissionDefaults()
+            if len(sys.argv)>2:
+                self.setProductsList(sys.argv[2])
+            else:
+                    self.findProducts()
+            self.processProducts()    
         #
         #
         #
@@ -341,7 +369,10 @@ class Ingester():
                 self.logger.info("   TMPSPACE: %s" % TMPSPACE)
                 self.logger.info("   OUTSPACE: %s" % OUTSPACE)
                 self.logger.info("   Max product done limit: %s" % max_product_done)
+                self.logger.info("   Verify product: %s" % verify_product)
                 self.logger.info("   Create index: %s" % create_index)
+                self.logger.info("   Create shopcart: %s" % create_shopcart)
+                self.logger.info("   Index added: %s" % index_added)
                 self.logger.info("   Fixed batch name: %s" % fixed_batch_name)
                 self.logger.info("   Product overwrite: %s" % product_overwrite)
                 self.logger.info("   OUTPUT_EO_SIP_PATTERN: %s" % OUTPUT_EO_SIP_PATTERN)
@@ -372,6 +403,18 @@ class Ingester():
                 if not os.path.exists(LOG_FOLDER):
                         self.logger.info("  will make log folder:%s" % LOG_FOLDER)
                         os.makedirs(LOG_FOLDER)
+
+        #
+        #
+        #
+        def saveInfo(self, filename=None, data=None):
+            path="%s/%s" % (TMPSPACE, filename)
+            fd=open(path, "a+")
+            fd.write(data)
+            fd.write("\n")
+            fd.close()
+            
+            
 
                         
         #
@@ -526,7 +569,7 @@ class Ingester():
         #
         #
         def processProducts(self):
-                global CONFIG_NAME, DEBUG, num,num_total,num_done,num_error,list_done,list_error,description_error,max_product_done,create_index,fixed_batch_name
+                global CONFIG_NAME, DEBUG, num,num_total,num_done,num_error,list_done,list_error,description_error,max_product_done,create_index,create_shopcart,index_added,fixed_batch_name
                 #
                 if fixed_batch_name!=None:
                     self.batchName="batch_%s_%s" % (CONFIG_NAME, fixed_batch_name)
@@ -550,10 +593,15 @@ class Ingester():
                 fd.close
                 self.logger.info("\n\nlist of products to be done written in:%s\n\n" % (file_doBeDoneList))
 
-                #
+                # create index: use default header, + added if defined
                 if create_index!=0:
-                    self.indexCreator=indexCreator.IndexCreator()
+                    self.indexCreator=indexCreator.IndexCreator(None, index_added)
                     self.logger.info("will create index")
+
+                # create shopcart:
+                if create_shopcart!=0:
+                    self.shopcartCreator=shopcartCreator.ShopcartCreator(None, None)
+                    self.logger.info("will create shopcart")
 
                 self.statsUtil.start(len(self.productList))
                 
@@ -568,8 +616,8 @@ class Ingester():
                         self.logger.info("")
                         self.logger.info("")
                         self.logger.info("")
-                        self.logger.info("doing product[%d/%d]:%s" % ( num, num_all, item))
-                        aProcessInfo.addLog("\n\nDoing product[%d/%d]:%s" % ( num, num_all, item))
+                        self.logger.info("doing product[%d/%d][%s/%s]:%s" % ( num, num_all, num_done, num_error, item))
+                        aProcessInfo.addLog("\n\nDoing product[%d/%d][%s/%s]:%s" % ( num, num_all, num_done, num_error, item))
                         try:
                                 self.doOneProduct(aProcessInfo)
 
@@ -585,11 +633,23 @@ class Ingester():
                                         aProcessInfo.addLog("ERROR creating index:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc()))
                                         self.logger.error("ERROR creating index: %s  %s" % (exc_type, exc_obj))
                                         pass
+
+                                if create_shopcart!=0:
+                                    try:
+                                        firstBrowsePath=aProcessInfo.destProduct.browse_metadata_dict.iterkeys().next()
+                                        self.shopcartCreator.addOneProduct(aProcessInfo.destProduct.metadata, aProcessInfo.destProduct.browse_metadata_dict[firstBrowsePath])
+                                    except Exception, e:
+                                        exc_type, exc_obj, exc_tb = sys.exc_info()
+                                        print " ERROR creating shopcart:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc())
+                                        aProcessInfo.addLog("ERROR creating shopcart:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc()))
+                                        self.logger.error("ERROR creating shopcart: %s  %s" % (exc_type, exc_obj))
+                                        pass
                                 
                         except Exception, e:
                                 num_error=num_error+1
                                 list_error.append("%s|%s" % (item,aProcessInfo.workFolder))
                                 exc_type, exc_obj, exc_tb = sys.exc_info()
+                                
                                 try:
                                     self.logger.error("Error:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc()))
                                     aProcessInfo.addLog("Error:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc()))
@@ -598,8 +658,9 @@ class Ingester():
                                     exc_type, exc_obj, exc_tb = sys.exc_info()
                                     print " ERROR adding error in log:%s  %s" %  (exc_type, exc_obj)
 
+                                # write log
                                 try:
-                                        prodLogPath="%s/bad_conversion_%d.log" % (aProcessInfo.workFolder, num)
+                                        prodLogPath="%s/bad_conversion_%d.log" % (aProcessInfo.workFolder, num_error)
                                         fd=open(prodLogPath, 'w')
                                         fd.write(aProcessInfo.prodLog)
                                         fd.close()
@@ -607,6 +668,23 @@ class Ingester():
                                         print "Error: problem writing prodLog in fodler:%s" % aProcessInfo.workFolder
                                         exc_type, exc_obj, exc_tb = sys.exc_info()
                                         print " problem is:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc())
+
+                                # save the pinfo in workfolder
+                                try:
+                                    self.saveProcessInfo(aProcessInfo)
+                                except:
+                                    self.logger.error(" Error: saving pinfo files")
+                                    exc_type, exc_obj, exc_tb = sys.exc_info()
+                                    print " ERROR saving pinfo files:%s  %s%s\n" %  (exc_type, exc_obj, traceback.format_exc())
+                                    
+                                # save the matadata file in workfolder
+                                try:
+                                    self.saveMetadata(aProcessInfo)
+                                except:
+                                    self.logger.error(" Error: saving metadata files")
+                                    exc_type, exc_obj, exc_tb = sys.exc_info()
+                                    print " ERROR saving metadata files:%s  %s%s\n" %  (exc_type, exc_obj, traceback.format_exc())
+
 
                         if max_product_done!=None and num>=int(max_product_done):
                                 aProcessInfo.addLog("max number of product to be done reached:%s; STOPPING" % max_product_done)
@@ -646,6 +724,19 @@ class Ingester():
                     fd.write(tmp)
                     fd.close()
                     print "\n index written in:%s" % (path)
+
+                if create_shopcart!=0:
+                    # index text:
+                    tmp=self.shopcartCreator.getIndexesText()
+                    if self.debug!=0:
+                        print "\n\nSHOPCART:\n%s"  % tmp
+                    path="%s/%s" % (OUTSPACE, '%s_shopcart.txt' % fixed_batch_name)
+                    fd=open(path, "w")
+                    fd.write("%d\n" % self.shopcartCreator.getSize())
+                    #fd.write("\n")
+                    fd.write(tmp)
+                    fd.close()
+                    print "\n shopcart written in:%s" % (path)
                 
 
         #
@@ -683,7 +774,9 @@ class Ingester():
                 global product_overwrite, OUTPUT_EO_SIP_PATTERN, OUTSPACE
 
                 startProcessing=time.time()
-                self.verifySourceProduct(pInfo)
+                #
+                if verify_product==1:
+                    self.verifySourceProduct(pInfo)
                 # create work folder
                 workfolder=self.makeWorkingFolders(pInfo)
                 # instanciate source product
@@ -715,11 +808,11 @@ class Ingester():
                 # build product name
                 patternName = OUTPUT_EO_SIP_PATTERN
                 pInfo.destProduct.buildProductNames(patternName, definitions_EoSip.getDefinition('PRODUCT_EXT'))
-                self.logger.info("  Eo-Sip product name:%s"  % pInfo.destProduct.productShortName)
-                pInfo.addLog("  Eo-Sip product name:%s"  % pInfo.destProduct.productShortName)
+                self.logger.info("  Eo-Sip product name:%s"  % pInfo.destProduct.packageName)
+                pInfo.addLog("  Eo-Sip product name:%s"  % pInfo.destProduct.packageName)
 
                 # make Eo-Sip tmp folder
-                pInfo.eosipTmpFolder = pInfo.workFolder + "/" + pInfo.destProduct.productShortName
+                pInfo.eosipTmpFolder = pInfo.workFolder + "/" + pInfo.destProduct.packageName
                 if not os.path.exists(pInfo.eosipTmpFolder):
                         self.logger.info("  will make tmpEosipFolder:%s" % pInfo.eosipTmpFolder)
                         pInfo.addLog("  will make tmpEosipFolder:%s" % pInfo.eosipTmpFolder)
@@ -762,6 +855,27 @@ class Ingester():
                 self.output_eoSip(pInfo, OUTSPACE, OUTPUT_RELATIVE_PATH_TREES, product_overwrite)
 
                 # save metadata in working folder
+                self.saveMetadata(pInfo)
+
+                processingDuration=time.time()-startProcessing
+                # compute stats
+                try:
+                    # TODO: move get size into product??
+                    size=os.stat(pInfo.destProduct.path).st_size
+                    self.statsUtil.oneDone(processingDuration, size)
+                    self.logger.info("  batch run will be completed at:%s" % self.statsUtil.getEndDate())
+                except Exception, e:
+                    exc_type, exc_obj, exc_tb = sys.exc_info()
+                    pInfo.addLog("Error:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc()))
+                    self.logger.info("Error doing stats")
+                    pass
+                print "\n\n\n\nLog:%s\n" % pInfo.prodLog
+
+                print "\n\n\n\nProcess info:%s\n" % pInfo.toString()
+
+
+        def unused(self):
+                self.saveMetadata(pInfo)
                 pName=pInfo.destProduct.packageName
                 pos = pName.find('.')
                 if pos >0:
@@ -778,24 +892,53 @@ class Ingester():
                     fd=open(metFile, 'w')
                     fd.write(item.toString())
                     fd.close()
-                    
-
-                processingDuration=time.time()-startProcessing
-                # compute stats
-                try:
-                    # TODO: move get size into product??
-                    size=os.stat(pInfo.destProduct.path).st_size
-                    self.statsUtil.oneDone(processingDuration, size)
-                    self.logger.info("  batch run will be completed at:%s" % self.statsUtil.getEndDate())
-                except:
-                    exc_type, exc_obj, exc_tb = sys.exc_info()
-                    pInfo.addLog("Error:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc()))
-                    self.logger.info("Error doing stats")
-                    pass
-                print "\n\n\n\nLog:%s\n" % pInfo.prodLog
-
-                print "\n\n\n\nProcess info:%s\n" % pInfo.toString()
                 
+        #
+        # save metadata as files
+        #
+        def saveMetadata(self, pInfo):
+            if pInfo.destProduct!=None and pInfo.destProduct.metadata!=None:
+                try:
+                    # save metadata in working folder
+                    workfolder=pInfo.workFolder
+                    fd=open("%s/metadata-product.txt" % (workfolder), 'w')
+                    fd.write(pInfo.destProduct.metadata.toString())
+                    fd.close()
+                except Exception, e:
+                        exc_type, exc_obj, exc_tb = sys.exc_info()
+                        pInfo.addLog("ERROR saving product metadata files:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc()))
+                        self.logger.info("ERROR saving product metadata files")
+                        print "ERROR saving product metadata files:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc())
+                
+            if pInfo.destProduct!=None and pInfo.destProduct.browse_metadata_dict!=None and len(pInfo.destProduct.browse_metadata_dict)>0:
+                try: 
+                    # also browse metadata
+                    n=0
+                    for item in pInfo.destProduct.browse_metadata_dict.values():
+                        fd=open("%s/metadata-browse-%d.txt" % (workfolder, n), 'w')
+                        fd.write(item.toString())
+                        fd.close()
+                except Exception, e:
+                        exc_type, exc_obj, exc_tb = sys.exc_info()
+                        pInfo.addLog("ERROR saving browse metadata files:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc()))
+                        self.logger.info("ERROR saving browse metadata files")
+                        print "ERROR saving browse metadata files:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc())
+
+        #
+        # save processInfo as files
+        #
+        def saveProcessInfo(self, pInfo):
+            try:
+                # save pInfo in working folder
+                workfolder=pInfo.workFolder
+                fd=open("%s/processInfo.txt" % (workfolder), 'w')
+                fd.write(pInfo.toString())
+                fd.close()
+            except Exception, e:
+                    exc_type, exc_obj, exc_tb = sys.exc_info()
+                    pInfo.addLog("ERROR saving pinfo files:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc()))
+                    self.logger.info("ERROR saving pinfo files")
+                    print"ERROR saving pinfo files:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc())
                 
         #
         # should be abstract

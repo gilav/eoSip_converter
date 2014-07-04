@@ -14,6 +14,10 @@ Supported products are at this time:
 History:
 ========
 
+2014-07-04:
+ - add a shopcart creator
+ - fix a bug on dateTime + msec and year 2000 (!)
+
 2014-06-24: 
  - TropForest + Spot + Ikonos ok
  - add conditions in xml block definition. to be able to not create the 'empty' branch

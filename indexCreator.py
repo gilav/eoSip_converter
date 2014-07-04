@@ -12,6 +12,7 @@ from esaProducts import metadata, browse_metadata
 
 class IndexCreator():
     header=[]
+    mapping=[]
     DEFAULT_HEADERS="File|PLATFORM_SHORT_NAME|INSTRUMENT_SHORT_NAME|OPERATIONAL_MODE|PRODUCT_TYPE|PRODUCT_ID|PARENT_IDENTIFIER|BEGIN_DATE|END_DATE|AVAILABILITY_TIME|PRODUCT_URI|PRODUCT_VERSION|PRODUCT_SIZE|FOOTPRINT|SENSOR_TYPE|PROCESSING_MODE|ACQUISITION_TYPE|STATUS|IMAGE_QUALITY_DEGRADATION|PLATFORM_SERIAL_IDENTIFIER|ORBIT_NUMBER|ILLUMINATION_AZIMUTH_ANGLE|ILLUMINATION_ZENITH_ANGLE|ILLUMINATION_ELEVATION_ANGLE|CLOUD_COVER_PERCENTAGE|BROWSE_METADATA_LOCATION|BROWSE_IMAGE_LOCATION|THUMBNAIL_URL|"
     BASE_URL="@BASE_URL@"
     #
@@ -23,12 +24,12 @@ class IndexCreator():
                       'INSTRUMENT_SHORT_NAME':metadata.METADATA_INSTRUMENT,
                       'OPERATIONAL_MODE':None,
                       'PRODUCT_TYPE':metadata.METADATA_TYPECODE,
-                      'PRODUCT_ID':metadata.METADATA_PRODUCTNAME,
+                      'PRODUCT_ID':metadata.METADATA_PACKAGENAME,
                       'PARENT_IDENTIFIER':None,
                       'BEGIN_DATE':metadata.METADATA_START_TIME,
                       'END_DATE':metadata.METADATA_STOP_TIME,
                       'AVAILABILITY_TIME':metadata.METADATA_GENERATION_TIME,
-                      'PRODUCT_URI':metadata.METADATA_PACKAGENAME,
+                      'PRODUCT_URI':metadata.METADATA_PRODUCTNAME,
                       'PRODUCT_VERSION':metadata.METADATA_VERSION,
                       'PRODUCT_SIZE':metadata.METADATA_PRODUCT_SIZE,
                       'FOOTPRINT':metadata.METADATA_FOOTPRINT,
@@ -60,27 +61,83 @@ class IndexCreator():
     debug=0
 
 
-    def __init__(self, h=None):
+    #
+    # added are 'field:mapping' like: 'PARENT_PRODUCT:METADATA_PARENT_PRODUCT'
+    #
+    def __init__(self, h=None, added=None):
         global DEFAULT_HEADERS,METADATA_MAPPING
-        if h==None:
+        self.header=[]
+        self.mapping={}
+
+        # verif
+        l1=len(self.DEFAULT_HEADERS.split("|"))
+        l2=len(self.METADATA_MAPPING.keys())
+        if l1 != l2:
+            raise Exception("IndexCreator init problem: different size between field and mapping:%d %d" % (l1, l2))
+        
+        if h==None: # default headers, + added if anny
             if self.debug>1:
                 print " using default header"
             n=0
-            for item in self.DEFAULT_HEADERS.split("|"): #self.METADATA_MAPPING.iterkeys():
+            for item in self.DEFAULT_HEADERS.split("|"):
                 if len(item)>0:
                     if self.debug>1:
                         print " ############# header[%d]:%s" % (n, item)
                     self.header.append(item)
                     n=n+1
-        else:
-            toks=h.split("|")
-            n=0
-            for item in toks:
-                if len(item) > 0:
-                    if self.debug>1:
-                        print " ############# header[%d]:%s" % (n, item)
-                    self.header.append(item)
+            for item in self.METADATA_MAPPING.keys():
+                self.mapping[item]=self.METADATA_MAPPING[item]
+                if self.debug>1:
+                    print " ############# mapping[%d]:%s<==>%s" % (n, item, self.METADATA_MAPPING[item])
                     n=n+1
+            # added
+            if added!=None:
+                if self.debug>1:
+                    print " add added to default header"
+                for item in added.split("|"):
+                    if self.debug>1:
+                        print " ############# added header+mapping[%d]:%s" % (n, item)
+                    pos=item.find(':')
+                    if pos > 0:
+                        self.header.append(item[0:pos])
+                        self.mapping[item[0:pos]]=item[pos+1:]
+                        n=n+1
+                    else:
+                        raise Exception("invalid added field:mapping, no ':' in:%s" % item)
+                        
+        else: # specific headers is any, defaults + added if anny
+            if h!=None:
+                if self.debug>1:
+                    print " specific header"
+                toks=h.split("|")
+                n=0
+                for item in toks:
+                    if len(item) > 0:
+                        if self.debug>1:
+                            print " ############# specific header[%d]:%s" % (n, item)
+                        self.header.append(item)
+                        n=n+1
+            n=0
+            for item in self.METADATA_MAPPING.keys():
+                self.mapping[item]=self.METADATA_MAPPING[item]
+                if self.debug>1:
+                    print " ############# mapping[%d]:%s<==>%s" % (n, item, self.METADATA_MAPPING[item])
+                    n=n+1
+                    
+            # added
+            if added!=None:
+                if self.debug>1:
+                    print " add added to specific header"
+                for item in added.split("|"):
+                    if self.debug>1:
+                        print " ############# added header[%d]:%s" % (n, item)
+                    pos=item.find(':')
+                    if pos > 0:
+                        self.header.append(item[0:pos])
+                        self.mapping[item[0:pos]]=item[pos+1:]
+                        n=n+1
+                    else:
+                        raise Exception("invalid added field:mapping, no ':' in:%s" % item)
         
         if self.debug!=0:
             print " ########################## IndexCreator init done; number of headers:%s, %s" % (n, len(self.header))
@@ -101,11 +158,13 @@ class IndexCreator():
             print " ## END browse metasdata:"
             for item in self.BROWSE_METADATA_USED:
                 print " @@@@@@@@@@@@@@@@@@@@ self.BROWSE_METADATA_USED:%s" % item
-            
+
+        
         for field in self.header:
             if self.debug!=0:
                 print "  #### create index row: field[%s]:'%s'" % (n,field)
-            key=self.METADATA_MAPPING[field]
+            #key=self.METADATA_MAPPING[field]
+            key=self.mapping[field]
             if key==None:
                 value='N/A'
             else:

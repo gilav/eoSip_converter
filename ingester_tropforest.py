@@ -161,7 +161,7 @@ class ingester_tropforest(ingester.Ingester):
             try:
                     browseSrcPath="%s/%s" % (processInfo.workFolder , processInfo.srcProduct.TIF_FILE_NAME)
                     browseExtension=definitions_EoSip.getBrowseExtension(0, definitions_EoSip.getDefinition('BROWSE_JPEG_EXT'))
-                    browseDestPath="%s/%s.%s" % (processInfo.eosipTmpFolder, processInfo.destProduct.productShortName, browseExtension)
+                    browseDestPath="%s/%s.%s" % (processInfo.eosipTmpFolder, processInfo.destProduct.packageName, browseExtension)
                     imageUtil.makeJpeg(browseSrcPath, browseDestPath, 50 )
                     processInfo.destProduct.addSourceBrowse(browseDestPath, [])
 
@@ -245,14 +245,7 @@ if __name__ == '__main__':
         if len(sys.argv) > 1:
             ingester = ingester_tropforest()
             #ingester.debug=1
-            ingester.readConfig(sys.argv[1])
-            ingester.makeFolders()
-            ingester.getMissionDefaults()
-            if len(sys.argv)>2:
-                ingester.setProductsList(sys.argv[2])
-            else:
-                    ingester.findProducts()
-            ingester.processProducts()
+            ingester.starts(sys.argv)
             
         else:
             print "syntax: python ingester_xxx.py configuration_file.cfg"

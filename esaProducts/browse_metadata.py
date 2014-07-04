@@ -7,7 +7,11 @@ import sys
 import traceback
 import base_metadata
 from base_metadata import Base_Metadata
-import sipBuilder
+#print "\nbrowse_metadata SYS_PATH:%s" % sys.path
+#try:
+#import sipBuilder
+#except:
+#from definitions_EoSip import sipBuilder
 
 #BROWSE_METADATA_BROWSE_CHOICE='BROWSE_METADATA_BROWSE_CHOICE'
 BROWSE_METADATA_IDENTIFIER='BROWSE_METADATA_IDENTIFIER'

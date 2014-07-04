@@ -26,9 +26,22 @@ class SipMessageBuilder(SipBuilder):
             return tmp
         else:
             return "%s\n" % tmp
+
+
+    #
+    # resolve '@xxx@' and '$$self.getNextCounter()$$' tags
+    #
+    def resolve(self, segment, met=None):
+        pos=segment.find('@')
+        if pos<0:
+            return self.resolveEval(segment, met)
+        else:
+            tmp1 = self.resolveVarname(segment, met)
+            return self.resolveEval(tmp1, met)
+
     
     #
-    # add to sip message, resolve @xxx@ tags
+    # add to sip message, resolve '@xxx@' and '$$self.getNextCounter()$$' tags
     #
     def addToSipMessage(self, mess, segment, met=None, optional=False):
         if mess!=None:
@@ -170,10 +183,12 @@ class SipMessageBuilder(SipBuilder):
         # find if there are CONDITIONS in classe definition
         try:
             conditions=self.__getattribute__(sipBuilder.VALUE_CONDITIONS)
-            print "@@@@@@@@@@@@@@@@@@@@@ %s has conditions !!!" % self
+            if self.debug!=0:
+                print "@@@@@@@@@@@@@@@@@@@@@ %s has conditions !!!" % self
         except:
             conditions=None
-            print "@@@@@@@ %s no conditions" % self
+            if self.debug!=0:
+                print "@@@@@@@ %s no conditions" % self
 
         n=0
         for field in representationToUse:
@@ -212,7 +227,8 @@ class SipMessageBuilder(SipBuilder):
                             condOk=False
                             cond=conditions[field]
                             condOk=self.checkConditions(metadata,cond)
-                            print "######################################### CONDITION:'%s'" % cond
+                            if self.debug!=0:
+                                print "######################################### CONDITION:'%s'" % cond
                         except Exception, e:
                             #print "CONDITIONS ERROR:\n%s" % traceback.format_exc()
                             pass
@@ -237,7 +253,8 @@ class SipMessageBuilder(SipBuilder):
                         sipMessage=self.addToSipMessage(sipMessage, block, metadata)
                         
                     else:
-                        print "############################################################ CONDITIONS not ok:'%s'" % conditions 
+                        if self.debug!=0:
+                            print "############################################################ CONDITIONS not ok:'%s'" % conditions 
             else:
                 if self.debug!=0:
                     print "    FIELD UNUSED:%s" % field

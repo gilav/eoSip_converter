@@ -41,8 +41,10 @@ class Dimap_Spot_Product(Directory_Product):
                 metadata.METADATA_SOFTWARE_VERSION:'Production/Production_Facility/SOFTWARE_VERSION',
                 metadata.METADATA_DATASET_NAME:'Dataset_Id/DATASET_NAME',
                 metadata.METADATA_ORBIT:'Dataset_Sources/Source_Information/Scene_Source/Imaging_Parameters/REVOLUTION_NUMBER',
+                metadata.METADATA_PARENT_PRODUCT:'Dataset_Sources/Source_Information/SOURCE_ID',
                 metadata.METADATA_PLATFORM:'Dataset_Sources/Source_Information/Scene_Source/MISSION',
                 metadata.METADATA_PLATFORM_ID:'Dataset_Sources/Source_Information/Scene_Source/MISSION_INDEX',
+                metadata.METADATA_PROCESSING_LEVEL:'Dataset_Sources/Source_Information/Scene_Source/SCENE_PROCESSING_LEVEL',
                 metadata.METADATA_INSTRUMENT:'Dataset_Sources/Source_Information/Scene_Source/INSTRUMENT',
                 metadata.METADATA_INSTRUMENT_ID:'Dataset_Sources/Source_Information/Scene_Source/INSTRUMENT_INDEX',
                 metadata.METADATA_SENSOR_NAME:'Dataset_Sources/Source_Information/Scene_Source/INSTRUMENT',
@@ -125,7 +127,7 @@ class Dimap_Spot_Product(Directory_Product):
             elif self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)=='1' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='X':
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRV1_X__1P')
             elif self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)=='2' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='X':
-                self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRV_X__1P')
+                self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRV2_X__1P')
             else:
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRV#_#_##')
                         
@@ -161,8 +163,6 @@ class Dimap_Spot_Product(Directory_Product):
         if met==None:
             raise Exception("metadate is None")
 
-        # set some evident values
-        met.setMetadataPair(metadata.METADATA_PRODUCTNAME, self.origName)
         
         # use what contains the metadata file
         metContent=self.getMetadataInfo()

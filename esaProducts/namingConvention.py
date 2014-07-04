@@ -45,7 +45,7 @@ class NamingConvention(Product):
     #
     def buildProductName(self, met=None, ext=None):
         if self.debug!=0:
-            print " NamingConvention.buildProductName, pattern used:%s" % self.usedPattern
+            print " NamingConvention.buildProductName, pattern used:%s, ext:%s" % (self.usedPattern, ext)
         toks = self.PATTERN.split('_')
         res=''
         for tok in toks:

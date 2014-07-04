@@ -20,10 +20,42 @@ monthDict2={'JAN':'01', 'FEB':'02', 'MAR':'03', 'APR':'04', 'MAY':'05', 'JUN':'0
 DEFAULT_DATE_PATTERN="%Y-%m-%dT%H:%M:%SZ"
 DEFAULT_DATE_PATTERN_MSEC="%Y-%m-%dT%H:%M:%S.000Z"
 
-debug=1
+debug=0
+
+def format( i, size, pad):
+        result=''
+        while len(result) < size:
+            result = pad + result;
+        return result;
+
+def dms2degdec(dd,mm,ss):
+    return dd + mm/60 + ss/3600
+    
+
+def decdeg2dms(dd):
+    dd=float(dd)
+    is_positive = dd >= 0
+    dd = abs(dd)
+    minutes,seconds = divmod(dd*3600,60)
+    degrees,minutes = divmod(minutes,60)
+    degrees = degrees if is_positive else -degrees
+    return (degrees,minutes,seconds)
+
+    
+def decdeg2dmsString(dd, degChar='\'', sign=' '):
+    dd=float(dd)
+    if dd < 0:
+        sign = "-";
+    is_positive = dd >= 0
+    dd = abs(dd)
+    minutes,seconds = divmod(dd*3600,60)
+    degrees,minutes = divmod(minutes,60)
+    degrees = degrees if is_positive else -degrees
+    return "%s%s%s%s%s%s'" % (sign, int(degrees), degChar,  int(minutes), degChar, int(seconds))
+
 
 #
-#
+# convert UTL to lat lon
 #
 def utmToLatLon(easting, northing, zone, northernHemisphere=True):
     if northernHemisphere=='S' or northernHemisphere=='s':
@@ -113,17 +145,18 @@ def dateFromSecDs(t, pattern=DEFAULT_DATE_PATTERN):
 def datePlusMsec(s, deltaMsec, pattern=DEFAULT_DATE_PATTERN):
         d=datetime.strptime(s, pattern)
         d=d+timedelta(milliseconds=deltaMsec)
+        #print "##%s" % d.strftime(DEFAULT_DATE_PATTERN_MSEC)
         msec=d.microsecond/1000
         tmp="%s" % d.strftime(DEFAULT_DATE_PATTERN_MSEC)
-        return tmp.replace("000", "%s" % msec)
+        return tmp.replace(".000Z", ".%sZ" % msec)
 
 #
 # return a time
 #
 def timePlusMsec(t, deltaMsec):
         d=datetime.fromtimestamp(t)
-        d+timedelta(milliseconds=deltaMsec)
-        return d+timedelta(milliseconds=deltaMsec)
+        res=d+timedelta(milliseconds=deltaMsec)
+        return res
 
 
 #
@@ -236,7 +269,9 @@ def normaliseNumber(s=None, max=-1, pad=' ', truncate=None):
         return res
 
 
-
+#
+# reverse a footprint (CCW <-> CW)
+#
 def reverseFootprint(footprint):
         toks=footprint.split(" ")
         ccw=""
@@ -286,7 +321,7 @@ if __name__ == '__main__':
         print "Utm(712605, 10000, 21, True) ==> lat:0.090422 Lon:-55.089726567181266 ? :: %s %s" % utmToLatLon(712605, 10000, 21, True)
 
         sNow=dateNow()
-        print "dateNow:%s" % sNow
+        print "\n\n\ndateNow:%s" % sNow
 
         nowPlus=datePlusMsec(sNow, 4512)
         print "now + 4.512 sec=%s" % nowPlus
@@ -294,8 +329,43 @@ if __name__ == '__main__':
         toks=nowPlus.split('T')
         print normaliseTime(toks[1], 6)
 
+
+        dateTime='2000-12-31T10:44:45Z'
+        nowPlus=datePlusMsec(dateTime, 4512)
+        print "\n\n\n2000-12-31T10:44:45Z + 4.512 sec=%s" % nowPlus
+        nowPlus=datePlusMsec(dateTime, -4512)
+        print "\n2000-12-31T10:44:45Z - 4.512 sec=%s" % nowPlus
+
+
+        dateTime='2000-10-31T10:44:45Z'
+        nowPlus=datePlusMsec(dateTime, 4512)
+        print "\n\n\n2000-10-31T10:44:45Z + 4.512 sec=%s" % nowPlus
+        nowPlus=datePlusMsec(dateTime, -4512)
+        print "\n2000-10-31T10:44:45Z - 4.512 sec=%s" % nowPlus
+
+
+        dateTime='2010-10-31T10:44:45Z'
+        nowPlus=datePlusMsec(dateTime, 4512)
+        print "\n\n\n2010-10-31T10:44:45Z + 4.512 sec=%s" % nowPlus
+        nowPlus=datePlusMsec(dateTime, -4512)
+        print "\n2010-10-31T10:44:45Z - 4.512 sec=%s" % nowPlus
+
+
+        dateTime='1986-05-16T09:22:42Z'
+        nowPlus=datePlusMsec(dateTime, 4512)
+        print "\n\n\n1986-05-16T09:22:42Z + 4.512 sec=%s" % nowPlus
+        nowPlus=datePlusMsec(dateTime, -4512)
+        print "\n1986-05-16T09:22:42Z - 4.512 sec=%s" % nowPlus
         
-        print "normaliseDateString:%s" % normaliseDateString("17-DEC-2013 20:26:48Z")
+        print "\n\n\nnormaliseDateString:%s" % normaliseDateString("17-DEC-2013 20:26:48Z")
+
+
+        degdec='23.711863883'
+        print "degree dec:%s to deg min sec string:%s" % (degdec, decdeg2dmsString(degdec))
+
+        d,m,s=decdeg2dms(degdec)
+        print "degree dec:%s to deg min sec:%s %s %s" % (s,d,m,s)
+        print "and reverse:%s" % dms2degdec(d,m,s)
         
             
     except Exception, e:

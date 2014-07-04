@@ -122,12 +122,7 @@ if __name__ == '__main__':
     try:
         if len(sys.argv) > 1:
             ingester = ingester_reaper()
-            ingester.debug=1
-            ingester.readConfig(sys.argv[1])
-            ingester.makeFolders()
-            ingester.getMissionDefaults()
-            ingester.findProducts()
-            ingester.processProducts()
+            ingester.starts(sys.argv)
             
         else:
             print "syntax: python ingester_xxx.py configuration_file.cfg"

@@ -40,6 +40,9 @@ class DataProvider():
         #print "\n\n\ncurrent path:%s\n\n\n" % sys.path
         self.initString = init
         toks=init.split("|")
+        if len(toks[1].split("@"))!= 3:
+            raise Exception("token 1 of provider source has not 3 '@' separated fields:'%s'" % toks[1])
+            
         aClass,aPackage,aPath=toks[1].split("@")
         if self.debug!=0:
             print "  will instanciate class:'%s' in package:'%s' with init:'%s'" % (aClass,aPackage,aPath)

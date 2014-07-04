@@ -5,7 +5,7 @@
 # - the tmpWorkig folder
 # - the ingester used
 #
-
+from cStringIO import StringIO
 
 class processInfo():
 
@@ -29,12 +29,13 @@ class processInfo():
 
     
     def toString(self):
-        res='\nworkFolder:%s\n' % self.workFolder
-        res='%ssrcPath:%s\n' % (res, self.srcPath)
-        res='%snum:%s\n' % (res, self.num)
-        res='%ssrcProduct:%s\n' % (res, self.srcProduct)
-        res='%sdestProduct:%s\n' % (res, self.destProduct)
-        res='%seosipTmpFolder:%s\n' % (res, self.eosipTmpFolder)
-        res='%singester:%s\n' % (res, self.ingester)
-        return res
+        out=StringIO()
+        print >>out, '\nworkFolder:%s\n' % self.workFolder
+        print >>out, 'srcPath:%s\n' % (self.srcPath)
+        print >>out, 'num:%s\n' % (self.num)
+        print >>out, 'srcProduct:%s\n' % (self.srcProduct)
+        print >>out, 'destProduct:%s\n' % (self.destProduct)
+        print >>out, 'eosipTmpFolder:%s\n' % (self.eosipTmpFolder)
+        print >>out, 'ingester:%s\n' % (self.ingester)
+        return out.getvalue()
         

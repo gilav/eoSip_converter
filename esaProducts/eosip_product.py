@@ -26,7 +26,6 @@ from namingConvention import NamingConvention
 import definitions_EoSip
 import xmlHelper
 import browse_metadata, metadata
-#from definitions_EoSip import rep_metadataReport, rep_browseReport, SIPInfo
 from definitions_EoSip import eop_EarthObservation, alt_EarthObservation, sar_EarthObservation, opt_EarthObservation, lmb_EarthObservation, atm_EarthObservation, rep_browseReport, eop_browse, SIPInfo
 
 
@@ -71,17 +70,15 @@ class EOSIP_Product(Directory_Product):
         self.browsesReportInfo=[]
         # sip report
         self.sipReport=None
-        # the product name (as in final eoSip product): productShortName + ext
+        # the product name (as in final eoSip product): packageName + ext
         self.productName=None
-        # the product name (as in final eoSip product)
-        self.productShortName=None
         # the source of the product
         self.sourceProductPath=None
         # the product report info
         self.productReport=None
         # the browse report info
         self.browsesReport=None
-        # the package name 
+        # the package name == productShortName??
         self.packageName=None
         # the package extention
         self.extension=None
@@ -173,11 +170,13 @@ class EOSIP_Product(Directory_Product):
             print " build products names, pattern=%s,ext=%s" % (pattern, ext) # using metadata:\n%s" % self.metadata.dump()
         naming = NamingConvention(pattern)
         self.productName=naming.buildProductName(self.metadata, ext)
-        self.productShortName=self.productName.split('.')[0]
-        self.metadata.setMetadataPair(metadata.METADATA_PRODUCTNAME, self.productShortName)
+        self.metadata.setMetadataPair(metadata.METADATA_PRODUCTNAME, self.productName)
+        self.packageName=self.productName.split('.')[0]
+        self.metadata.setMetadataPair(metadata.METADATA_PACKAGENAME, self.packageName)
 
         #
-        self.buildackageName()
+        #self.builPackageName()
+        #self.packageName=self.productShortName
 
 
     #
@@ -195,7 +194,8 @@ class EOSIP_Product(Directory_Product):
         ##productReportBuilder=eop_EarthObservation.eop_EarthObservation()
         #self.metadata.debug=1
         typologyUsed = self.metadata.getOtherInfo("TYPOLOGY_SUFFIX")
-        print "############## typologyUsed:"+typologyUsed
+        if self.debug!=0:
+            print "############## typologyUsed:"+typologyUsed
         if typologyUsed=='':
             typologyUsed='EOP'
             
@@ -214,7 +214,8 @@ class EOSIP_Product(Directory_Product):
 
         # add the BROWSE block. just for first browse at this time. TODO: loop all browses? 
         bmet=self.browse_metadata_dict.values()[0]
-        print "%%%%%%%%%%%%%%%%%%%% BMET DUMP:%s" % bmet.dump()
+        if self.debug!=0:
+            print "%%%%%%%%%%%%%%%%%%%% BMET DUMP:%s" % bmet.dump()
 
         
         browseBlockBuilder=eop_browse.eop_browse()
@@ -258,7 +259,7 @@ class EOSIP_Product(Directory_Product):
         if self.debug!=0:
             print " product report content:\n%s" % self.productReport
         ext=definitions_EoSip.getDefinition("MD_EXT")
-        reportName="%s.%s" % (self.productShortName, ext)
+        reportName="%s.%s" % (self.packageName, ext)
         if self.debug!=0:
             print "   product report name:%s" % (reportName)
 
@@ -355,7 +356,7 @@ class EOSIP_Product(Directory_Product):
         if self.debug!=0:
             print " sip report content:\n%s" % self.sipReport
         ext=definitions_EoSip.getDefinition("SI_EXT")
-        sipName="%s.%s" % (self.productShortName, ext)
+        sipName="%s.%s" % (self.packageName, ext)
         if self.debug!=0:
             print "   sip report name:%s" % (sipName)
 
@@ -376,7 +377,7 @@ class EOSIP_Product(Directory_Product):
     #
     # build package name
     #
-    def buildackageName(self):
+    def builPackageName(self):
         self.packageName=self.productName.replace(".%s"% self.extension, ".%s" % definitions_EoSip.getDefinition('PACKAGE_EXT'))
         self.metadata.setMetadataPair(metadata.METADATA_PACKAGENAME, self.packageName)
 
@@ -420,13 +421,15 @@ class EOSIP_Product(Directory_Product):
     # wtite the Eo-Sip product in a folder.
     #
     def writeToFolder(self, p=None, overwrite=None):
-        if self.packageName==None:
-            raise Exception("Eo-Sip product has no package name")
+        if self.productName==None:
+            raise Exception("Eo-Sip product has no productName")
         if self.debug==0:
             print "\n will write EoSip product at folder path:%s" % p
         if p[-1]!='/':
             p=p+'/'
-        self.path="%s%s" % (p, self.packageName)
+
+        #
+        self.path="%s%s" % (p, self.productName)
         if self.debug==0:
             print " full eoSip path:%s" % self.path
 
@@ -452,10 +455,11 @@ class EOSIP_Product(Directory_Product):
         # - source is not a zip file ==> compress into a zip
         if self.debug!=0:
             print "  write EoSip content[0]; product itself:%s  as:%s" % (self.sourceProductPath, self.productName)
+
+        # source is already a zip
         if self.sourceProductPath.lower()[-4:]==".zip":
             zipf.write(self.sourceProductPath, self.productName, zipfile.ZIP_STORED)
         else: # zip source product
-            #zipf.write(self.sourceProductPath, self.productName, zipfile.ZIP_STORED)
             tmpProductZippedPath="%s/productZipped.zip" % (self.folder)
             zipTmpProduct = zipfile.ZipFile(tmpProductZippedPath, 'w')
             zipTmpProduct.write(self.sourceProductPath, os.path.split(self.sourceProductPath)[1], zipfile.ZIP_STORED)
@@ -466,7 +470,7 @@ class EOSIP_Product(Directory_Product):
         for browsePath in self.sourceBrowsesPath:
             folder=os.path.split(browsePath)[0]
             bmet=self.browse_metadata_dict[browsePath]
-            name= "%s.%s" % (self.productShortName, definitions_EoSip.getDefinition('BROWSE_JPEG_EXT'))
+            name= "%s.%s" % (self.packageName, definitions_EoSip.getDefinition('BROWSE_JPEG_EXT'))
             if self.debug==0:
                 print "   write EoSip content[1]; product browse:%s  as:%s" % (browsePath, name)                                                                 
             zipf.write(browsePath, name)
@@ -544,7 +548,6 @@ class EOSIP_Product(Directory_Product):
         print >>out, "  Content:"
         print >>out, "   product name:%s" % self.productName
         print >>out, "   source product path:%s" % self.sourceProductPath
-        print >>out, "   product shortName:%s" % self.productShortName
         print >>out, "   product tmpFolder:%s" % self.folder
         
         if len(self.sourceBrowsesPath)==0:

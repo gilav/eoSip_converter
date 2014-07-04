@@ -61,6 +61,8 @@ class csvData():
         print "csv file %s opened, num lines:%s" % (path, self.numLines)
         if self.debug!=0:
             print "dir:%s" % dir(self.reader)
+        if doLut==False:
+            raise Exception("cvsFile '%s' error: has no column:'%s' or '%s' needed to build LUT" % (path, key, name))
 
 
 
@@ -72,7 +74,12 @@ class csvData():
             return self.lut[k]
         else:
             return None
-
+        
+    #
+    # get values
+    #
+    def getRowValues(self):
+        return self.lut.values()
 
     #
     #
@@ -84,10 +91,25 @@ if __name__ == '__main__':
     try:
         csvd = csvData()
         #csvd.openFile("C:/Users/glavaux/Shared/LITE/testData/TropForest/status_AVNIR_qc_Final.csv", 'New_Filename', 'Orbit')
-        csvd.openFile("C:/Users/glavaux/Shared/LITE/Spot/MMMC_SPOT_export.csv", 'DATASET_ID', 'TRACK')
+        #csvd.openFile("C:/Users/glavaux/Shared/LITE/Spot/MMMC_SPOT_export.csv", 'DATASET_ID', 'TRACK')
+        csvd.openFile("C:/Users/glavaux/Shared/LITE/Spot/MMMC_SPOT_export.csv", 'DATASET_ID', 'PRODUCT_ID')
         #print "get N02-W062_KOM_20101110_PRO_0 Orbit:%s" % csvd.getRowValue('N00-W075_AVN_20090804_PRO_0')
-        print "get N02-57172150608221305471J0_1A_DVD.ZIP track:%s" % csvd.getRowValue('57172150608221305471J0_1A_DVD.ZIP')
+        print "get N02-57172150608221305471J0_1A_DVD.ZIP PRODUCT_ID:%s" % csvd.getRowValue('57172150608221305471J0_1A_DVD.ZIP')
+        print "get 40202630705261133411I0_1A_NETWORK.ZIP PRODUCT_ID:%s" % csvd.getRowValue('40202630705261133411I0_1A_NETWORK.ZIP')
         #print "get toto Orbit:%s" % csvd.getRowValue('toto')
+
+        values = csvd.getRowValues()
+        values.sort()
+        typecode={}
+        for item in values:
+            pos=item.find('.')
+            if pos > 0:
+                typecode[item[pos+1:]]=item
+
+        for item in typecode.keys():
+            print item
+            
+        
         
     except Exception, e:
         print " Error"

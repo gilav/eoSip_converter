@@ -12,9 +12,17 @@ import traceback
 # to be able to import metadata
 #currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 #parentdir = os.path.dirname(currentdir)
-#print "SYS_PATH:%s" % sys.path
+#print "\nsipBuilder SYS_PATH:%s" % sys.path
 #sys.path.insert(0,parentdir)
 import metadata, browse_metadata
+#try:
+#    import metadata, browse_metadata
+#except:
+#    currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+#    parentdir = os.path.dirname(currentdir)
+#    #print "\nsipBuilder SYS_PATH:%s" % sys.path
+#    sys.path.insert(0,parentdir)
+#    import metadata, browse_metadata
 
 
 VALUE_OPTIONAL="OPTIONAL"
@@ -24,13 +32,20 @@ VALUE_NONE="None"
 VALUE_NOT_PRESENT="NOT-PRESENT"
 
 # default xml node mapping
+#print "module metadata:%s" % metadata
+#print "module browse_metadata:%s" % browse_metadata
+
+#print "dir module metadata:%s" % dir(metadata)
+#print "dir module browse_metadata:%s" % dir(browse_metadata)
+
+
 EOSIP_METADATA_MAPPING={'responsible':metadata.METADATA_RESPONSIBLE,
                         'SIPCreator':metadata.METADATA_CREATOR,
                         'reportType':metadata.METADATA_REPORT_TYPE,
                         'generationTime':metadata.METADATA_GENERATION_TIME,
-                        'gmlId':metadata.METADATA_PRODUCTNAME,
+                        'gmlId':metadata.METADATA_PACKAGENAME,
                         'identifier':metadata.METADATA_PRODUCTNAME,
-                        'parentIdentifier':metadata.METADATA_PRODUCTNAME,
+                        'parentIdentifier':metadata.METADATA_PARENT_PRODUCT,
                         'productType':metadata.METADATA_TYPECODE,
                         'beginPositionDate':metadata.METADATA_START_DATE,
                         'beginPositionTime':metadata.METADATA_START_TIME,
@@ -54,7 +69,7 @@ EOSIP_METADATA_MAPPING={'responsible':metadata.METADATA_RESPONSIBLE,
                         'instrumentElevationAngle':metadata.METADATA_INSTRUMENT_ELEVATION_ANGLE,
                         'productSize':metadata.METADATA_PRODUCT_SIZE,
                         'referenceSystemIdentifier':metadata.METADATA_REFERENCE_SYSTEM_IDENTIFIER,
-                        'href':metadata.METADATA_PACKAGENAME,
+                        'href':metadata.METADATA_PRODUCTNAME,
                         'timePosition':metadata.METADATA_PROCESSING_TIME,
                         'cloudCoverPercentage':metadata.METADATA_CLOUD_COVERAGE,
                         'status':metadata.METADATA_STATUS,
@@ -73,6 +88,7 @@ EOSIP_METADATA_MAPPING={'responsible':metadata.METADATA_RESPONSIBLE,
                         'processingCenter':metadata.METADATA_PROCESSING_CENTER,
                         'processorName':metadata.METADATA_SOFTWARE_NAME,
                         'processorVersion':metadata.METADATA_SOFTWARE_VERSION,
+                        'processingLevel':metadata.METADATA_PROCESSING_LEVEL,
                         'cycleNumber':metadata.METADATA_CYCLE,
                         'relativePassNumber':metadata.METADATA_RELATIVE_ORBIT,
                         'snowCoverPercentage':metadata.METADATA_SNOW_COVERAGE,
@@ -114,7 +130,8 @@ class SipBuilder:
             pos = condition.find('__')
             operator=condition[0:pos]
             metaName=condition[pos+2:]
-            print "################################## checkConditions: operator:'%s'  varname='%s'" % (operator, metaName)
+            if self.debug!=0:
+                print "################################## checkConditions: operator:'%s'  varname='%s'" % (operator, metaName)
             if metadata.dict.has_key(metaName):
                 resolved=metadata.getMetadataValue(metaName)
                 if operator=="FILLED":
@@ -123,8 +140,10 @@ class SipBuilder:
                 else:
                     raise Exception("unknown condition operator:'%s'" % operator)
             else:
-                print "################################## checkConditions: metaName not in metadata:'%s'" % metaName
-            print "################################## checkConditions: returns:%s" % result
+                if self.debug!=0:
+                    print "################################## checkConditions: metaName not in metadata:'%s'" % metaName
+            if self.debug!=0:
+                print "################################## checkConditions: returns:%s" % result
             return result
         except Exception, e:
             exc_type, exc_obj, exc_tb = sys.exc_info()

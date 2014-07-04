@@ -103,7 +103,7 @@ class ingester_ikonos(ingester.Ingester):
                     #browseSrcPath="%s/%s" % (processInfo.workFolder , processInfo.srcProduct.PREVIEW_NAME)
                     browseSrcPath=processInfo.srcProduct.preview_path
                     browseExtension=definitions_EoSip.getBrowseExtension(0, definitions_EoSip.getDefinition('BROWSE_JPEG_EXT'))
-                    browseDestPath="%s/%s.%s" % (processInfo.eosipTmpFolder, processInfo.destProduct.productShortName, browseExtension)
+                    browseDestPath="%s/%s.%s" % (processInfo.eosipTmpFolder, processInfo.destProduct.packageName, browseExtension)
                     shutil.copyfile(browseSrcPath, browseDestPath)
                     processInfo.destProduct.addSourceBrowse(browseDestPath, [])
                     processInfo.addLog("  browse image created:%s" %  (browseDestPath))
@@ -180,11 +180,7 @@ if __name__ == '__main__':
         if len(sys.argv) > 1:
             ingester = ingester_ikonos()
             ingester.debug=0
-            ingester.readConfig(sys.argv[1])
-            ingester.makeFolders()
-            ingester.getMissionDefaults()
-            ingester.findProducts()
-            ingester.processProducts()
+            ingester.starts(sys.argv)
             
         else:
             print "syntax: python ingester_xxx.py configuration_file.cfg"
