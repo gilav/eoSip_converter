@@ -13,6 +13,8 @@ import zipfile
 import xmlHelper
 from product import Product
 from directory_product import Directory_Product
+from definitions_EoSip import sipBuilder
+from browseImage import BrowseImage
 import metadata
 import browse_metadata
 import formatUtils
@@ -245,6 +247,13 @@ class Dimap_Tropforest_Product(Directory_Product):
         # set orbit to 000000 if None
         if self.metadata.getMetadataValue(metadata.METADATA_ORBIT)==None:
             self.metadata.setMetadataPair(metadata.METADATA_ORBIT, "000000")
+
+        # suppress 'L' charactere in metadata.METADATA_INSTRUMENT_INCIDENCE_ANGLE
+        tmp = self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_INCIDENCE_ANGLE)
+        if tmp[0]=='L':
+            tmp = tmp[1:]
+            self.metadata.setMetadataPair(metadata.METADATA_INSTRUMENT_INCIDENCE_ANGLE, tmp)
+            
             
         # 
         self.buildTypeCode() 
@@ -348,6 +357,8 @@ class Dimap_Tropforest_Product(Directory_Product):
         nodes=[]
         helper.getNodeByPath(None, 'Geoposition/Geoposition_Insert', None, nodes)
         if len(nodes)==1:
+            footprint=None
+            rowCol=None
             ulx = helper.getNodeText(helper.getFirstNodeByPath(nodes[0], 'ULXMAP', None))
             uly = helper.getNodeText(helper.getFirstNodeByPath(nodes[0], 'ULYMAP', None))
             try: # next for non Deimos products
@@ -360,10 +371,10 @@ class Dimap_Tropforest_Product(Directory_Product):
                 met.setMetadataPair(browse_metadata.BROWSE_METADATA_RECT_COORDLIST, "%s %s %s %s" % (bry, ulx, uly , brx))
 
                 # make the product metadata report footprint in ccw order
-                ccw="%s %s %s %s %s %s %s %s %s %s" % (uly, ulx,   bry, ulx,   bry, brx,   uly, brx,   uly, ulx)
+                footprint="%s %s %s %s %s %s %s %s %s %s" % (uly, ulx,   bry, ulx,   bry, brx,   uly, brx,   uly, ulx)
                 if self.debug!=0:
-                    print " posList:%s" % ccw
-                met.setMetadataPair(metadata.METADATA_FOOTPRINT, ccw)
+                    print " posList:%s" % footprint
+                met.setMetadataPair(metadata.METADATA_FOOTPRINT, footprint)
             except:
                 #self.debug=1
                 # for Deimos products
@@ -371,6 +382,7 @@ class Dimap_Tropforest_Product(Directory_Product):
                 # get the UTM zone and number
                 # is like: WGS 84 / UTM zone 21N
                 # ==>extract 21 and N
+                footprint=''
                 utmInfo=met.getMetadataValue(metadata.METADATA_REFERENCE_SYSTEM_IDENTIFIER_NAME)
                 lastTok=utmInfo.split(" ")[-1]
                 zone=lastTok[-1]
@@ -378,7 +390,6 @@ class Dimap_Tropforest_Product(Directory_Product):
                 if self.debug!=0:
                     print " ################# utm info:'%s'; zone:'%s'; zone number:'%s'" % (utmInfo, zone, zoneNumber)
                 nodes2=[]
-                footprint=''
                 helper.getNodeByPath(None, 'Dataset_Frame/Vertex', None, nodes2)
                 #
                 # keep first + 2th and 4th point to close the polygon and make the rectBrose BL/UR corners
@@ -422,15 +433,44 @@ class Dimap_Tropforest_Product(Directory_Product):
                     print " ERROR: Dataset_Frame/Vertex not found:%d" % len(nodes2)
                     raise Exception(" ERROR: Dataset_Frame/Vertex not found:%d" % len(nodes2))
 
+
             # extract also COUNTRY, add it to local attributes
             # Deimos doesn't have this info
             if met.getMetadataValue(metadata.METADATA_PLATFORM)!='DEIMOS':
-                print "@@@@@@@@@@@@@ nodes=%s" % nodes
-                print "@@@@@@@@@@@@@ nodes[0]=%s" % nodes[0]
-                helper.setDebug(1)
+                #print "@@@@@@@@@@@@@ nodes=%s" % nodes
+                #print "@@@@@@@@@@@@@ nodes[0]=%s" % nodes[0]
+                #helper.setDebug(1)
                 country = helper.getNodeText(helper.getFirstNodeByPath(nodes[0], 'COUNTRY', None))
                 met.setMetadataPair(metadata.METADATA_COUNTRY, country)
                 met.addLocalAttribute("country", country)
+
+
+            # make sure the footprint is CCW
+            browseIm = BrowseImage()
+            browseIm.setFootprint(footprint)
+            browseIm.setColRowList(rowCol)
+            print "browseIm:%s" % browseIm.info()
+            if not browseIm.getIsCCW():
+                print "############### reverse the footprint; before:%s; colRowList:%s" % (footprint,rowCol)
+                browseIm.reverseFootprint()
+                print "###############             after;%s; colRowList:%s" % (browseIm.getFootprint(), browseIm.getColRowList())
+                met.setMetadataPair(metadata.METADATA_FOOTPRINT, browseIm.getFootprint())
+                met.setMetadataPair(metadata.METADATA_FOOTPRINT_IMAGE_ROWCOL, browseIm.getColRowList())
+            else:
+                met.setMetadataPair(metadata.METADATA_FOOTPRINT, footprint)
+                met.setMetadataPair(metadata.METADATA_FOOTPRINT_IMAGE_ROWCOL, rowCol)
+                pass
+            # calculate center if not already set
+            centerPair = met.getMetadataValue(metadata.METADATA_SCENE_CENTER)
+            if centerPair==sipBuilder.VALUE_NOT_PRESENT:
+                lat, lon = browseIm.calculateCenter()
+                met.setMetadataPair(metadata.METADATA_SCENE_CENTER, "%s %s" % (lat, lon))
+                met.setMetadataPair(metadata.METADATA_SCENE_CENTER_LAT, lat)
+                met.setMetadataPair(metadata.METADATA_SCENE_CENTER_LON, lon)
+            else:
+                print "@@@@@@@@@@@@@@@#######################@@@@@@@@@@@@@@@@@@@@@ centerPair:%s" % centerPair
+            # footprint is needed in the localAttributes
+            met.addLocalAttribute("boundingBox", met.getMetadataValue(metadata.METADATA_FOOTPRINT))
 
 
         else:

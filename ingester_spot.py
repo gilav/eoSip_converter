@@ -34,6 +34,7 @@ class ingester_spot(ingester.Ingester):
         #
         def createSourceProduct(self, processInfo):
             global debug,logger
+            processInfo.ingester=self
             dimapP = dimap_spot_product.Dimap_Spot_Product(processInfo.srcPath)
             processInfo.srcProduct = dimapP
 
@@ -45,15 +46,17 @@ class ingester_spot(ingester.Ingester):
             eosipP=eosip_product.EOSIP_Product()
             eosipP.sourceProductPath = processInfo.srcPath
             processInfo.destProduct = eosipP
-            self.logger.info(" Eo-Sip product created")
-            processInfo.addLog(" Eo-Sip product created")
+            self.logger.info(" Eo-Sip class created")
+            processInfo.addLog("\n - Eo-Sip class created")
+            self.logger.info(" src product will be stored as:%s" % eosipP.src_product_stored)
+            processInfo.addLog("  => src product will be stored as:%s" % eosipP.src_product_stored)
                     
         #
         # Override
         #
         def verifySourceProduct(self, processInfo):
-                processInfo.addLog(" verifying product:%s" % (processInfo.srcPath))
-                self.logger.info(" verifying product");
+                processInfo.addLog(" - verifying product: %s" % (processInfo.srcPath))
+                self.logger.info(" verifying product")
                 fh = open(processInfo.srcPath, 'rb')
                 zf = zipfile.ZipFile(fh)
                 ok = zf.testzip()
@@ -61,27 +64,29 @@ class ingester_spot(ingester.Ingester):
                 if ok is not None:
                         self.logger.error("  Zip file is corrupt:%s" % processInfo.srcPath)
                         self.logger.error("  First bad file in zip: %s" % ok)
-                        processInfo.addLog("  Zip file is corrupt:%s" % processInfo.srcPath)
+                        processInfo.addLog("  => Zip file is corrupt:%s" % processInfo.srcPath)
                         raise Exception("Zip file is corrupt:%s" % processInfo.srcPath)
                 else:
                     self.logger.info("  Zip file is ok")
-                    processInfo.addLog("  Zip file is ok")
+                    processInfo.addLog("  => Zip file is ok")
 
             
         #
         # Override
         #
         def prepareProducts(self,processInfo):
-                processInfo.addLog(" prepare product in:%s" % (processInfo.workFolder))
-                self.logger.info(" prepare product");
+                processInfo.addLog("\n - prepare product, will extract inside working folder:%s" % (processInfo.workFolder))
+                self.logger.info(" prepare product")
                 processInfo.srcProduct.extractToPath(processInfo.workFolder)
-                processInfo.addLog("  extracted inside:%s" % (processInfo.workFolder))
+                processInfo.addLog("  => extracted inside:%s" % (processInfo.workFolder))
                 self.logger.info("  extracted inside:%s" % (processInfo.workFolder))
 
         #
         # Override
         #
         def extractMetadata(self,met,processInfo):
+            processInfo.addLog("\n - will extract metadata from src product")
+            self.logger.info(" will extract metadata from src product")
             # fill metadata object
             numAdded=processInfo.srcProduct.extractMetadata(met)
             size=processInfo.srcProduct.getSize()
@@ -121,8 +126,9 @@ class ingester_spot(ingester.Ingester):
             except Exception, e:
                     exc_type, exc_obj, exc_tb = sys.exc_info()
                     print "Error %s  %s\n%s" %  (exc_type, exc_obj, traceback.format_exc())
-                
-            
+                    processInfo.addLog("  => ERROR: %s  %s" %  (exc_type, exc_obj))
+                    self.logger.info(" ERROR: %s  %s" %  (exc_type, exc_obj))
+                    
             
             
             # get additionnal metadata from optionnal dataProvider:we want the track and frame
@@ -133,6 +139,8 @@ class ingester_spot(ingester.Ingester):
                     #print "@@@@@@@@@@@@@@@@@@@@         key:%s" % met.getMetadataValue(metadata.METADATA_ORIGINAL_NAME)
                     # look the one for the mission
                     for item in self.dataProviders.keys():
+                            processInfo.addLog("   also use data from data provider:%s" % item)
+                            self.logger.info(" also use data from data provider:%s" % item)
                             #print "@@@@@@@@@@@@@@@@@@@@ doing dataProviders item:%s" % item
                             if item == metadata.METADATA_TRACK:  # fiel is mandatory
                                     # what value do we have?
@@ -206,13 +214,15 @@ class ingester_spot(ingester.Ingester):
         # construct the browse_metadatareport footprint block(BROWSE_CHOICE): it is the rep:footprint for spot
         #
         def makeBrowses(self,processInfo):
+            processInfo.addLog("\n - will make browse")
+            self.logger.info(" will make browse")
             try:
                     browseSrcPath=processInfo.srcProduct.preview_path
                     browseExtension=definitions_EoSip.getBrowseExtension(0, definitions_EoSip.getDefinition('BROWSE_JPEG_EXT'))
                     browseDestPath="%s/%s.%s" % (processInfo.eosipTmpFolder, processInfo.destProduct.packageName, browseExtension)
                     shutil.copyfile(browseSrcPath, browseDestPath)
                     processInfo.destProduct.addSourceBrowse(browseDestPath, [])
-                    processInfo.addLog("  browse image created:%s" %  (browseDestPath))
+                    processInfo.addLog("  => browse image created:%s" %  (browseDestPath))
                     self.logger.info("  browse image created:%s" % browseDestPath)
 
 
@@ -245,9 +255,11 @@ class ingester_spot(ingester.Ingester):
                     exc_type, exc_obj, exc_tb = sys.exc_info()
                     errorMsg="Error generating browse:%s  %s\n%s" %  (exc_type, exc_obj, traceback.format_exc())
                     self.logger.error(errorMsg)
-                    processInfo.addLog="%s" %  (errorMsg)
+                    processInfo.addLog("  => ERROR: %s  %s" %  (exc_type, exc_obj))
+                    self.logger.info(" ERROR: %s  %s" %  (exc_type, exc_obj))
                     processInfo.addLog="%s" %  (traceback.format_exc())
                     #raise e
+
 
         #
         # Override
@@ -257,49 +269,74 @@ class ingester_spot(ingester.Ingester):
         # create link for the other rules if any
         #
         def output_eoSip(self, processInfo, basePath, pathRules, overwrite=None):
-                self.logger.info("  output_eoSip: basePath=%s" %  (basePath))
+                processInfo.addLog("\n - will output eoSip; basePath=%s" %  (basePath))
+                self.logger.info(" will output eoSip; basePath=%s" %  (basePath))
                 # copy eoSip in first path
                 # make links in other paths
                 outputProductResolvedPaths = processInfo.destProduct.getOutputFolders(basePath, pathRules)
                 if len(outputProductResolvedPaths)==0:
+                        processInfo.addLog("   ERROR: no product resolved path")
+                        self.logger.info(" ERROR: no product resolved path")
                         raise Exception("no product resolved path")
                 else:
                         # output in first path
                         firstPath=outputProductResolvedPaths[0]
-                        processInfo.addLog("  Eo-Sip product writen in folder:%s\n" %  (firstPath))
-                        self.logger.info("  Eo-Sip product writen in folder:%s\n" %  (firstPath))
+                        processInfo.addLog("  Eo-Sip product will be writen in folder:%s" %  (firstPath))
+                        self.logger.info("  Eo-Sip product will be writen in folder:%s" %  (firstPath))
                         processInfo.destProduct.writeToFolder(firstPath, overwrite)
+                        processInfo.addLog("  ok, writen well")
+                        self.logger.info(" ok, writen well")
 
-                        # copy the browse FOR TEST
-                        try:
-                                if len(processInfo.destProduct.sourceBrowsesPath)>0:
-                                        tmp=os.path.split(processInfo.destProduct.sourceBrowsesPath[0])[1]
-                                        tmpb=tmp.split('.')[-1]
-                                        tmpa=tmp.split('.')[0:-1]
-                                        thumbnail = "%s.TN.%s" % ("".join(tmpa),tmpb)
-                                        processInfo.destProduct.metadata.setMetadataPair(metadata.METADATA_THUMBNAIL,thumbnail)
-                                        thumbnail="%s/%s" % (firstPath, thumbnail)
-                                        #shutil.copyfile("%s" % (processInfo.destProduct.sourceBrowsesPath[0]), "%s/%s" % (firstPath,tmp))
-                                        imageUtil.makeJpeg("%s" % (processInfo.destProduct.sourceBrowsesPath[0]), thumbnail, 25 )
-                                        print "####################################### %s/%s_TN.%s" % (firstPath,tmpa,tmpb)
-                                
-                                else:
-                                        print "There is no brose to move to final folder"
-                        except:
-                                print " thubnail Error"
-                                exc_type, exc_obj, exc_tb = sys.exc_info()
-                                traceback.print_exc(file=sys.stdout)
+                        # make a thumbnail FOR TEST
+                        if processInfo.create_thumbnail==1:
+                                self.make_thumbnail(processInfo, firstPath)
 
                         # output link in other path
                         i=0
                         for item in outputProductResolvedPaths:
                                 if i>0:
                                         otherPath="%s" % (item)
-                                        self.logger.info("  eoSip product tree path[%d] is:%s" %(i, item))
+                                        self.logger.info("  create also (linked?) eoSip product at tree path[%d] is:%s" %(i, item))
+                                        processInfo.addLog("  create also (linked?) eoSip product at tree path[%d] is:%s" %(i, item))
                                         processInfo.destProduct.writeToFolder(basePath, overwrite)
                                         processInfo.addLog("  Eo-Sip product link writen in folder[%d]:%s\n" %  (i, otherPath))
                                         self.logger.info("  Eo-Sip product link writen in folder[%d]:%s\n" %  (i, otherPath))
                                 i=i+1
+                                
+        #
+        # make a thumbnail
+        #
+        def make_thumbnail(self, processInfo, path):
+                # make a thumbnail FOR TEST
+                processInfo.addLog("\n - will make thumbnail")
+                self.logger.info("  will make thumbnail")
+                try:
+                        if len(processInfo.destProduct.sourceBrowsesPath)>0:
+                                tmp=os.path.split(processInfo.destProduct.sourceBrowsesPath[0])[1]
+                                tmpb=tmp.split('.')[-1]
+                                tmpa=tmp.split('.')[0:-1]
+                                thumbnail = "%s.TN.%s" % ("".join(tmpa),tmpb)
+                                processInfo.destProduct.metadata.setMetadataPair(metadata.METADATA_THUMBNAIL,thumbnail)
+                                thumbnail="%s/%s" % (path, thumbnail)
+                                imageUtil.makeJpeg("%s" % (processInfo.destProduct.sourceBrowsesPath[0]), thumbnail, 25 )
+                                print "builded thumbnail file:%s/%s_TN.%s" % (path,tmpa,tmpb)
+                                self.logger.info("builded thumbnail file:%s/%s_TN.%s" % (path,tmpa,tmpb))
+                                processInfo.addLog("builded thumbnail file:%s/%s_TN.%s" % (path,tmpa,tmpb))
+                        
+                        else:
+                                print "there is no browse so no thumbnail to create in final folder"
+                                self.logger.info(" no browse available, so no thumbnail...")
+                                processInfo.addLog("  => no browse available, so no thumbnail...")
+                                
+                except Exception, e:
+                        print " thubnail creation Error"
+                        exc_type, exc_obj, exc_tb = sys.exc_info()
+                        traceback.print_exc(file=sys.stdout)
+                        self.logger.info(" ERROR: %s  %s" %  (exc_type, exc_obj))
+                        processInfo.addLog("  => ERROR: %s  %s" %  (exc_type, exc_obj))
+                        processInfo.addLog="%s" %  (traceback.format_exc())
+
+
 
 if __name__ == '__main__':
     try:

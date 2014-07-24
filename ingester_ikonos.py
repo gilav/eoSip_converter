@@ -33,6 +33,7 @@ class ingester_ikonos(ingester.Ingester):
         #
         def createSourceProduct(self, processInfo):
             global debug,logger
+            processInfo.ingester=self
             processInfo.srcProduct = ikonos_product.Ikonos_Product(processInfo.srcPath)
 
         #

@@ -18,3 +18,5 @@ class om_result(SipMessageBuilder):
     REPRESENTATION_ALT = ["alt_EarthObservationResult"]
 
     REPRESENTATION_OPT = ["opt_EarthObservationResult"]
+
+    REPRESENTATION_LMB = ["lmb_EarthObservationResult"]

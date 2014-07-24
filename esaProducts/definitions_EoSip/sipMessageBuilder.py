@@ -1,4 +1,4 @@
-import os,sys,inspect
+import os,sys,inspect,traceback
 import logging
 
 # to be able to import all the definition in this folder:
@@ -45,6 +45,7 @@ class SipMessageBuilder(SipBuilder):
     #
     def addToSipMessage(self, mess, segment, met=None, optional=False):
         if mess!=None:
+            if self.debug != 0:print "@@@@###@@@\n@@@@###@@@@\n@@@@###@@@ addToSipMessage: segment='%s'. optional=%s" % (segment, optional)
             pos=segment.find('@')
             if pos<0:
                 tmp=self.resolveEval(segment, met)
@@ -175,20 +176,26 @@ class SipMessageBuilder(SipBuilder):
         # find if there are OPTIONAL in classe definition
         try:
             optional=self.__getattribute__(sipBuilder.VALUE_OPTIONAL)
-            #print "@@@@@@@ %s has optional !!!" % self
-        except:
+            if self.debug!=0:
+                print "\n@@@ has optional? @@@ %s has optional !!!" % self
+        except Exception, e:
             optional=None
-            #print "@@@@@@@ %s no optional" % self
+            if self.debug!=0:
+                print "\n@@@ has optional? @@@ %s no optional" % self
+            #exc_type, exc_obj, exc_tb = sys.exc_info()
+            #print "has optional ERROR@@@ %s  %s\n%s" %  (exc_type, exc_obj, traceback.format_exc())
 
         # find if there are CONDITIONS in classe definition
         try:
             conditions=self.__getattribute__(sipBuilder.VALUE_CONDITIONS)
             if self.debug!=0:
-                print "@@@@@@@@@@@@@@@@@@@@@ %s has conditions !!!" % self
-        except:
+                print "\n@@@@@ has conditions? @@@@@ %s has conditions !!!" % self
+        except Exception, e:
             conditions=None
             if self.debug!=0:
-                print "@@@@@@@ %s no conditions" % self
+                print "\n@@@@ has conditions? @@@@@ %s no conditions" % self
+            #exc_type, exc_obj, exc_tb = sys.exc_info()
+            #print "@@@ has conditions? ERROR@@@ %s  %s\n%s" %  (exc_type, exc_obj, traceback.format_exc())
 
         n=0
         for field in representationToUse:
@@ -248,6 +255,7 @@ class SipMessageBuilder(SipBuilder):
                         module = __import__(field)
                         class_ = getattr(module, fieldBis)
                         instance = class_()
+                        instance.debug=self.debug
                         
                         block=instance.buildMessage(metadata, newCurrentTreePath)
                         sipMessage=self.addToSipMessage(sipMessage, block, metadata)

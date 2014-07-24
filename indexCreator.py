@@ -189,11 +189,14 @@ class IndexCreator():
                         #print "  #### create index row: field[%s]: key=%s: use metadata" % (n,key)
                         value=met.getMetadataValue(key)
                     else:
-                        if useBrowseBaseUrl==0:
-                            #print "  #### create index row: field[%s]: key=%s: use BROWSE metadata" % (n,key)
-                            value=bmet.getMetadataValue(key)
+                        if bmet==None:
+                            value="N/A"
                         else:
-                            value="%s%s%s" % (self.BASE_URL, met.getMetadataValue(metadata.METADATA_PRODUCT_RELATIVE_PATH), bmet.getMetadataValue(key))
+                            if useBrowseBaseUrl==0:
+                                #print "  #### create index row: field[%s]: key=%s: use BROWSE metadata" % (n,key)
+                                value=bmet.getMetadataValue(key)
+                            else:
+                                value="%s%s%s" % (self.BASE_URL, met.getMetadataValue(metadata.METADATA_PRODUCT_RELATIVE_PATH), bmet.getMetadataValue(key))
                 except:
                     value="ERROR_getMetadataValue"
                     exc_type, exc_obj, exc_tb = sys.exc_info()

@@ -13,6 +13,7 @@ import zipfile
 import xmlHelper
 from product import Product
 from directory_product import Directory_Product
+from browseImage import BrowseImage
 import metadata
 import browse_metadata
 import formatUtils
@@ -389,10 +390,24 @@ class Dimap_Spot_Product(Directory_Product):
             met.setMetadataPair(browse_metadata.BROWSE_METADATA_FOOTPRINT_NUMBER_NODES, "%s" % (n+1))
                 
 
-            # make it CCW
-            #met.setMetadataPair(metadata.METADATA_FOOTPRINT, formatUtils.reverseFootprint(footprint))
-            met.setMetadataPair(metadata.METADATA_FOOTPRINT, footprint)
-            met.setMetadataPair(metadata.METADATA_FOOTPRINT_IMAGE_ROWCOL, rowCol)
+            # make sure the footprint is CCW
+            browseIm = BrowseImage()
+            browseIm.setFootprint(footprint)
+            browseIm.setColRowList(rowCol)
+            print "browseIm:%s" % browseIm.info()
+            if not browseIm.getIsCCW():
+                print "############### reverse the footprint; before:%s; colRowList:%s" % (footprint,rowCol)
+                browseIm.reverseFootprint()
+                print "###############             after;%s; colRowList:%s" % (browseIm.getFootprint(), browseIm.getColRowList())
+                met.setMetadataPair(metadata.METADATA_FOOTPRINT, browseIm.getFootprint())
+                met.setMetadataPair(metadata.METADATA_FOOTPRINT_IMAGE_ROWCOL, browseIm.getColRowList())
+            else:
+                met.setMetadataPair(metadata.METADATA_FOOTPRINT, footprint)
+                met.setMetadataPair(metadata.METADATA_FOOTPRINT_IMAGE_ROWCOL, rowCol)
+                pass
+            #
+            met.addLocalAttribute("boundingBox", met.getMetadataValue(metadata.METADATA_FOOTPRINT))
+
             
         return footprint, rowCol
         

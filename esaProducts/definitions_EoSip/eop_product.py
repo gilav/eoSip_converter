@@ -12,7 +12,7 @@ class eop_product(SipMessageBuilder):
         "<ows:RequestMessage></ows:RequestMessage>",
         "</ows:ServiceReference>",
         "</eop:fileName>",
-        "<eop:version>SLA</eop:version>",
+        "<eop:version>@productVersion@</eop:version>",
         "<eop:size uom='Bytes'>@productSize@</eop:size>",
         "</eop:ProductInformation>"]
 

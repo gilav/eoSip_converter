@@ -32,6 +32,7 @@ class ingester_reaper(ingester.Ingester):
         #
         def createSourceProduct(self, processInfo):
             global debug,logger
+            processInfo.ingester=self
             processInfo.srcProduct = netCDF_reaper_product.netCDF_reaper_Product(processInfo.srcPath)
 
         #

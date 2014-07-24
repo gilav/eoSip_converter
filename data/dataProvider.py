@@ -46,11 +46,12 @@ class DataProvider():
         aClass,aPackage,aPath=toks[1].split("@")
         if self.debug!=0:
             print "  will instanciate class:'%s' in package:'%s' with init:'%s'" % (aClass,aPackage,aPath)
+            
         name,key=toks[2].split("@")
         if self.debug!=0:
             print " key;'%s' name;'%s'" % (key,name)
 
-        # do it:
+        # create it:
         module = __import__(aPackage)
         if self.debug!=0:
             print " module loaded:%s" % module

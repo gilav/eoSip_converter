@@ -43,8 +43,8 @@ EOSIP_METADATA_MAPPING={'responsible':metadata.METADATA_RESPONSIBLE,
                         'SIPCreator':metadata.METADATA_CREATOR,
                         'reportType':metadata.METADATA_REPORT_TYPE,
                         'generationTime':metadata.METADATA_GENERATION_TIME,
-                        'gmlId':metadata.METADATA_PACKAGENAME,
-                        'identifier':metadata.METADATA_PRODUCTNAME,
+                        'gmlId':metadata.METADATA_IDENTIFIER,
+                        'identifier':metadata.METADATA_IDENTIFIER,
                         'parentIdentifier':metadata.METADATA_PARENT_PRODUCT,
                         'productType':metadata.METADATA_TYPECODE,
                         'beginPositionDate':metadata.METADATA_START_DATE,
@@ -92,7 +92,8 @@ EOSIP_METADATA_MAPPING={'responsible':metadata.METADATA_RESPONSIBLE,
                         'cycleNumber':metadata.METADATA_CYCLE,
                         'relativePassNumber':metadata.METADATA_RELATIVE_ORBIT,
                         'snowCoverPercentage':metadata.METADATA_SNOW_COVERAGE,
-                        'sceneCenter':metadata.METADATA_SCENE_CENTER
+                        'sceneCenter':metadata.METADATA_SCENE_CENTER,
+                        'productVersion':metadata.METADATA_PRODUCT_VERSION
                         }
 
 
@@ -215,12 +216,12 @@ class SipBuilder:
         if self.debug!=0:
             print "### isFieldUsed: pathOk:'%s'" % pathOk
         name=self.getFieldName(rep)
-        metDebug=metadata.debug
+        #metDebug=metadata.debug
         if self.debug!=0:
             print "### isFieldUsed: name:'%s'" % name
-            metadata.debug=2
+            #metadata.debug=2
         res=metadata.isFieldUsed("%s/%s" % (pathOk, name))
-        metadata.debug=metDebug
+        #metadata.debug=metDebug
         return res
 
 

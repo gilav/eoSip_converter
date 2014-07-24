@@ -55,6 +55,7 @@ from esaProducts import formatUtils
 import indexCreator, shopcartCreator
 import statsUtil
 from data import dataProvider
+from services import serviceProvider
 import sipBuilder
 
 
@@ -108,6 +109,7 @@ SETTING_Output='Output'
 SETTING_workflowp='Workflow'
 SETTING_eosip='eoSip'
 SETTING_Data='Data'
+SETTING_Services='Services'
 #
 SETTING_metadataReport_usedMap='metadataReport-xml-map'
 SETTING_browseReport_usedMap='browseReport-xml-map'
@@ -121,15 +123,16 @@ OUTPUT_EO_SIP_PATTERN=None
 SETTING_VERIFY_SRC_PRODUCT='VERIFY_SRC_PRODUCT'
 SETTING_MAX_PRODUCTS_DONE='MAX_PRODUCTS_DONE'
 SETTING_CREATE_INDEX='CREATE_INDEX'
+SETTING_CREATE_THUMBNAIL='CREATE_THUMBNAIL'
 SETTING_CREATE_SHOPCART='CREATE_SHOPCART'
 SETTING_INDEX_ADDED_FIELD='INDEX_ADDED_FIELD'
 SETTING_FIXED_BATCH_NAME='FIXED_BATCH_NAME'
 SETTING_PRODUCT_OVERWRITE='PRODUCT_OVERWRITE'
 # eoSip
 SETTING_EOSIP_TYPOLOGY='TYPOLOGY'
-# data
-SETTING_DATA_PROVIDER='provider'
-
+SETTING_EOSIP_STORE_TYPE='STORE_TYPE'
+# data provider
+#SETTING_DATA_PROVIDER='provider'
 
 #
 #
@@ -148,15 +151,23 @@ FINAL_PATH_LIST=[]
 # mission stuff
 mission_metadatas={}
 # workflow stuff
-verify_product=1
+verify_product=True
 max_product_done=None
-create_index=0
-create_shopcart=0
+create_index=False
+create_thumbnail=False
+create_shopcart=False
 index_added=None
 fixed_batch_name=None
-product_overwrite=0
+product_overwrite=False
+
+# eoSip
+eoSip_store_type=None
+
 # data provider stuff
 dataProviders={}
+
+# servies provider
+servicesProvider=None
 
 # default debug value
 DEBUG=0
@@ -164,6 +175,14 @@ DEBUG=0
 # fixed stuff
 LOG_FOLDER="./log"
 file_doBeDoneList="%s/%s" % (LOG_FOLDER, 'product_list.txt')
+# Eo_SIP validation schema
+SCHEMA_SIP="ressources/xml_validator"
+SCHEMA_BP="ressources/xml_validator/report/IF-ngEO-BrowseReport.xsd"
+SCHEMA_MD_OPT="ressources/xml_validator/opt.xsd"
+SCHEMA_MD_SAR="ressources/xml_validator/sar.xsd"
+SCHEMA_MD_EOP="ressources/xml_validator/eop.xsd"
+SCHEMA_MD_ALT="ressources/xml_validator/alt.xsd"
+SCHEMA_MD_LMB="ressources/xml_validator/lmb.xsd"
 
 
 class Ingester():
@@ -204,8 +223,36 @@ class Ingester():
                 self.outputProductResolvedPaths=None
                 #
                 self.dataProviders={}
-                
+                self.servicesProvider=None
 
+        #
+        #
+        #
+        def getSchema(self, fileType=None,):
+            varName="SCHEMA_%s" % (fileType)
+            if TYPOLOGY!=None:
+                print "TYPOLOGY:%s" % TYPOLOGY
+                varName="%s_%s" % (varName, TYPOLOGY)
+            else:
+                print "TYPOLOGY is None"
+            print "get schema from varName:%s" % varName
+            path="%s/%s" % (parentdir, globals()[varName])
+            return path.replace('\\', '/')
+
+        #
+        # return the service provider
+        #
+        def getServiceProvider(self):
+            return servicesProvider
+
+        #
+        # return a service by name
+        #
+        def getService(self, name):
+            if self.servicesProvider==None:
+                raise Exception("no service available")
+            
+            return self.servicesProvider.getService(name)
 
         #
         #
@@ -213,7 +260,7 @@ class Ingester():
         def readConfig(self, path=None):
                 global CONFIG_NAME, __config, OUTSPACE, INBOX, TMPSPACE, LIST_TYPE, LIST_BUILD, FILES_NAMEPATTERN, FILES_EXTPATTERN, DIRS_NAMEPATTERN, DIRS_ISLEAF,\
                 DIRS_ISEMPTY, LIST_LIMIT, LIST_STARTDATE, LIST_STOPDATE, OUTPUT_EO_SIP_PATTERN, OUTPUT_RELATIVE_PATH_TREES, max_product_done,\
-                create_index,create_shopcart,index_added,verify_product,fixed_batch_name,product_overwrite,TYPOLOGY #,dataProviders
+                create_index,create_shopcart,create_thumbnail,index_added,verify_product,fixed_batch_name,product_overwrite,TYPOLOGY,eoSip_store_type #,dataProviders
 
                 if not os.path.exists(path):
                     raise Exception("cofiguration file:'%s' doesn't exists" % path)
@@ -277,9 +324,10 @@ class Ingester():
                         except:
                             pass
 
+
                         # workflow
                         try:
-                            verify_product= __config.get(SETTING_workflowp, SETTING_VERIFY_SRC_PRODUCT)
+                            verify_product= __config.getboolean(SETTING_workflowp, SETTING_VERIFY_SRC_PRODUCT)
                         except:
                             pass
                         try:
@@ -287,11 +335,15 @@ class Ingester():
                         except:
                             pass
                         try:
-                            create_index = __config.get(SETTING_workflowp, SETTING_CREATE_INDEX)
+                            create_index = __config.getboolean(SETTING_workflowp, SETTING_CREATE_INDEX)
                         except:
                             pass
                         try:
-                            create_shopcart = __config.get(SETTING_workflowp, SETTING_CREATE_SHOPCART)
+                            create_shopcart = __config.getboolean(SETTING_workflowp, SETTING_CREATE_SHOPCART)
+                        except:
+                            pass
+                        try:
+                            create_thumbnail = __config.getboolean(SETTING_workflowp, SETTING_CREATE_THUMBNAIL)
                         except:
                             pass
                         try:
@@ -303,11 +355,13 @@ class Ingester():
                         except:
                             pass
                         try:
-                            product_overwrite = __config.get(SETTING_workflowp, SETTING_PRODUCT_OVERWRITE)
+                            product_overwrite = __config.getboolean(SETTING_workflowp, SETTING_PRODUCT_OVERWRITE)
                         except:
                             pass
 
-                        # eoSip
+
+                        # eoSip:
+                        # mandatory block
                         try:
                             TYPOLOGY = __config.get(SETTING_eosip, SETTING_EOSIP_TYPOLOGY)
                             # is it supported
@@ -326,20 +380,52 @@ class Ingester():
                                 #TYPOLOGY = sipBuilder.TYPOLOGY_REPRESENTATION_SUFFIX[0]
                                 #pass
 
-                        # dataProvider
+                        #optional
+                        try:
+                            eoSip_store_type = __config.get(SETTING_eosip, SETTING_EOSIP_STORE_TYPE)
+                        except:
+                            pass
+
+                        # dataProvider: optional
                         try:
                             dataProvidersSrc=dict(__config.items(SETTING_Data))
                             n=0
                             for item in dataProvidersSrc:
                                 value=dataProvidersSrc[item]
                                 if self.debug!=0:
-                                    print " ############################ data provider[%d]:%s==>%s" % (n,item,value)
+                                    print " data provider[%d]:%s==>%s" % (n,item,value)
                                 aDataProvider = dataProvider.DataProvider(value)
                                 self.dataProviders[item]=aDataProvider
                         except Exception, e:
                             exc_type, exc_obj, exc_tb = sys.exc_info()
+                            print " Error  dataProvider:%s %s" % (exc_type, exc_obj)
                             traceback.print_exc(file=sys.stdout)
-                            raise e
+                            
+
+                        # servicesProvider: optional
+                        try:
+                            serviceProvidersSrc=dict(__config.items(SETTING_Services))
+                            if len(serviceProvidersSrc)!=0:
+                                self.servicesProvider = serviceProvider.ServiceProvider(None)
+                                n=0
+                                for item in serviceProvidersSrc:
+                                    try:
+                                        value=serviceProvidersSrc[item]
+                                        if self.debug!=0:
+                                            print " service[%d]:%s==>%s" % (n,item,value)
+                                        self.servicesProvider.addService(item, value)
+                                    except:
+                                        exc_type, exc_obj, exc_tb = sys.exc_info()
+                                        print " Error adding serviceProvider '%d':"
+                                        traceback.print_exc(file=sys.stdout)
+                            else:
+                                print " no service provider configured"
+                                        
+                        except Exception, e:
+                            exc_type, exc_obj, exc_tb = sys.exc_info()
+                            print " Error  servicesProvider:%s %s" % (exc_type, exc_obj)
+                            traceback.print_exc(file=sys.stdout)
+                            
                         
                         self.dump()
 
@@ -350,19 +436,27 @@ class Ingester():
                         raise e
 
         #
+        # start the ingester
+        #  argv[1]: the configuration file
+        #  argv[2]: the file holding the list of products
         #
         #
+        # 
         def starts(self, argv):
+            if len(argv) < 2:
+                raise Exception("not enough parameter passed, need 1, has %d" % (len(argv)-1))
             self.readConfig(sys.argv[1])
             self.makeFolders()
             self.getMissionDefaults()
             if len(sys.argv)>2:
                 self.setProductsList(sys.argv[2])
             else:
-                    self.findProducts()
-            self.processProducts()    
+                self.findProducts()
+            self.processProducts()
+
+            
         #
-        #
+        # dump info
         #
         def dump(self):
                 self.logger.info("   INBOX: %s" % INBOX)
@@ -370,6 +464,7 @@ class Ingester():
                 self.logger.info("   OUTSPACE: %s" % OUTSPACE)
                 self.logger.info("   Max product done limit: %s" % max_product_done)
                 self.logger.info("   Verify product: %s" % verify_product)
+                self.logger.info("   Create thumbnail: %s" % create_thumbnail)
                 self.logger.info("   Create index: %s" % create_index)
                 self.logger.info("   Create shopcart: %s" % create_shopcart)
                 self.logger.info("   Index added: %s" % index_added)
@@ -378,15 +473,17 @@ class Ingester():
                 self.logger.info("   OUTPUT_EO_SIP_PATTERN: %s" % OUTPUT_EO_SIP_PATTERN)
                 self.logger.info("   OUTPUT_RELATIVE_PATH_TREES: %s" % OUTPUT_RELATIVE_PATH_TREES)
                 self.logger.info("   eoSip typology: %s" % TYPOLOGY)
+                self.logger.info("   eoSip store type: %s" % eoSip_store_type)
                 #if len(dataProviders) > 0:
                 self.logger.info("   additional data providers:%s" % self.dataProviders)
                 #else:
                 #    print "   no dataprovider"
+                self.logger.info("   additional service providers:%s" % self.servicesProvider)
                 #raise Exception("STOP")
 
 
         #
-        #
+        # make folder by the ingester
         #
         def makeFolders(self):
                 self.logger.info(" test TMPSPACE folder exists:%s" % TMPSPACE)
@@ -404,8 +501,9 @@ class Ingester():
                         self.logger.info("  will make log folder:%s" % LOG_FOLDER)
                         os.makedirs(LOG_FOLDER)
 
+
         #
-        #
+        # save info in file in working folder
         #
         def saveInfo(self, filename=None, data=None):
             path="%s/%s" % (TMPSPACE, filename)
@@ -418,7 +516,7 @@ class Ingester():
 
                         
         #
-        #
+        # make the destination folder
         #
         def makeOutputFolders(self, metadata, basePath=None):
                 #create output directory trees according to the configuration path rules
@@ -443,22 +541,28 @@ class Ingester():
 
         
         #
-        #
+        # make working folder
         #
         def makeWorkingFolders(self, processInfo):
                 global TMPSPACE
                 # make working folder
                 tmpPath=TMPSPACE+"/%s_workfolder_%s" % (self.batchName, processInfo.num)
-                processInfo.addLog("  working folder:%s\n" % (tmpPath))
-                if not os.path.exists(tmpPath):
+                processInfo.addLog("\n - create working folder if needed; working folder:%s" % (tmpPath))
+                if not os.path.exists(tmpPath): # create it
+                    processInfo.addLog("  => don't exist, create it") 
                     self.logger.info("  will make working folder:%s" % tmpPath)
                     os.makedirs(tmpPath)
                     processInfo.addLog("  working folder created:%s\n" % (tmpPath))
+                else: # already exists
+                    processInfo.addLog("  => already exists") 
+                    pass # TODO: 
                 processInfo.workFolder=tmpPath
                 return tmpPath
+
                 
         #
-        #
+        # set the list of product to be processed(
+        # (this list is passed as a file path parameter to the ingester)
         #
         def setProductsList(self, filePath=None):
             self.logger.info(" set product list from file:%s" % filePath)
@@ -476,8 +580,9 @@ class Ingester():
             self.logger.info(" there are:%s products in list" % (len(lines)))
             self.productList=list
 
+
         #
-        #
+        # find the products to be processed
         #
         def findProducts(self):
                 aFileHelper=fileHelper.fileHelper()
@@ -505,7 +610,8 @@ class Ingester():
 
 
         #
-        #
+        # get the mission default/fixed matadata values.
+        # is defined in the configuration file
         #
         def getMissionDefaults(self):
                 global __config, xmlMappingMetadata, xmlMappingBrowse, FINAL_PATH_LIST, mission_metadatas
@@ -565,11 +671,12 @@ class Ingester():
                     exc_type, exc_obj, exc_tb = sys.exc_info()
                     traceback.print_exc(file=sys.stdout)
 
+
         #
-        #
+        # process the products
         #
         def processProducts(self):
-                global CONFIG_NAME, DEBUG, num,num_total,num_done,num_error,list_done,list_error,description_error,max_product_done,create_index,create_shopcart,index_added,fixed_batch_name
+                global CONFIG_NAME, DEBUG, num,num_total,num_done,num_error,list_done,list_error,description_error,max_product_done,create_index,create_thumbnail,create_shopcart,index_added,fixed_batch_name
                 #
                 if fixed_batch_name!=None:
                     self.batchName="batch_%s_%s" % (CONFIG_NAME, fixed_batch_name)
@@ -594,14 +701,18 @@ class Ingester():
                 self.logger.info("\n\nlist of products to be done written in:%s\n\n" % (file_doBeDoneList))
 
                 # create index: use default header, + added if defined
-                if create_index!=0:
+                if create_index:
                     self.indexCreator=indexCreator.IndexCreator(None, index_added)
                     self.logger.info("will create index")
 
                 # create shopcart:
-                if create_shopcart!=0:
+                if create_shopcart:
                     self.shopcartCreator=shopcartCreator.ShopcartCreator(None, None)
                     self.logger.info("will create shopcart")
+
+                #  create thumbnail:
+                if create_thumbnail:
+                    self.logger.info("will create thumbnail")
 
                 self.statsUtil.start(len(self.productList))
                 
@@ -609,6 +720,11 @@ class Ingester():
                         aProcessInfo=processInfo.processInfo()
                         aProcessInfo.srcPath=item
                         aProcessInfo.num=num
+                        # set some usefull flags
+                        aProcessInfo.create_thumbnail=create_thumbnail
+                        aProcessInfo.create_index=create_index
+                        aProcessInfo.create_shopcart=create_shopcart
+                        
                         #try:
                         num=num+1
                         num_total=num_total+1
@@ -623,10 +739,13 @@ class Ingester():
 
                                 num_done=num_done+1
                                 list_done.append(item+"|"+aProcessInfo.workFolder)
-                                if create_index!=0:
+                                if create_index:
                                     try:
-                                        firstBrowsePath=aProcessInfo.destProduct.browse_metadata_dict.iterkeys().next()
-                                        self.indexCreator.addOneProduct(aProcessInfo.destProduct.metadata, aProcessInfo.destProduct.browse_metadata_dict[firstBrowsePath])
+                                        if len(aProcessInfo.destProduct.browse_metadata_dict)>0: # there is at least one browse
+                                            firstBrowsePath=aProcessInfo.destProduct.browse_metadata_dict.iterkeys().next()
+                                            self.indexCreator.addOneProduct(aProcessInfo.destProduct.metadata, aProcessInfo.destProduct.browse_metadata_dict[firstBrowsePath])
+                                        else:
+                                            self.indexCreator.addOneProduct(aProcessInfo.destProduct.metadata, None)
                                     except Exception, e:
                                         exc_type, exc_obj, exc_tb = sys.exc_info()
                                         print " ERROR creating index:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc())
@@ -634,16 +753,50 @@ class Ingester():
                                         self.logger.error("ERROR creating index: %s  %s" % (exc_type, exc_obj))
                                         pass
 
-                                if create_shopcart!=0:
+                                if create_shopcart:
                                     try:
-                                        firstBrowsePath=aProcessInfo.destProduct.browse_metadata_dict.iterkeys().next()
-                                        self.shopcartCreator.addOneProduct(aProcessInfo.destProduct.metadata, aProcessInfo.destProduct.browse_metadata_dict[firstBrowsePath])
+                                        if len(aProcessInfo.destProduct.browse_metadata_dict)>0: # there is at least one browse
+                                            firstBrowsePath=aProcessInfo.destProduct.browse_metadata_dict.iterkeys().next()
+                                            self.shopcartCreator.addOneProduct(aProcessInfo.destProduct.metadata, aProcessInfo.destProduct.browse_metadata_dict[firstBrowsePath])
+                                        else:
+                                            self.shopcartCreator.addOneProduct(aProcessInfo.destProduct.metadata, None)
                                     except Exception, e:
                                         exc_type, exc_obj, exc_tb = sys.exc_info()
                                         print " ERROR creating shopcart:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc())
                                         aProcessInfo.addLog("ERROR creating shopcart:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc()))
                                         self.logger.error("ERROR creating shopcart: %s  %s" % (exc_type, exc_obj))
                                         pass
+
+
+                                # write log
+                                try:
+                                        prodLogPath="%s/conversion_%d.log" % (aProcessInfo.workFolder, num_error)
+                                        fd=open(prodLogPath, 'w')
+                                        fd.write(aProcessInfo.prodLog)
+                                        fd.close()
+                                except Exception, eee:
+                                        print "Error: problem writing convertion log in fodler:%s" % aProcessInfo.workFolder
+                                        exc_type, exc_obj, exc_tb = sys.exc_info()
+                                        print " problem is:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc())
+
+                                # save the pinfo in workfolder
+                                try:
+                                    self.saveProcessInfo(aProcessInfo)
+                                except:
+                                    self.logger.error(" Error: saving processInfo file")
+                                    exc_type, exc_obj, exc_tb = sys.exc_info()
+                                    print " ERROR saving processInfo file:%s  %s%s\n" %  (exc_type, exc_obj, traceback.format_exc())
+                                    
+                                # save the matadata file in workfolder
+                                try:
+                                    self.saveMetadata(aProcessInfo)
+                                except:
+                                    self.logger.error(" Error: saving metadata files")
+                                    exc_type, exc_obj, exc_tb = sys.exc_info()
+                                    print " ERROR saving metadata files:%s  %s%s\n" %  (exc_type, exc_obj, traceback.format_exc())
+
+
+
                                 
                         except Exception, e:
                                 num_error=num_error+1
@@ -660,22 +813,23 @@ class Ingester():
 
                                 # write log
                                 try:
-                                        prodLogPath="%s/bad_conversion_%d.log" % (aProcessInfo.workFolder, num_error)
+                                        prodLogPath="%s/bad_convertion_%d.log" % (aProcessInfo.workFolder, num_error)
                                         fd=open(prodLogPath, 'w')
                                         fd.write(aProcessInfo.prodLog)
                                         fd.close()
                                 except Exception, eee:
-                                        print "Error: problem writing prodLog in fodler:%s" % aProcessInfo.workFolder
+                                        print "Error: problem writing convertion log in fodler:%s" % aProcessInfo.workFolder
                                         exc_type, exc_obj, exc_tb = sys.exc_info()
                                         print " problem is:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc())
+
 
                                 # save the pinfo in workfolder
                                 try:
                                     self.saveProcessInfo(aProcessInfo)
                                 except:
-                                    self.logger.error(" Error: saving pinfo files")
+                                    self.logger.error(" Error: saving processInfo file")
                                     exc_type, exc_obj, exc_tb = sys.exc_info()
-                                    print " ERROR saving pinfo files:%s  %s%s\n" %  (exc_type, exc_obj, traceback.format_exc())
+                                    print " ERROR saving processInfo file:%s  %s%s\n" %  (exc_type, exc_obj, traceback.format_exc())
                                     
                                 # save the matadata file in workfolder
                                 try:
@@ -690,10 +844,12 @@ class Ingester():
                                 aProcessInfo.addLog("max number of product to be done reached:%s; STOPPING" % max_product_done)
                                 self.logger.info("max number of product to be done reached:%s; STOPPING" % max_product_done)
                                 break
-                        
+
+
                 self.runStopTime=time.time()
                 tmp=self.summary()
-                # write batch log
+                
+                # write convertion log
                 if not os.path.exists(LOG_FOLDER):
                     os.makedirs(LOG_FOLDER)
                 path="%s/%s.log" % (LOG_FOLDER, self.batchName)
@@ -701,6 +857,7 @@ class Ingester():
                 fd.write(tmp)
                 fd.close()
                 print " batch done log '%s' written in:%s" % (self.batchName, path)
+                
                 # write done list
                 path="%s/%s_DONE.log" % (LOG_FOLDER, self.batchName)
                 fd=open(path, "w")
@@ -714,7 +871,7 @@ class Ingester():
                 fd.close()
                 print " batch error log '%s' written in:%s" % (self.batchName, path)
                 
-                if create_index!=0:
+                if create_index:
                     # index text:
                     tmp=self.indexCreator.getIndexesText()
                     if self.debug!=0:
@@ -766,12 +923,13 @@ class Ingester():
             res="\n%s Duration: %s sec\n" % (res, (self.runStopTime-self.runStartTime))
             print res
             return res
-                
+
+ 
         #
-        #
+        # do one product
         #
         def doOneProduct(self, pInfo):
-                global product_overwrite, OUTPUT_EO_SIP_PATTERN, OUTSPACE
+                global product_overwrite ,eoSip_store_type, OUTPUT_EO_SIP_PATTERN, OUTSPACE
 
                 startProcessing=time.time()
                 #
@@ -806,10 +964,24 @@ class Ingester():
                 pInfo.destProduct.setXmlMappingMetadata(xmlMappingMetadata, xmlMappingBrowse)
 
                 # build product name
+                self.logger.info("  will build Eo-Sip package name" )
+                pInfo.addLog("\n - will build Eo-Sip package name")
                 patternName = OUTPUT_EO_SIP_PATTERN
-                pInfo.destProduct.buildProductNames(patternName, definitions_EoSip.getDefinition('PRODUCT_EXT'))
-                self.logger.info("  Eo-Sip product name:%s"  % pInfo.destProduct.packageName)
-                pInfo.addLog("  Eo-Sip product name:%s"  % pInfo.destProduct.packageName)
+                # get eoSip extension (.ZIP normally)
+                tmpExt=definitions_EoSip.getDefinition('EOSIP_PRODUCT_EXT')
+                # take care of the zip in zip ==> .SIP.ZIP filename case
+                #print "EoSip class name:%s" % pInfo.destProduct.__class__.__name__
+                #sys.exit()
+                if pInfo.destProduct.__class__.__name__ =="EOSIP_Product" and eoSip_store_type==pInfo.destProduct.SRC_PRODUCT_AS_ZIP:
+                    pInfo.destProduct.buildPackageNames(patternName, "%s.%s" % (definitions_EoSip.getDefinition('SIP'), tmpExt))
+                    pInfo.destProduct.buildProductNames(patternName, tmpExt)
+                else:
+                    pInfo.destProduct.buildPackageNames(patternName, tmpExt)
+                
+                self.logger.info("  Eo-Sip package name:%s"  % pInfo.destProduct.packageName)
+                pInfo.addLog("  => Eo-Sip package name:%s"  % pInfo.destProduct.packageName)
+                self.logger.info("  Eo-Sip product name:%s"  % pInfo.destProduct.productName)
+                pInfo.addLog("  => Eo-Sip product name:%s"  % pInfo.destProduct.productName)
 
                 # make Eo-Sip tmp folder
                 pInfo.eosipTmpFolder = pInfo.workFolder + "/" + pInfo.destProduct.packageName
@@ -830,23 +1002,29 @@ class Ingester():
 
                 # make report files
                 # SIP report
+                pInfo.addLog("\n - will build SIP file")
+                self.logger.info("  will build SIP file")
                 tmp=pInfo.destProduct.buildSipReportFile()
-                pInfo.addLog("  Sip report file built:%s" %  (tmp))
-                self.logger.info("  Sip report file built:%s" %  (tmp))
+                pInfo.addLog("  => Sip report file built well:%s" %  (tmp))
+                self.logger.info("  Sip report file built well:%s" %  (tmp))
 
 
                 # browse reports
+                pInfo.addLog("\n - will build browse reports")
+                self.logger.info("  will build browse reports")
                 tmp=pInfo.destProduct.buildBrowsesReportFile()
                 n=0
                 for item in tmp:
-                    pInfo.addLog("  Browse[%d] report file built:%s\n" %  (n, item))
-                    self.logger.info("  Browse[%d] report file built:%s" %  (n, item))
+                    pInfo.addLog("  => browse[%d] report file built:%s\n" %  (n, item))
+                    self.logger.info("  browse[%d] report file built:%s" %  (n, item))
                     n=n+1
 
                 # metadata report
+                pInfo.addLog("\n - will build product report")
+                self.logger.info("  will build product report")
                 tmp=pInfo.destProduct.buildProductReportFile()
-                pInfo.addLog("  Product report file built:%s" % tmp)
-                self.logger.info("  Product report file built:%s" % tmp)
+                pInfo.addLog("  => Product report file built well: %s" % tmp)
+                self.logger.info("  Product report file built well: %s" % tmp)
 
                 # display some info
                 print pInfo.destProduct.info()
@@ -873,25 +1051,6 @@ class Ingester():
 
                 print "\n\n\n\nProcess info:%s\n" % pInfo.toString()
 
-
-        def unused(self):
-                self.saveMetadata(pInfo)
-                pName=pInfo.destProduct.packageName
-                pos = pName.find('.')
-                if pos >0:
-                    pName=pName[0:pos]
-                
-                metFile="%s/metadata-product__%s.txt" % (workfolder, pName)
-                fd=open(metFile, 'w')
-                fd.write(pInfo.destProduct.metadata.toString())
-                fd.close()
-                # also browse metadata
-                n=0
-                for item in pInfo.destProduct.browse_metadata_dict.values():
-                    metFile="%s/metadata-browse-%d__%s.txt" % (workfolder, n, pName)
-                    fd=open(metFile, 'w')
-                    fd.write(item.toString())
-                    fd.close()
                 
         #
         # save metadata as files

@@ -5,9 +5,67 @@
 #
 
 from geom import vector2D
+from math import radians, cos, sin, asin, sqrt, atan2, degrees
 
 debug=0
 
+#
+#
+#
+def coordinateBetween(lat1, lon1, lat2, lon2):
+    # convert decimal degrees to radians 
+    lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
+
+    bx = cos(lat2) * cos(lon2 - lon1)
+    by = cos(lat2) * sin(lon2 - lon1)
+    lat3 = atan2(sin(lat1) + sin(lat2), \
+           sqrt((cos(lat1) + bx) * (cos(lat1) \
+           + bx) + by**2))
+    lon3 = lon1 + atan2(by, cos(lat1) + bx)
+
+    return degrees(lat3), degrees(lon3)
+
+#
+# Calculate the great circle distance between two points 
+# on the earth (specified in decimal degrees)
+# returns the distance in meters
+#
+def metersDistanceBetween(lat1, lon1, lat2, lon2):
+    # convert decimal degrees to radians 
+    lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
+
+    # haversine formula 
+    dlon = lon2 - lon1 
+    dlat = lat2 - lat1 
+    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+    c = 2 * asin(sqrt(a))
+    print "angle=%s" % c
+
+    # if we want the distance in meter
+    # 6378137f meters is the radius of the Earth
+    meters = 6378137 * c
+    return meters
+
+#
+# Calculate the great circle distance between two points 
+# on the earth (specified in decimal degrees)
+# returns the arc distance in radian
+#
+def arcDistanceBetween(lat1, lon1, lat2, lon2):
+    # convert decimal degrees to radians 
+    lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
+
+    # haversine formula 
+    dlon = lon2 - lon1 
+    dlat = lat2 - lat1 
+    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+    c = 2 * asin(sqrt(a))
+    print "angle=%s" % c
+
+    # if we want the distance in meter
+    # 6378137f meters is the radius of the Earth
+    #meters = 6378137f * c
+    return c
 
 
         
@@ -49,7 +107,10 @@ if __name__ == '__main__':
         angle=v2.get_angle_between(v1)
         print ">>>>>>>>>>>angle:%f" % v2.get_angle_between(v1)
         totAngle=totAngle+angle
-    print "\n\n\ntotal angle=%s" % totAngle
+    print "\n\n\ntotal angle=%s\n\n" % totAngle
+
+    print "distance:%s" % metersDistanceBetween(0.43,112.969,-0.421,142.969)
+    print "middle:lat=%s; lon=%s" % coordinateBetween(0.43,112.969,-40.421,142.969)
         
         
         

@@ -80,7 +80,6 @@ class Browse_Metadata(Base_Metadata):
             return self.dict[name]
         else:
             return sipBuilder.VALUE_NOT_PRESENT
-            #return "NOT-PRESENT"
 
 
     def getNextCounter(self):
