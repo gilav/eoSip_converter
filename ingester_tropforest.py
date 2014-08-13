@@ -14,6 +14,7 @@ import os, sys
 import time
 import zipfile
 import traceback
+from cStringIO import StringIO
 from base import ingester
 from esaProducts import dimap_tropforest_product, eosip_product
 from esaProducts import metadata, browse_metadata
@@ -160,20 +161,25 @@ class ingester_tropforest(ingester.Ingester):
         def makeBrowses(self,processInfo):
             try:
                     browseSrcPath="%s/%s" % (processInfo.workFolder , processInfo.srcProduct.TIF_FILE_NAME)
-                    browseExtension=definitions_EoSip.getBrowseExtension(0, definitions_EoSip.getDefinition('BROWSE_JPEG_EXT'))
+                    browseExtension=definitions_EoSip.getBrowseExtension(0, definitions_EoSip.getDefinition('BROWSE_PNG_EXT'))
                     browseDestPath="%s/%s.%s" % (processInfo.eosipTmpFolder, processInfo.destProduct.packageName, browseExtension)
-                    imageUtil.makeJpeg(browseSrcPath, browseDestPath, 50 )
+                    processInfo.addLog("  makeBrowse: ext=%s; src=%s;  dest=%s" % (browseExtension, browseSrcPath, browseDestPath))
+                    imageUtil.makeBrowse('PNG', browseSrcPath, browseDestPath, 50 )
+                    #imageUtil.externalMakeJpeg(browseSrcPath, browseDestPath)
                     processInfo.destProduct.addSourceBrowse(browseDestPath, [])
 
                     # create browse choice for browse metadata report
                     bmet=processInfo.destProduct.browse_metadata_dict[browseDestPath]
-                    #reportBuilder=rep_rectifiedBrowse.rep_rectifiedBrowse()
-                    #print "###\n###\n### BUILD BROWSE CHOICE FROM METADATA:%s" % (processInfo.destProduct.metadata.toString())
-                    #browseChoiceBlock=reportBuilder.buildMessage(processInfo.destProduct.metadata, "rep:rectifiedBrowse").strip()
-                    #if self.debug==0:
-                    #        print "browseChoiceBlock:%s" % (browseChoiceBlock)
-                    #bmet.setMetadataPair(browse_metadata.METADATA_BROWSE_CHOICE, browseChoiceBlock)
+
+
                     self.makeBrowseChoiceBlock(processInfo, bmet)
+                    #footprintBuilder=rep_footprint.rep_footprint()
+                    #
+                    #print "###\n###\n### BUILD BROWSE CHOICE FROM METADATA:%s" % (processInfo.destProduct.metadata.toString())
+                    #browseChoiceBlock=footprintBuilder.buildMessage(processInfo.destProduct.metadata, "rep:browseReport/rep:browse/rep:footprint").strip()
+                    #if self.debug!=-1:
+                    #        print "browseChoiceBlock:%s" % (browseChoiceBlock)
+                    #bmet.setMetadataPair(browse_metadata.BROWSE_METADATA_BROWSE_CHOICE, browseChoiceBlock)
 
 
                     # set the browse type (if not default one(i.e. product type code))for the product metadata report BROWSES block
@@ -239,6 +245,15 @@ class ingester_tropforest(ingester.Ingester):
                                 i=i+1
 
 
+        #
+        #
+        #
+        #def toString(self):
+        #        out=StringIO()
+        #        print >>out, 'tropforest ingester\n'
+        #        print >>out, 'dataProviders:%s\n' % (self.dataProviders)
+        #        print >>out, 'servicesProvider:%s\n' % (self.servicesProvider)
+        #        return out.getvalue()
 
 if __name__ == '__main__':
     try:

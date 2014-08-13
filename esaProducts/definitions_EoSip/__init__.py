@@ -44,15 +44,13 @@ def getDefinition(name=None):
         return "NO-EoSip-def:'%s'" % name
     
 #
-# returns the extension of the nth browse 
+# returns the extension of the nth browse. add D if default
 #
-def getBrowseExtension(n=0, default=None, format=__BROWSE_JPEG_EXT):
+def getBrowseExtension(n=0, format=__BROWSE_JPEG_EXT, default=False ):
     result=''
-    if n==0:
-        #result = __BROWSE_JPEG_EXT
+    if n==0: # we only have one browse
         result = format
-    else:
-        #base=__BROWSE_JPEG_EXT
+    else: # add D if the browse is the default one
         base=format
         pos = base.find('.')
         result=base[0:pos]

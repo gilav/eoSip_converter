@@ -22,16 +22,39 @@ DEFAULT_DATE_PATTERN_MSEC="%Y-%m-%dT%H:%M:%S.000Z"
 
 debug=0
 
+
+
+#
+# wrs for longitude (L Festa suggestion): 0 --> 360 degree
+#
+def absoluteLongitude(lon):
+        return 180+lon
+#
+# wrs for latitude (L Festa suggestion): colatitude: 90 - latitude
+#
+def coLatitude(lat):
+        return 90-lat
+
+#
+# pad a string to specified length
+#
 def format( i, size, pad):
         result=''
         while len(result) < size:
             result = pad + result;
         return result;
 
+#
+# degree minute seconde to degree decimal
+#
 def dms2degdec(dd,mm,ss):
     return dd + mm/60 + ss/3600
-    
 
+
+    
+#
+# degree decimal to degree minute seconde
+#
 def decdeg2dms(dd):
     dd=float(dd)
     is_positive = dd >= 0
@@ -41,7 +64,10 @@ def decdeg2dms(dd):
     degrees = degrees if is_positive else -degrees
     return (degrees,minutes,seconds)
 
-    
+
+#
+# degree decimal to degree minute seconde
+#
 def decdeg2dmsString(dd, degChar='\'', sign=' '):
     dd=float(dd)
     if dd < 0:
@@ -293,6 +319,18 @@ def reverseFootprint(footprint):
 
 if __name__ == '__main__':
     try:
+
+        a=001
+        b=-002
+        print "a=%s  colatitude a=%s" % (a, coLatitude(a))
+        print "b=%s  absoluteLongitude b=%s" % (b, absoluteLongitude(b))
+
+        a=-011
+        b=140
+        print "\na=%s  colatitude a=%s" % (a, coLatitude(a))
+        print "b=%s  absoluteLongitude b=%s" % (b, absoluteLongitude(b))
+        #sys.exit(0)
+            
         a="Ikonos"
         print "a=='%s' normaliseNumber(a)==>'%s'" % (a, normaliseNumber(a, 2, None, 1))
 

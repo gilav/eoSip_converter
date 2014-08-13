@@ -14,6 +14,12 @@ Supported products are at this time:
 History:
 ========
 
+2014-08-13:
+ - add browseImage class: calculate scene center, boundingBox
+ 
+2014-28-07:
+ - add services/addOn framework: first one is xmlvalidator: a http server + service-client. Use java xmlValidator with custom ressource resolver with cache, need to have 0 schema download-from-web in operation.
+
 2014-07-04:
  - add a shopcart creator
  - fix a bug on dateTime + msec and year 2000 (!)

@@ -42,9 +42,9 @@ class ServiceProvider():
 
 
     #
+    # add a service
     #
-    #
-    def addService(self, name, settings):
+    def addService(self, name, settings, ingester):
         print "add Service with settings string:'%s'" % settings
         
         toks=settings.split("|")
@@ -54,29 +54,27 @@ class ServiceProvider():
         aClass,aPackage,setting=toks[0].split("@")
         if self.debug!=0: 
             print "  will instanciate class:'%s' in package:'%s' with init:'%s'" % (aClass,aPackage,setting)
-
-            
+ 
         parameters=toks[1]
         if self.debug!=0:
             print " parameters:'%s'" % (parameters)
-
 
         # create it:
         module = __import__(aPackage)
         if self.debug!=0:
             print " module loaded:%s" % module
         class_ = getattr(module, aClass)
-        aclass = class_()
+        aclass = class_(name)
         if self.debug!=0:
             print " got class"
-        aclass.init(parameters);
+        aclass.init(parameters, ingester);
         self.services[name]=aclass
         if self.debug!=0:
             print " service ready"
 
 
     #
-    #
+    # list the known service
     #
     def listServices(self):
         return self.services.keys()

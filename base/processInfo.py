@@ -36,6 +36,5 @@ class processInfo():
         print >>out, 'srcProduct:%s\n' % (self.srcProduct)
         print >>out, 'destProduct:%s\n' % (self.destProduct)
         print >>out, 'eosipTmpFolder:%s\n' % (self.eosipTmpFolder)
-        print >>out, 'ingester:%s\n' % (self.ingester)
         return out.getvalue()
         

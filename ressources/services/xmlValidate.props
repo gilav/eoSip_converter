@@ -1,0 +1,19 @@
+
+
+[GLOBAL]
+#
+# the pattern using to build the http call to the remote xmlValidator
+#
+URL_PATTERN=http://127.0.0.1:7002/validate?XML_PATH=@XML_PATH@&XSD_PATH=@XSD_PATH@
+
+#
+# EO_SIP validation schema used
+#
+SCHEMA_FROM_TYPOLOGY="SCHEMA_MD"
+SCHEMA_SIP="ressources/xml_validator"
+SCHEMA_BI="ressources/xml_validator/report/IF-ngEO-BrowseReport.xsd"
+SCHEMA_MD_OPT="ressources/xml_validator/opt.xsd"
+SCHEMA_MD_SAR="ressources/xml_validator/sar.xsd"
+SCHEMA_MD_EOP="ressources/xml_validator/eop.xsd"
+SCHEMA_MD_ALT="ressources/xml_validator/alt.xsd"
+SCHEMA_MD_LMB="ressources/xml_validator/lmb.xsd"

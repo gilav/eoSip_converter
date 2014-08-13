@@ -27,10 +27,21 @@ import definitions_EoSip
 import xmlHelper
 import browse_metadata, metadata
 from definitions_EoSip import eop_EarthObservation, alt_EarthObservation, sar_EarthObservation, opt_EarthObservation, lmb_EarthObservation, atm_EarthObservation, rep_browseReport, eop_browse, SIPInfo
+from serviceClients import xmlValidateServiceClient
+
+#
+# list of supported validation schema type
+#
+BROWSE_SCHEMA_TYPE="BI"
+PRODUCT_SCHEMA_TYPE="MD"
+QUALITY_SCHEMA_TYPE="QR"
+SIP_SCHEMA_TYPE="SI"
 
 
-
-
+#
+# list if supported services
+#
+SERVICE_XML_VALIDATION="xmlValidate"
 
 
 class EOSIP_Product(Directory_Product):
@@ -199,8 +210,12 @@ class EOSIP_Product(Directory_Product):
         bMet.setMetadataPair(metadata.METADATA_START_TIME, self.metadata.getMetadataValue(metadata.METADATA_START_TIME))
         bMet.setMetadataPair(metadata.METADATA_STOP_DATE, self.metadata.getMetadataValue(metadata.METADATA_STOP_DATE))
         bMet.setMetadataPair(metadata.METADATA_STOP_TIME, self.metadata.getMetadataValue(metadata.METADATA_STOP_TIME))
-        #
-        bMet.setMetadataPair(browse_metadata.BROWSE_METADATA_BROWSE_TYPE, self.metadata.getMetadataValue(metadata.METADATA_TYPECODE))
+        # change last 2 last typecode digit in: BP
+        tmp=self.metadata.getMetadataValue(metadata.METADATA_TYPECODE)
+        tmp=tmp[0:len(tmp)-2]
+        tmp="%sBP" % tmp
+        #bMet.setMetadataPair(browse_metadata.BROWSE_METADATA_BROWSE_TYPE, self.metadata.getMetadataValue(metadata.METADATA_TYPECODE))
+        bMet.setMetadataPair(browse_metadata.BROWSE_METADATA_BROWSE_TYPE, tmp)
         #
         bMet.setMetadataPair('METADATA_GENERATION_TIME', self.metadata.getMetadataValue(metadata.METADATA_GENERATION_TIME))
         bMet.setMetadataPair('METADATA_RESPONSIBLE', self.metadata.getMetadataValue('METADATA_RESPONSIBLE'))
@@ -361,28 +376,13 @@ class EOSIP_Product(Directory_Product):
         if self.debug!=0:
             print "   product report written at path:%s" % self.reportFullPath
 
-        # full validation by service?
-        try:
-            service = self.processInfo.ingester.getService("xmlValidate")
-            print "@@@@@@@@@@@@@@@@ got service xmlValidate"
-
-            # build correct url + data
-            pattern = service.getproperties()
-            pos = pattern.index('?')
-            url=pattern[0:pos]
-            data=pattern[pos+1:]
-            print "############## service params:url=%s;data=%s" % (url, data)
-            data=data.replace("@XML_PATH@", self.reportFullPath)
-            #
-            schemaPath=self.processInfo.ingester.getSchema("MD", )
-            data=data.replace("@XSD_PATH@", schemaPath)
-            res=service.processRequest(url, data)
-            print "############## service result:%s" % res
-        except:
-            exc_type, exc_obj, exc_tb = sys.exc_info()
-            print "error getting service: %s   %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc())
-            pass
-
+        if self.processInfo.verify_xml:
+            print " call external xml validator" 
+            # call xml validator service
+            validator = xmlValidateServiceClient.XmlValidateServiceClient(self.processInfo)
+            validator.useXmlValidateService(self.processInfo, PRODUCT_SCHEMA_TYPE, self.reportFullPath)
+        else :
+            print " dont use external xml validator" 
             
         return self.reportFullPath
 
@@ -435,15 +435,24 @@ class EOSIP_Product(Directory_Product):
             
             #
             # write it
-            browseFullPath="%s/%s" % (self.folder, browseReportName)
-            allBrowseReportFullPath.append(browseFullPath)
-            self.browseFullPath.append(browseFullPath)
+            thisBrowseFullPath="%s/%s" % (self.folder, browseReportName)
+            allBrowseReportFullPath.append(thisBrowseFullPath)
+            self.browseFullPath.append(thisBrowseFullPath)
             #print " browse report content:\n%s" % browseReport
-            fd=open(browseFullPath, "w")
+            fd=open(thisBrowseFullPath, "w")
             fd.write(browseReport)
             fd.close()
             if self.debug!=0:
-                print "   browse report written at path:%s" % self.browseFullPath
+                print "   browse report written at path:%s" % thisBrowseFullPath
+
+            if self.processInfo.verify_xml:
+                print " call external xml validator" 
+                # call xml validator service
+                validator = xmlValidateServiceClient.XmlValidateServiceClient(self.processInfo)
+                validator.useXmlValidateService(self.processInfo, BROWSE_SCHEMA_TYPE, thisBrowseFullPath)
+            else :
+                print " dont use external xml validator" 
+                
             i=i+1
                 
         return allBrowseReportFullPath
@@ -563,30 +572,35 @@ class EOSIP_Product(Directory_Product):
         # two case:
         # - source is already a zip file ==> just rename it
         # - source is not a zip file ==> compress into a zip
-
+        print " @@@@@@@@@@@@@@ will store original product as:%s" % self.src_product_stored
         if self.src_product_stored==self.SRC_PRODUCT_AS_ZIP:
             # source is already a zip
             if self.sourceProductPath.lower()[-4:]==".zip":
                 zipf.write(self.sourceProductPath, self.productName, zipfile.ZIP_STORED)
-            else: # zip source product
+            else: # zip source product, at this time: assime it is a single file
                 tmpProductZippedPath="%s/productZipped.zip" % (self.folder)
                 zipTmpProduct = zipfile.ZipFile(tmpProductZippedPath, 'w')
                 zipTmpProduct.write(self.sourceProductPath, os.path.split(self.sourceProductPath)[1], zipfile.ZIP_STORED)
                 zipTmpProduct.close()
                 zipf.write(tmpProductZippedPath, self.productName, zipfile.ZIP_STORED)
+        elif self.src_product_stored==self.SRC_PRODUCT_AS_DIR:
+            # 
+            for name in self.processInfo.srcProduct.contentList:
+                print " @@@@@@@@@@@@@@ should write a file from the self.contentList:%s" % name
 
-            # write browses images + reports
-            for browsePath in self.sourceBrowsesPath:
-                folder=os.path.split(browsePath)[0]
-                bmet=self.browse_metadata_dict[browsePath]
-                name= "%s.%s" % (self.packageName, definitions_EoSip.getDefinition('BROWSE_JPEG_EXT'))
-                if self.debug==0:
-                    print "   write EoSip content[1]; product browse:%s  as:%s" % (browsePath, name)                                                                 
-                zipf.write(browsePath, name)
-                #
-                name=bmet.getMetadataValue(browse_metadata.BROWSE_METADATA_REPORT_NAME)
-                path = "%s/%s" % (folder, name)
-                zipf.write(path, name)
+
+        # write browses images + reports
+        for browsePath in self.sourceBrowsesPath:
+            folder=os.path.split(browsePath)[0]
+            bmet=self.browse_metadata_dict[browsePath]
+            name= "%s.%s" % (self.packageName, definitions_EoSip.getDefinition('BROWSE_JPEG_EXT'))
+            if self.debug==0:
+                print "   write EoSip content[1]; product browse:%s  as:%s" % (browsePath, name)                                                                 
+            zipf.write(browsePath, name)
+            #
+            name=bmet.getMetadataValue(browse_metadata.BROWSE_METADATA_REPORT_NAME)
+            path = "%s/%s" % (folder, name)
+            zipf.write(path, name)
         #
 
         # write product reports

@@ -15,4 +15,4 @@ class eop_EarthObservationMetaData(SipMessageBuilder):
                       "<LOCAL_ATTR></LOCAL_ATTR>"]
 
 
-    CONDITIONS = {"eop_downlinkedTo":"FILLED__acquisitionStation"}
+    #CONDITIONS = {"eop_downlinkedTo":"FILLED__acquisitionStation"}

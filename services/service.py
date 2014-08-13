@@ -6,28 +6,65 @@
 from abc import ABCMeta, abstractmethod
 import os, sys
 import logging
+import ConfigParser
 
 
 class Service:
-    debug=True
+    debug=False
+    name=None
+    propertieFile=None
     properties=None
+    ready=False
+
 
     #
+    # class init
     #
-    #
-    def __init__(self):
+    def __init__(self, name=None):
+        self.name=name
         if self.debug:
-            print " init class Service"
+            print " create class Service; name=%s" % self.name 
 
 
     #
+    # init
     #
+    # param: p is usually the path of a property file
     #
-    def init(self, p=None):
-        self.properties=p
+    def init(self, p=None, ingester=None):
+        if self.debug:
+            print " init class Service with parameter:%s" % p
+        if p[0:1]=="./":
+            p="%s%s" % (ingester.getConverterHomeDir(), p)
+        self.propertieFile=p
+        self.loadProperties()
+
 
     #
+    # load the properties setting file
     #
+    def loadProperties(self):
+        if self.debug:
+            print " load properties in Service '%s' from file:%s" % (self.name, self.propertieFile)
+        __config = ConfigParser.RawConfigParser()
+        __config.optionxform=str
+        __config.read(self.propertieFile)
+        self.properties=dict(__config.items("GLOBAL"))
+        
+    #
+    #
+    def getproperties(self):
+        return self.properties
+
+    #
+    # return a property value
+    #
+    def getProperty(self, propName=None):
+        return self.properties[propName]
+
+
+    #
+    # process a request
     #
     @abstractmethod
     def processRequest(self):

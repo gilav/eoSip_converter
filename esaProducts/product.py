@@ -14,6 +14,7 @@ class Product:
     size=0
     origName=None
     folder=None
+    contentList=None
     type=None
     metadata=None
     TYPE_UNKNOWN=0
@@ -22,12 +23,16 @@ class Product:
     TYPE_EOSIP=3
     TYPE_NETCDF=4
 
+    #
+    #
+    #
     def __init__(self, p=None):
         if self.debug!=0:
             print " init class Product, path=%s" % p
         self.path=p
         self.size=0
         self.type=self.TYPE_UNKNOWN
+        self.contentList=[]
         if p==None:
             return
         # the product original name
@@ -37,11 +42,16 @@ class Product:
             print " folder=%s" % self.folder
             print " origName=%s" % self.origName
 
-
+    #
+    #
+    #
     def getSize(self):
         self.size=os.stat(self.path).st_size
         return self.size
 
+    #
+    #
+    #
     def read(self, size=0):
         if self.debug!=0:
             print " will read product"
@@ -54,35 +64,56 @@ class Product:
             print " product readed"
         return data
 
+    #
+    #
+    #
     def writeToPath(self, path=None):
         if self.debug!=0:
             print " will write product at path:%s" % path
         return None
 
+    #
+    #
+    #
     def parseFileName(self):
         if self.debug!=0:
             print " will parse filename"
         pass
 
+    #
+    #
+    #
     @abstractmethod
     def getMetadataInfo(self):
         if self.debug!=0:
             print " will get metadata info"
         return None
-
+    
+    #
+    #
+    #
     def extractMetadata(self):
         if self.debug!=0:
             print " will extract metadata"
         return None
-
+    
+    #
+    #
+    #
     def setMetadata(self, m=None):
         if self.debug!=0:
             print " set metadata to:%s" % m
         self.metadata=m
 
+    #
+    #
+    #
     def buildTypeCode(self):
         return None
 
+    #
+    #
+    #
     def dumpMetadata(self):
         self.metadata.dump()
     

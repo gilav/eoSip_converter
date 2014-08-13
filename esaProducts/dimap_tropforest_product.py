@@ -18,6 +18,7 @@ from browseImage import BrowseImage
 import metadata
 import browse_metadata
 import formatUtils
+import geomHelper
 
 class Dimap_Tropforest_Product(Directory_Product):
 
@@ -80,7 +81,10 @@ class Dimap_Tropforest_Product(Directory_Product):
             print " will exttact product to path:%s" % folder
         fh = open(self.path, 'rb')
         z = zipfile.ZipFile(fh)
-        
+
+        # keep list of content
+        self.contentList=[]
+        # 
         n=0
         for name in z.namelist():
             n=n+1
@@ -99,12 +103,14 @@ class Dimap_Tropforest_Product(Directory_Product):
                     self.XML_FILE_NAME=name
             if self.debug!=0:
                 print "   %s extracted at path:%s" % (name, folder+'/'+name)
+            self.contentList.append(name)
         fh.close()
         self.EXTRACTED_PATH=folder
 
 
     #
-    #
+    # extract the grid from filaname: N00-E113_AVN_20090517_PRO_0.tif or N00_W055_DE1_20101109_PRO_0.tif
+    # return a string 
     #
     def extractGridFromFile(self,value):
         if value==None:
@@ -114,25 +120,54 @@ class Dimap_Tropforest_Product(Directory_Product):
             grid=self.TIF_FILE_NAME.split('_')[0]
             if value=="lat":
                 grid_final=grid.split('-')[0]
+                if grid_final[0]=="N":
+                    grid_final=grid_final[1:]
+                elif grid_final[0]=="S":
+                    grid_final="-%s" % grid_final[1:]
+                else:
+                    raise Exception("lat is malformed if filename:%s" % self.TIF_FILE_NAME)
             elif value=="lon":
                 grid_final=grid.split('-')[1]
+                if grid_final[0]=="E":
+                    grid_final=grid_final[1:]
+                elif grid_final[0]=="W":
+                    grid_final="-%s" % grid_final[1:]
+                else:
+                    raise Exception("lon is malformed if filename:%s" % self.TIF_FILE_NAME)
         else:
             grid=self.TIF_FILE_NAME.split('_')
             if value=="lat":
                 grid_final=grid[0]
+                if grid_final[0]=="N":
+                    grid_final=grid_final[1:]
+                elif grid_final[0]=="S":
+                    grid_final="-%s" % grid_final[1:]
+                else:
+                    raise Exception("lat is malformed if filename:%s" % self.TIF_FILE_NAME)
             elif value=="lon":
                 grid_final=grid[1]
+                if grid_final[0]=="E":
+                    grid_final=grid_final[1:]
+                elif grid_final[0]=="W":
+                    grid_final="-%s" % grid_final[1:]
+                else:
+                    raise Exception("lon is malformed if filename:%s" % self.TIF_FILE_NAME)
         return grid_final
 
 
     #
+    # normalise the grid to 4 digit
     #
-    #
-    def extractGridFromFileNormalised(self,value):
+    def extractGridFromFileNormalised(self, value):
         if value==None:
             raise Exception("value (lat/lon) is None")
         grid_final=self.extractGridFromFile(value)
-        grid_final=grid_final[0]+grid_final[1:].rjust(3,"0")
+        if value=="lat":
+            grid_final="%s" % formatUtils.coLatitude(int(grid_final))
+        elif value=="lon":
+            grid_final="%s" % formatUtils.absoluteLongitude(int(grid_final))
+            
+        grid_final=grid_final.rjust(3,"0")
         return grid_final
 
 
@@ -141,11 +176,11 @@ class Dimap_Tropforest_Product(Directory_Product):
     #
     def buildTypeCode(self):
         if self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)=='AVNIR':
-            self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'AV2_OBS_11')
+            self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'AV2_OBS_2F')
         elif self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)=='SLIM-6-22':
-            self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'SL6_L1R_1P') # or SL6_L1T_1P
-        elif self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)==None:
-            self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'EOC_PAN_1G') # or 1P 1R
+            self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'SL6_L1T_2F') # or SL6_L1R_1P
+        elif self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)==None:  # KOMPSAT
+            self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'MSC_MS__2F ') 
         else:
             self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'###_###_##')
 
@@ -203,7 +238,7 @@ class Dimap_Tropforest_Product(Directory_Product):
 
         # keep the original product name, add it to local attributes
         #met.addLocalAttribute("original_name", met.getMetadataValue(metadata.METADATA_DATASET_NAME))
-        met.addLocalAttribute("original_name", self.origName)
+        #met.addLocalAttribute("original_name", self.origName)
 
                             
         return num_added
@@ -216,22 +251,30 @@ class Dimap_Tropforest_Product(Directory_Product):
     # - build type code
     #
     def refineMetadata(self):
-        # set platform Id
+        # test that footprint is valid (not almost a point)
+        tmp=self.metadata.getMetadataValue(metadata.METADATA_FOOTPRINT)
+        toks=tmp.split(" ")
+        dist=geomHelper.metersDistanceBetween(float(toks[0]), float(toks[1]), float(toks[2]), float(toks[3]))
+        if dist < 1000: # in meters
+            raise Exception("footprint is too small:%s" % dist)
+        #print "DISTANCE=%s" % dist
+        
+        # set platform Id and instrument. Overwrite readed values
         if self.metadata.getMetadataValue(metadata.METADATA_PLATFORM)=='ALOS':
-            if self.metadata.getMetadataValue(metadata.METADATA_PLATFORM_ID)==None:
-                self.metadata.setMetadataPair(metadata.METADATA_PLATFORM_ID, '1')
-            if self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT)==None:
-                self.metadata.setMetadataPair(metadata.METADATA_INSTRUMENT, 'AV2')
+            #if self.metadata.getMetadataValue(metadata.METADATA_PLATFORM_ID)==None:
+            self.metadata.setMetadataPair(metadata.METADATA_PLATFORM_ID, '1')
+            #if self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT)==None:
+            self.metadata.setMetadataPair(metadata.METADATA_INSTRUMENT, 'AVNIR-2')
         elif self.metadata.getMetadataValue(metadata.METADATA_PLATFORM)=='KOMPSAT':
-            if self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT)==None:
-                self.metadata.setMetadataPair(metadata.METADATA_INSTRUMENT, 'EOC')
-            if self.metadata.getMetadataValue(metadata.METADATA_PLATFORM_ID)==None:
-                self.metadata.setMetadataPair(metadata.METADATA_PLATFORM_ID, '2')
+            #if self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT)==None:
+            self.metadata.setMetadataPair(metadata.METADATA_INSTRUMENT, 'MSC')
+            #if self.metadata.getMetadataValue(metadata.METADATA_PLATFORM_ID)==None:
+            self.metadata.setMetadataPair(metadata.METADATA_PLATFORM_ID, '2')
         elif self.metadata.getMetadataValue(metadata.METADATA_PLATFORM)=='DEIMOS':
-            if self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT)==None:
-                self.metadata.setMetadataPair(metadata.METADATA_INSTRUMENT, 'SLIM6')
-            if self.metadata.getMetadataValue(metadata.METADATA_PLATFORM_ID)==None:
-                self.metadata.setMetadataPair(metadata.METADATA_PLATFORM_ID, '1')
+            #if self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT)==None:
+            self.metadata.setMetadataPair(metadata.METADATA_INSTRUMENT, 'SLIM6')
+            #if self.metadata.getMetadataValue(metadata.METADATA_PLATFORM_ID)==None:
+            self.metadata.setMetadataPair(metadata.METADATA_PLATFORM_ID, '1')
 
         # add time 00:00:00 to processing time if needed
         tmp = self.metadata.getMetadataValue(metadata.METADATA_PROCESSING_TIME)
@@ -250,10 +293,9 @@ class Dimap_Tropforest_Product(Directory_Product):
 
         # suppress 'L' charactere in metadata.METADATA_INSTRUMENT_INCIDENCE_ANGLE
         tmp = self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_INCIDENCE_ANGLE)
-        if tmp[0]=='L':
+        if tmp != None and tmp[0]=='L':
             tmp = tmp[1:]
             self.metadata.setMetadataPair(metadata.METADATA_INSTRUMENT_INCIDENCE_ANGLE, tmp)
-            
             
         # 
         self.buildTypeCode() 
@@ -442,12 +484,13 @@ class Dimap_Tropforest_Product(Directory_Product):
                 #helper.setDebug(1)
                 country = helper.getNodeText(helper.getFirstNodeByPath(nodes[0], 'COUNTRY', None))
                 met.setMetadataPair(metadata.METADATA_COUNTRY, country)
-                met.addLocalAttribute("country", country)
+                met.addLocalAttribute("observedCountry", country)
 
 
             # make sure the footprint is CCW
             browseIm = BrowseImage()
             browseIm.setFootprint(footprint)
+            browseIm.calculateBoondingBox()
             browseIm.setColRowList(rowCol)
             print "browseIm:%s" % browseIm.info()
             if not browseIm.getIsCCW():
@@ -469,8 +512,9 @@ class Dimap_Tropforest_Product(Directory_Product):
                 met.setMetadataPair(metadata.METADATA_SCENE_CENTER_LON, lon)
             else:
                 print "@@@@@@@@@@@@@@@#######################@@@@@@@@@@@@@@@@@@@@@ centerPair:%s" % centerPair
-            # footprint is needed in the localAttributes
-            met.addLocalAttribute("boundingBox", met.getMetadataValue(metadata.METADATA_FOOTPRINT))
+            # boundingBox is needed in the localAttributes
+            met.setMetadataPair(metadata.METADATA_BOUNDING_BOX, browseIm.boondingBox)
+            met.addLocalAttribute("boundingBox", met.getMetadataValue(metadata.METADATA_BOUNDING_BOX))
 
 
         else:

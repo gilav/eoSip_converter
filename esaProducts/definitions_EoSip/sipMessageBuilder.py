@@ -234,7 +234,7 @@ class SipMessageBuilder(SipBuilder):
                             condOk=False
                             cond=conditions[field]
                             condOk=self.checkConditions(metadata,cond)
-                            if self.debug!=0:
+                            if self.debug==0:
                                 print "######################################### CONDITION:'%s'" % cond
                         except Exception, e:
                             #print "CONDITIONS ERROR:\n%s" % traceback.format_exc()
@@ -261,7 +261,7 @@ class SipMessageBuilder(SipBuilder):
                         sipMessage=self.addToSipMessage(sipMessage, block, metadata)
                         
                     else:
-                        if self.debug!=0:
+                        if self.debug==0:
                             print "############################################################ CONDITIONS not ok:'%s'" % conditions 
             else:
                 if self.debug!=0:

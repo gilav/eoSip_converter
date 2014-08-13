@@ -15,7 +15,7 @@ from tagResolver import TagResolver
 class ShopcartCreator(TagResolver):
     header=[]
     mapping=[]
-    DEFAULT_HEADERS="Id|Mission|Sensor|Product|COLLECTION|Status|Start|Stop|Orbit|Track|Frame|Swath|Station|Processing Level|Original Name|Product Id|PASSTIME|Pass|SCENE_CENTER|FOOTPRINT|ACQUISITIONDESCRIPTOR|THUMBNAIL_URL|PRODUCT_URL|PRODUCT_TYPE|CLOUD_COVER_PERCENTAGE|SNOW_COVER_PERCENTAGE|IMAGE_QUALITY_DEGRATATION|Display|Mosaic|ORDEROPTIONS|Medium|Delivery|Processing Options|Programming Options|Scene Type|Scene Start|Scene Stop|Scene centre|Selected Frame|Order|SCENE_FOOTPRINT"
+    DEFAULT_HEADERS="Id|Mission|Sensor|Product|COLLECTION|Status|Start|Stop|Orbit|Track|Frame|Swath|Station|Processing Level|Original Name|Product Id|PASSTIME|Pass|SCENE_CENTER|BBOX|FOOTPRINT|ACQUISITIONDESCRIPTOR|THUMBNAIL_URL|PRODUCT_URL|PRODUCT_TYPE|CLOUD_COVER_PERCENTAGE|SNOW_COVER_PERCENTAGE|IMAGE_QUALITY_DEGRATATION|Display|Mosaic|ORDEROPTIONS|Medium|Delivery|Processing Options|Programming Options|Scene Type|Scene Start|Scene Stop|Scene centre|Selected Frame|Order|SCENE_FOOTPRINT"
     BASE_BROWSE_URL="%BASE_BROWSE_URL%"
     BASE_URL="%BASE_URL%"
     #
@@ -41,6 +41,7 @@ class ShopcartCreator(TagResolver):
                       'PASSTIME':'',
                       'Pass':'D',
                       'SCENE_CENTER':'@METADATA_SCENE_CENTER@',
+                      'BBOX':'@METADATA_BOUNDING_BOX@',
                       'FOOTPRINT':'@METADATA_FOOTPRINT@',
                       'ACQUISITIONDESCRIPTOR':'ACQ',
                       'THUMBNAIL_URL':'http://172.19.17.85/Spot/@METADATA_PRODUCT_RELATIVE_PATH@/@BROWSE_METADATA_FILENAME@',

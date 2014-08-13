@@ -8,6 +8,7 @@ import subprocess
 import traceback
 from subprocess import call,Popen, PIPE
 
+# try to have PIL library
 PilReady=0
 try:
     from PIL import Image
@@ -16,14 +17,21 @@ try:
 except:
     pass
 
+# 
+SUPPORTED_TYPE=["JPEG", "JPG","PNG"]
 
+# debug
 debug=1
+# command line used to build the browse, when PIL is not used
 externalConverterCommand="/bin/sh -c \"/usr/bin/gm convert -verbose -scale 25%"
 
 
 import struct
 import imghdr
 
+#
+# get image dimenssion without external library
+#
 def get_image_size(fname):
     '''Determine the image type of fhandle and return its size.
     from draco'''
@@ -61,30 +69,40 @@ def get_image_size(fname):
 
 
 #
+# make a browse image
 #
-#
-def makeJpeg(src=None, dest=None, resizePercent=-1, w=-1, h=-1, enhance=None):
+def makeBrowse(type="JPEG", src=None, dest=None, resizePercent=-1, w=-1, h=-1, enhance=None):
+    try:
+        SUPPORTED_TYPE.index(type)
+    except:
+        raise Exception("unsupported browse type:%s" % type)
+    #
+    # convert to supported type
+    #
+    if type.lower()=="jpg":
+        type="JPEG"
+    
     if PilReady==1:
         try:
-            makeJpegPil(src, dest, resizePercent, w, h, enhance)
+            makeBrowsePil(type, src, dest, resizePercent, w, h, enhance)
         except Exception, e:
-            print " can not make jpeg using PIL:"
+            print " can not make browse using PIL:"
             if debug!=0:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 traceback.print_exc(file=sys.stdout)
             try:
-                externalMakeJpeg(src, dest)
+                externalMakeBrowse(type, src, dest)
             except Exception, e:
-                print " Error making jpeg using external call:"
+                print " Error making browse using external call:"
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 traceback.print_exc(file=sys.stdout)
                 #raise e
                 pass
     else:
         try:
-            externalMakeJpeg(src, dest)
+            externalMakeBrowse(type, src, dest)
         except Exception, e:
-            print " Error making jpeg using external call:"
+            print " Error making browse using external call:"
             exc_type, exc_obj, exc_tb = sys.exc_info()
             traceback.print_exc(file=sys.stdout)
             #raise e
@@ -92,9 +110,9 @@ def makeJpeg(src=None, dest=None, resizePercent=-1, w=-1, h=-1, enhance=None):
         
 
 #
+# run external command to generate the browse
 #
-#
-def externalMakeJpeg(src=None, dest=None):
+def externalMakeBrowse(type="JPEG", src=None, dest=None):
     try:
         src=src.replace("//","/")
         dest=dest.replace("//","/")
@@ -109,42 +127,17 @@ def externalMakeJpeg(src=None, dest=None):
         if retval!=0:
             raise Exception("Error externalMakeJpeg:")
         if debug!=0:
-            print "  jpeg saved as:%s" % dest
+            print "  browse saved as:%s" % dest
     except Exception, e:
         print " externalMakeJpeg error:"
         exc_type, exc_obj, exc_tb = sys.exc_info()
         traceback.print_exc(file=sys.stdout)
         raise e
     
-#
-# NOT USED
-#
-def externalMakeJpeg__(src=None, dest=None):
-    try:
-        src=src.replace("//","/")
-        dest=dest.replace("//","/")
-        if debug!=0:
-            print " external resize image:%s into:%s" % (src, dest)
-        command="%s %s %s" % (externalConverterCommand, src, dest)
-        print "command:%s" % command
-        toks=externalConverterCommand.split(" ")
-        p = Popen(toks, shell=True, stdout=PIPE, stderr=PIPE)
-        out,err=p.communicate()
-        retval = p.returncode
-        print "  retval:%s" % retval
-        if retval!=0:
-            raise Exception("Error externalMakeJpeg:%s\n%s" % (out.rstrip(),err.rstrip()))
-        if debug!=0:
-            print "  jpeg saved as:%s" % dest
-    except Exception, e:
-        print " externalMakeJpeg error:"
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        traceback.print_exc(file=sys.stdout)
-        raise e
 
 
 #
-#
+# test
 #
 def splitBands(img=None):
     newIm=None
@@ -161,13 +154,15 @@ def splitBands(img=None):
     return newIm
     
 #
+# make a browse image using PIL
+# w and h parameter not used at this time
 #
-#
-def makeJpegPil(src=None, dest=None, resizePercent=-1, w=-1, h=-1, enhance=None):
+def makeBrowsePil(type="JPEG", src=None, dest=None, resizePercent=-1, w=-1, h=-1, enhance=None):
     try:
         if debug==0:
             print " internal resize image:%s into:%s; percent:%s" % (src, dest, resizePercent)
         im = Image.open(src)
+        im = im.convert('RGB')
         if debug==0:
             print "  src image readed:%s" % im.info
 
@@ -175,7 +170,6 @@ def makeJpegPil(src=None, dest=None, resizePercent=-1, w=-1, h=-1, enhance=None)
         if enhance != None:
             converter = ImageEnhance.Contrast(im)
             newIm = converter.enhance(1.5)
-            
             #r, g, b, a = img.split()
             #if debug!=0:
             #    print "  im splitted"
@@ -197,7 +191,7 @@ def makeJpegPil(src=None, dest=None, resizePercent=-1, w=-1, h=-1, enhance=None)
         if debug!=0:
             print "  newIm:%s" % newIm
 
-        width, height = im.size
+        width, height = newIm.size
         newSize=None
         if resizePercent!=-1:
             nw=width*resizePercent/100
@@ -207,26 +201,24 @@ def makeJpegPil(src=None, dest=None, resizePercent=-1, w=-1, h=-1, enhance=None)
             newSize=[w,h]
 
         if newSize!=None:   
-            im=newIm.resize(newSize, Image.BILINEAR )
+            newIm=newIm.resize(newSize, Image.BILINEAR )
             if debug!=0:
                 print "  newIm resized"
-            im.save(dest, "JPEG")
+            newIm.save(dest, type)
         else:
-            newIm.save(dest, "JPEG")
+            newIm.save(dest, type)
         if debug!=0:
-            print "  jpeg saved as:%s" % dest
+            print "  browse saved as:%s" % dest
     except Exception, e:
-        print " Error making jpeg:"
+        print " Error making browse:"
         exc_type, exc_obj, exc_tb = sys.exc_info()
         traceback.print_exc(file=sys.stdout)
-        #print " !!!!!!!!!!!!!!!!!!!!! FAKE IMAGE GENERATED, to be removed in operation !!!!!!!!!!!!!!!!!!!!!!!!"
         raise e
-        #fd=open(dest, "w")
-        #fd.write('0')
-        #fd.close()
+
 
     
 if __name__ == '__main__':
-    src="C:/Users/glavaux/Shared/LITE/tmp/unzipped/N11-E078_AVN_20090626_PRO_0.tif"
-    dest="C:/Users/glavaux/Shared/LITE/TropForest-example/AVNIR/test.jpg"
-    ok=makeJpeg(src, dest, 50)
+    #src="C:/Users/glavaux/Shared/LITE/tmp/unzipped/N00-E113_AVN_20090517_PRO_0.tif"
+    src="C:/Users/glavaux/Shared/LITE/tmp/unzipped/imagery.tif"
+    dest="C:/Users/glavaux/Shared/LITE/tmp/unzipped/test.png"
+    ok=makeBrowse("PNG", src, dest, 50)

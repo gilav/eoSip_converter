@@ -14,17 +14,28 @@ from service import Service
 
 class HttpCall(Service):
 
-    #
-    #
-    #
-    def init(self, p=None):
-        self.properties=p
-        if debug:
-            print " set service properties to:%s" % self.properties
-        self.my_init()
 
     #
+    # class init
+    # call super class
     #
+    def __init__(self, name=None):
+        Service.__init__(self, name)
+
+
+    #
+    # init
+    # call super class
+    #
+    # param: p is usually the path of a property file
+    #
+    def init(self, p=None, ingester=None):
+        Service.init(self, p, ingester)
+        self.my_init()
+
+
+    #
+    # 
     #
     def my_init(self, proxy=0, timeout=5):
         self.timeout=timeout
@@ -41,17 +52,8 @@ class HttpCall(Service):
                 print " disabling proxy"
             proxy_handler = urllib2.ProxyHandler({})
             self.opener = urllib2.build_opener(proxy_handler)
-            #urllib2.install_opener(self.opener)
             if debug:
                 print " proxy disabled"
-
-
-
-    #
-    #
-    #
-    def getproperties(self):
-        return self.properties
 
 
     #

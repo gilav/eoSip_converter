@@ -13,17 +13,18 @@ debug=0
 #
 #
 def coordinateBetween(lat1, lon1, lat2, lon2):
+    print "\n\n\n coordinateBetween deg %s %s %s %s" % (lat1, lon1, lat2, lon2)
     # convert decimal degrees to radians 
     lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
 
     bx = cos(lat2) * cos(lon2 - lon1)
     by = cos(lat2) * sin(lon2 - lon1)
-    lat3 = atan2(sin(lat1) + sin(lat2), \
-           sqrt((cos(lat1) + bx) * (cos(lat1) \
-           + bx) + by**2))
+    lat3 = atan2(sin(lat1) + sin(lat2),  sqrt((cos(lat1) + bx) * (cos(lat1)  + bx) + by**2))
     lon3 = lon1 + atan2(by, cos(lat1) + bx)
 
+    print "\n\n\n coordinateBetween res deg: %s %s" % (degrees(lat3), degrees(lon3))
     return degrees(lat3), degrees(lon3)
+
 
 #
 # Calculate the great circle distance between two points 
@@ -39,12 +40,54 @@ def metersDistanceBetween(lat1, lon1, lat2, lon2):
     dlat = lat2 - lat1 
     a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
     c = 2 * asin(sqrt(a))
-    print "angle=%s" % c
+    if debug!=0:
+        print "angle=%s" % c
 
     # if we want the distance in meter
     # 6378137f meters is the radius of the Earth
     meters = 6378137 * c
     return meters
+
+
+# from java, == arcDistanceBetween. OK
+def sphericalDistance(lat1, lon1, lat2, lon2):
+    phi0, lambda0, phi, alambda = map(radians, [lat1, lon1, lat2, lon2])
+    pdiff = sin(((phi-phi0)/2));
+    ldiff = sin((alambda-lambda0)/2);
+    rval = sqrt((pdiff*pdiff) + cos(phi0)*cos(phi)*(ldiff*ldiff));
+	
+    return 2 * asin(rval);
+
+
+# from java. OK
+def getIntermediatePoint(lat1, lon1, lat2, lon2, f):
+        print " @@@@@@@@@@@@@@@@ getIntermediatePoint deg %s %s %s %s" % (lat1, lon1, lat2, lon2)
+        lon = 999999
+        lat = 999999
+        
+        # get distance a-b
+        d = sphericalDistance(lat1, lon1, lat2, lon2)
+        print " @@@@@@@@@@@@@@@@ d0:%s    %s" % (d, degrees(d))
+        #d = arcDistanceBetween(lat1, lon1, lat2, lon2)
+        #print " @@@@@@@@@@@@@@@@ d1:%s    %s" % (d, degrees(d))
+
+        
+        lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
+        # apply formula
+        A = sin((1.0-f)*d)/sin(d)
+        B = sin(f*d)/sin(d)
+        
+        x = A*cos(lat1)*cos(lon1) +  B*cos(lat2)*cos(lon2)
+        y = A*cos(lat1)*sin(lon1) +  B*cos(lat2)*sin(lon2)
+        z = A*sin(lat1) +  B*sin(lat2)
+        
+        
+        lat = atan2(z,sqrt(pow(x,2) + pow(y,2)))
+        lon = atan2(y,x)
+        
+        #return lat, lon
+        return degrees(lat), degrees(lon)
+
 
 #
 # Calculate the great circle distance between two points 
@@ -52,15 +95,18 @@ def metersDistanceBetween(lat1, lon1, lat2, lon2):
 # returns the arc distance in radian
 #
 def arcDistanceBetween(lat1, lon1, lat2, lon2):
+    print "\n\n\n arcDistanceBetween deg %s %s %s %s" % (lat1, lon1, lat2, lon2)
     # convert decimal degrees to radians 
     lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
+    #print " arcDistanceBetween rad %s %s %s %s" % (lat1, lon1, lat2, lon2)
 
     # haversine formula 
     dlon = lon2 - lon1 
     dlat = lat2 - lat1 
     a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
     c = 2 * asin(sqrt(a))
-    print "angle=%s" % c
+    if debug==0:
+        print "angle=%s rad or %s deg" % (c, degrees(c))
 
     # if we want the distance in meter
     # 6378137f meters is the radius of the Earth

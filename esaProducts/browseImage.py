@@ -6,7 +6,9 @@ parentdir = os.path.dirname(currentdir)
 sys.path.insert(0,parentdir)
 
 from geom import vector2D
+import math
 import geomHelper
+import formatUtils
 
 
 
@@ -24,6 +26,8 @@ class BrowseImage():
     # footprint is: 'lat long '...
     footprint=None
     origFootprint=None
+    # bounding box
+    boondingBox=None
     # center
     centerLat=None
     centerLon=None
@@ -39,6 +43,8 @@ class BrowseImage():
     isSSW=None
     #
     isClosed=None
+    # cross +-180 longitude
+    isCrossing=None
     #
     debug=0
     #
@@ -124,12 +130,144 @@ class BrowseImage():
     #
     #
     #
+    def testCrossing(self):
+        if self.footprint==None:
+            return
+        toks=self.footprint.split(" ")
+        nPair = 1
+        numPair=len(toks)/2
+        if self.debug!=0:
+                print " numPair=%s" % numPair
+        # test distance in longitudes
+        oldLon=None
+        for item in range(len(toks)/2):
+            lon=toks[(item*2)+1]
+            if oldLon!=None:
+                print "testCrossing %d, lon=%s, oldLon=%s" % (item, lon, oldLon)
+                if float(lon)-float(oldLon) > 180 and float(lon)*float(oldLon) <0:
+                    self.isCrossing=True
+                    print "@#@#@#@#  CROSSING!"
+                    return
+            oldLon=lon
+        self.isCrossing=False
+            
+    #
+    # get the boundingBox
+    #
+    def calculateBoondingBox(self):
+        if self.footprint==None:
+            return
+        if self.centerLat==None or self.centerLon==None:
+            self.calculateCenter()
+            
+        self.testCrossing()
+
+        toks=self.footprint.split(" ")
+        nPair = 1
+        numPair=len(toks)/2
+        print " calculateEnvelope isCrossing=%s" % self.isCrossing
+
+        maxLat=-90
+        minLat=90
+        minLon=180
+        maxLon=-180
+        for item in range(len(toks)/2):
+            latn = float(toks[item*2])
+            longn = float(toks[item*2+1])
+
+            if latn > maxLat:
+                maxLat=latn;
+            if latn < minLat:
+                minLat=latn
+
+            if longn<0 and self.isCrossing==True:
+                longn=longn+360
+                if longn>maxLon:
+                    maxLon=longn
+                if longn<minLon:
+                    minLon=longn
+            else:
+                if longn>maxLon:
+                    maxLon=longn
+                if longn<minLon:
+                    minLon=longn
+
+        if maxLon > 180:
+            maxLon = maxLon -360
+        print "############ minLat=%s  maxLat=%s   minLon=%s   maxLon=%s" % (minLat, maxLat, minLon, maxLon)
+        # we want 4 points: uper left corner, then ccw
+        self.boondingBox = "%s %s %s %s %s %s %s %s" % (maxLat, minLon, minLat, minLon,
+                                                        minLat, maxLon, maxLat, maxLon)    
+    #
+    # get the footprint envelope: calculate biggest x/y axe arc-distance from coord[n] to center.
+    #
+    def calculateEnvelope2(self):
+        self.testCrossing()
+        if self.footprint==None:
+            return
+        if self.centerLat==None or self.centerLon==None:
+            self.calculateCenter()
+            
+        toks=self.footprint.split(" ")
+        nPair = 1
+        numPair=len(toks)/2
+        if self.debug!=0:
+                print " numPair=%s" % numPair
+        maxx = 0
+        maxy = 0
+        fcenterlat=float(self.centerLat)
+        fcenterlon=float(self.centerLon)
+        for item in range(len(toks)/2):
+            latn = toks[item*2]
+            longn = toks[item*2+1]
+            dy = geomHelper.arcDistanceBetween(fcenterlat, fcenterlon, float(latn), fcenterlon)
+            dx = geomHelper.arcDistanceBetween(fcenterlat, fcenterlon, fcenterlat, float(longn))
+            if dx > maxx:
+                maxx=dx
+            if dy>maxy:
+                maxy=dy
+                
+            print "coords %d, lat=%s, lon=%s;   dx=%s; dy=%s    maxx=%s; maxy=%s" % (nPair, latn, longn, dx, dy, maxx, maxy)
+            nPair = nPair+1
+
+        print "==> maxx=%s; maxy=%s" % (maxx, maxy)
+        maxLon = math.radians(fcenterlon)+maxx
+        minLon = math.radians(fcenterlon)-maxx
+        maxLat = math.radians(fcenterlat)-maxy
+        minLat = math.radians(fcenterlat)+maxy
+        self.boondingBox = "%s %s %s %s %s %s %s %s %s %s" % (math.degrees(minLat), math.degrees(minLon),math.degrees(maxLat), math.degrees(minLon),
+                                                        math.degrees(maxLat), math.degrees(maxLon),math.degrees(minLat), math.degrees(maxLon),
+                                                        math.degrees(minLat), math.degrees(minLon))
+
+        
+
+
+    #
+    # get the footprint center: use the first and middle point to do it
+    #
     def calculateCenter(self):
         # get the first and middle footprint coords
         toks=self.footprint.split(" ")
         #print "2eme coord: lat=%s lon=%s" % (toks[(len(toks)/2)-1], toks[(len(toks)/2)] )
-        self.centerLat, self.centerLon = geomHelper.coordinateBetween(float(toks[0]), float(toks[1]), float(toks[(len(toks)/2)-1]), float(toks[(len(toks)/2)]))
-        #print "@@@@@@@@@@@@@@@@@@@@@@@calculateCenter:%s  %s" % (self.centerLat,self.centerLon)
+        #self.centerLat, self.centerLon = geomHelper.coordinateBetween(float(toks[0]), float(toks[1]), float(toks[(len(toks)/2)-1]), float(toks[(len(toks)/2)]))
+        #print "@@@@@@@@@@@@@@@@@@@@@@@calculateCenter 0:%s  %s" % (self.centerLat,self.centerLon)
+        #self.centerLat=formatUtils.EEEtoNumber("%s" % self.centerLat)
+        #self.centerLon=formatUtils.EEEtoNumber("%s" % self.centerLon)
+        #print "@@@@@@@@@@@@@@@@@@@@@@@calculateCenter 1:%s  %s" % (self.centerLat,self.centerLon)
+
+        # new:
+        if len(toks)==10:
+            alat, alon = geomHelper.getIntermediatePoint(float(toks[0]), float(toks[1]), float(toks[(len(toks)/2)-1]), float(toks[(len(toks)/2)]), 0.5)
+            #print "@@@@@@@@@@@@@@@@@@@@@@@getIntermediatePoint 0:%s  %s" % (alat, alon)
+
+            alat1, alon1 = geomHelper.getIntermediatePoint(float(toks[2]), float(toks[3]), float(toks[(len(toks)/2)+1]), float(toks[(len(toks)/2)+2]), 0.5)
+            #print "@@@@@@@@@@@@@@@@@@@@@@@getIntermediatePoint 1:%s  %s" % (alat1, alon1)
+
+            self.centerLat, self.centerLon = geomHelper.getIntermediatePoint(alat, alon, alat1, alon1, 0.5)
+            #print "@@@@@@@@@@@@@@@@@@@@@@@getIntermediatePoint 2:%s  %s" % (self.centerLat, self.centerLon)
+            self.centerLat = formatUtils.EEEtoNumber("%s" % self.centerLat)
+            self.centerLon = formatUtils.EEEtoNumber("%s" % self.centerLon)
+        
         return self.centerLat, self.centerLon
     
     #
@@ -262,6 +400,7 @@ class BrowseImage():
         info="%s center: lat=%s; lon=%s\n" % (info, self.centerLat, self.centerLon)
         info="%s is CCW=%s\n" % (info, self.isCCW)
         info="%s is closed=%s\n" % (info, self.isClosed)
+        info="%s boondingBox=%s\n" % (info, self.boondingBox)
         if self.num_reverseColRowList != self.num_reverseFootprint:
             info="%s ERROR: number of reverse footprint != reverse colRowList: %s vs %s\n" % (info, self.num_reverseColRowList, self.num_reverseFootprint)
             self.valid=False
@@ -287,8 +426,15 @@ if __name__ == '__main__':
     # f130:
     #browse.setFootprint('51.107277 -3.388437 51.544346 -2.074867 50.715931 -1.393089 50.284798 -2.687346 51.107277 -3.388437')
     # d79f:
-    browse.setFootprint('57.555702 -6.213644 57.067524 -7.676043 57.731705 -8.470135 58.227787 -6.987471 57.555702 -6.213644')
+    #browse.setFootprint('57.555702 -6.213644 57.067524 -7.676043 57.731705 -8.470135 58.227787 -6.987471 57.555702 -6.213644')
+    #browse.setFootprint('-50 170 -20 175 -20 -170 -50 -175 -50 170')
+    browse.setFootprint("0.43 112.969 -0.421 112.969 -0.421 113.443 0.43 113.443 0.43 112.969")
+    browse.calculateCenter()
+    browse.calculateBoondingBox()
     print browse.info()
+    fd=open("boundingBox_try.txt", "w")
+    fd.write(browse.info())
+    fd.close()
     browse.reverse()
     print "\nreversed:"
     print browse.info()

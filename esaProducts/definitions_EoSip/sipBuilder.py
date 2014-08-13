@@ -39,13 +39,13 @@ VALUE_NOT_PRESENT="NOT-PRESENT"
 #print "dir module browse_metadata:%s" % dir(browse_metadata)
 
 
-EOSIP_METADATA_MAPPING={'responsible':metadata.METADATA_RESPONSIBLE,
+EOSIP_METADATA_MAPPING={'acquisitionStation':metadata.METADATA_ACQUISITION_CENTER,
+                        'responsible':metadata.METADATA_RESPONSIBLE,
                         'SIPCreator':metadata.METADATA_CREATOR,
                         'reportType':metadata.METADATA_REPORT_TYPE,
                         'generationTime':metadata.METADATA_GENERATION_TIME,
                         'gmlId':metadata.METADATA_IDENTIFIER,
                         'identifier':metadata.METADATA_IDENTIFIER,
-                        'parentIdentifier':metadata.METADATA_PARENT_PRODUCT,
                         'productType':metadata.METADATA_TYPECODE,
                         'beginPositionDate':metadata.METADATA_START_DATE,
                         'beginPositionTime':metadata.METADATA_START_TIME,
@@ -84,6 +84,7 @@ EOSIP_METADATA_MAPPING={'responsible':metadata.METADATA_RESPONSIBLE,
                         'browseFileName':browse_metadata.BROWSE_METADATA_NAME,
                         'BrowseRectCoordList':browse_metadata.BROWSE_METADATA_RECT_COORDLIST,
                         'colRowList':metadata.METADATA_FOOTPRINT_IMAGE_ROWCOL,
+                        'parentIdentifier':metadata.METADATA_PARENT_IDENTIFIER,
                         'processingDate':metadata.METADATA_PROCESSING_TIME,
                         'processingCenter':metadata.METADATA_PROCESSING_CENTER,
                         'processorName':metadata.METADATA_SOFTWARE_NAME,
@@ -124,26 +125,31 @@ class SipBuilder:
 
     #
     # condition value is like:"FILLED__acquisitionStation"
+    # where FILLED is the OPERATOR
+    # and acquisitionStation is the mappiing name (present in the EOSIP_METADATA_MAPPING)
     #
     def checkConditions(self, metadata=None, condition=None):
         try:
             result=False
             pos = condition.find('__')
             operator=condition[0:pos]
-            metaName=condition[pos+2:]
-            if self.debug!=0:
+            aliasName=condition[pos+2:]
+            if not EOSIP_METADATA_MAPPING.has_key(aliasName):
+                raise Exception("condition has unknown mapping key:%s" % aliasName)
+            metaName=EOSIP_METADATA_MAPPING[aliasName]
+            if self.debug==0:
                 print "################################## checkConditions: operator:'%s'  varname='%s'" % (operator, metaName)
             if metadata.dict.has_key(metaName):
                 resolved=metadata.getMetadataValue(metaName)
                 if operator=="FILLED":
                     if resolved!=None and resolved!=VALUE_NONE and resolved!=VALUE_UNKNOWN and resolved!=VALUE_NOT_PRESENT:
-                        result=true
+                        result=True
                 else:
                     raise Exception("unknown condition operator:'%s'" % operator)
             else:
-                if self.debug!=0:
+                if self.debug==0:
                     print "################################## checkConditions: metaName not in metadata:'%s'" % metaName
-            if self.debug!=0:
+            if self.debug==0:
                 print "################################## checkConditions: returns:%s" % result
             return result
         except Exception, e:
