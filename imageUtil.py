@@ -29,6 +29,7 @@ externalConverterCommand="/bin/sh -c \"/usr/bin/gm convert -verbose -scale 25%"
 import struct
 import imghdr
 
+
 #
 # get image dimenssion without external library
 #
@@ -71,7 +72,7 @@ def get_image_size(fname):
 #
 # make a browse image
 #
-def makeBrowse(type="JPEG", src=None, dest=None, resizePercent=-1, w=-1, h=-1, enhance=None):
+def makeBrowse(type="JPEG", src=None, dest=None, resizePercent=-1, w=-1, h=-1, enhance=None, transparent=False):
     try:
         SUPPORTED_TYPE.index(type)
     except:
@@ -84,14 +85,14 @@ def makeBrowse(type="JPEG", src=None, dest=None, resizePercent=-1, w=-1, h=-1, e
     
     if PilReady==1:
         try:
-            makeBrowsePil(type, src, dest, resizePercent, w, h, enhance)
+            makeBrowsePil(type, src, dest, resizePercent, w, h, enhance, transparent)
         except Exception, e:
             print " can not make browse using PIL:"
             if debug!=0:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 traceback.print_exc(file=sys.stdout)
             try:
-                externalMakeBrowse(type, src, dest)
+                externalMakeBrowse(type, src, dest, transparent)
             except Exception, e:
                 print " Error making browse using external call:"
                 exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -157,12 +158,12 @@ def splitBands(img=None):
 # make a browse image using PIL
 # w and h parameter not used at this time
 #
-def makeBrowsePil(type="JPEG", src=None, dest=None, resizePercent=-1, w=-1, h=-1, enhance=None):
+def makeBrowsePil(type="JPEG", src=None, dest=None, resizePercent=-1, w=-1, h=-1, enhance=None, transparent=False):
     try:
         if debug==0:
             print " internal resize image:%s into:%s; percent:%s" % (src, dest, resizePercent)
         im = Image.open(src)
-        im = im.convert('RGB')
+        im = im.convert('RGBA')
         if debug==0:
             print "  src image readed:%s" % im.info
 
@@ -204,9 +205,22 @@ def makeBrowsePil(type="JPEG", src=None, dest=None, resizePercent=-1, w=-1, h=-1
             newIm=newIm.resize(newSize, Image.BILINEAR )
             if debug!=0:
                 print "  newIm resized"
+            if type=="PNG" and transparent==True:
+                source = newIm.split() 
+                R, G, B, A = 0, 1, 2, 3
+                mask = newIm.point(lambda i: i > 0 and 255) # use black as transparent
+                source[A].paste(mask)
+                newIm = Image.merge(im.mode, source)  # build a new multiband image 
             newIm.save(dest, type)
         else:
+            if type=="PNG" and transparent==True:
+                source = newIm.split() 
+                R, G, B, A = 0, 1, 2, 3
+                mask = newIm.point(lambda i: i > 0 and 255) # use black as transparent
+                source[A].paste(mask)
+                newIm = Image.merge(im.mode, source)  # build a new multiband image 
             newIm.save(dest, type)
+            
         if debug!=0:
             print "  browse saved as:%s" % dest
     except Exception, e:
@@ -219,6 +233,9 @@ def makeBrowsePil(type="JPEG", src=None, dest=None, resizePercent=-1, w=-1, h=-1
     
 if __name__ == '__main__':
     #src="C:/Users/glavaux/Shared/LITE/tmp/unzipped/N00-E113_AVN_20090517_PRO_0.tif"
-    src="C:/Users/glavaux/Shared/LITE/tmp/unzipped/imagery.tif"
+    #src="C:/Users/glavaux/Shared/LITE/tmp/unzipped/imagery.tif"
+    src="C:/Users/glavaux/Shared/LITE/spaceTmp/batch_dimap_spot_workfolder_0/SP1_OPER_HRV1_X__1P_19881009T114531_19881009T114540_000029_0022_0322/SP1_OPER_HRV1_X__1P_19881009T114531_19881009T114540_000029_0022_0322.BI.JPG"
     dest="C:/Users/glavaux/Shared/LITE/tmp/unzipped/test.png"
-    ok=makeBrowse("PNG", src, dest, 50)
+    ok=makeBrowse("PNG", src, dest, 50, transparent=True)
+    #dest="C:/Users/glavaux/Shared/LITE/tmp/unzipped/test.jpeg"
+    #ok=makeBrowse("JPG", src, dest, 50)

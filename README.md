@@ -14,6 +14,10 @@ Supported products are at this time:
 History:
 ========
 
+2014-08-20:
+ - ready for tropforest (again...)
+ - allow to make PNG with transparency (PIL only)
+
 2014-08-13:
  - add browseImage class: calculate scene center, boundingBox
  

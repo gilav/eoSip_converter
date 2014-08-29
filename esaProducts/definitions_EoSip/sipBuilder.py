@@ -111,6 +111,8 @@ class SipBuilder:
     __metaclass__=ABCMeta
 
     debug=0
+    debugUnused=0
+    debugCondition=0
     # the matadata to xml node mapping in use
     USED_METADATA_MAPPING=EOSIP_METADATA_MAPPING
 
@@ -137,7 +139,7 @@ class SipBuilder:
             if not EOSIP_METADATA_MAPPING.has_key(aliasName):
                 raise Exception("condition has unknown mapping key:%s" % aliasName)
             metaName=EOSIP_METADATA_MAPPING[aliasName]
-            if self.debug==0:
+            if self.debug!=0 or self.debugCondition!=0:
                 print "################################## checkConditions: operator:'%s'  varname='%s'" % (operator, metaName)
             if metadata.dict.has_key(metaName):
                 resolved=metadata.getMetadataValue(metaName)
@@ -147,9 +149,9 @@ class SipBuilder:
                 else:
                     raise Exception("unknown condition operator:'%s'" % operator)
             else:
-                if self.debug==0:
+                if self.debug!=0 or self.debugCondition!=0:
                     print "################################## checkConditions: metaName not in metadata:'%s'" % metaName
-            if self.debug==0:
+            if self.debug!=0 or self.debugCondition!=0:
                 print "################################## checkConditions: returns:%s" % result
             return result
         except Exception, e:
@@ -186,13 +188,13 @@ class SipBuilder:
     # 
     #
     def isFieldUsed(self, rep=None, metadata=None, path=None):
-        if self.debug!=0:
+        if self.debug!=0 or self.debugUnused!=0:
             print "### isFieldUsed: test rep:'%s' at path:'%s'" % (rep, path)
         if path[0]!='/':
             path="/%s" % (path)
         # is closing node:
         if rep[0:2]=='</':
-            if self.debug!=0:
+            if self.debug!=0 or self.debugUnused!=0:
                 print "### isFieldUsed: CLOSING NODE: USED"
             return 1
         # normalyse path 
@@ -203,31 +205,31 @@ class SipBuilder:
         while pos>0:
             #raise Exception("TEST @ in path")
             pathOk=pathOk+path[0:pos]
-            if self.debug!=0:
+            if self.debug!=0 or self.debugUnused!=0:
                 print "### isFieldUsed: pathOk:'%s'" % pathOk
             endPos=path.find('/')
             if endPos>0:
                 pos = path.find('@', endPos+1)
-                if self.debug!=0:
+                if self.debug!=0 or self.debugUnused!=0:
                     print "### isFieldUsed: pathOk remain from pos:'%d'" % pos
             else:
                 pos=-1
-                if self.debug!=0:
+                if self.debug!=0 or self.debugUnused!=0:
                     print "### isFieldUsed: pathOk end"
 
         if len(pathOk)==0:
             pathOk=path
 
         #pathOk=pathOk.replace(":","_")
-        if self.debug!=0:
+        if self.debug!=0 or self.debugUnused!=0:
             print "### isFieldUsed: pathOk:'%s'" % pathOk
         name=self.getFieldName(rep)
         #metDebug=metadata.debug
-        if self.debug!=0:
+        if self.debug!=0 or self.debugUnused!=0:
             print "### isFieldUsed: name:'%s'" % name
-            #metadata.debug=2
-        res=metadata.isFieldUsed("%s/%s" % (pathOk, name))
-        #metadata.debug=metDebug
+        res=metadata.isFieldUsed("%s/%s" % (pathOk, name), self.debugUnused)
+        if self.debug!=0 or self.debugUnused!=0:
+            print "### isFieldUsed: returns:'%s'" % res
         return res
 
 

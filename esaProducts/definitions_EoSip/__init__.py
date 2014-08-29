@@ -41,7 +41,8 @@ def getDefinition(name=None):
     if hasattr(current_module, "__%s" % name):
         return getattr(current_module, "__%s" % name)
     else:
-        return "NO-EoSip-def:'%s'" % name
+        #return "NO-EoSip-def:'%s'" % name
+        raise Exception("EoSip definition not exists:'%s'" % name)
     
 #
 # returns the extension of the nth browse. add D if default

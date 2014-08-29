@@ -41,7 +41,7 @@ class Dimap_Tropforest_Product(Directory_Product):
                 metadata.METADATA_SENSOR_CODE:'Dataset_Sources/Source_Information/Scene_Source/INSTRUMENT_INDEX',
                 metadata.METADATA_DATA_FILE_PATH:'Data_Access/Data_File/DATA_FILE_PATH@href',
                 metadata.METADATA_DATASET_PRODUCTION_DATE:'Production/DATASET_PRODUCTION_DATE',
-                metadata.METADATA_INSTRUMENT_INCIDENCE_ANGLE:'Dataset_Sources/Source_Information/Scene_Source/INCIDENCE_ANGLE',
+                #metadata.METADATA_INSTRUMENT_INCIDENCE_ANGLE:'Dataset_Sources/Source_Information/Scene_Source/INCIDENCE_ANGLE',
                 metadata.METADATA_VIEWING_ANGLE:'Dataset_Sources/Source_Information/Scene_Source/VIEWING_ANGLE',
                 metadata.METADATA_SUN_AZIMUTH:'Dataset_Sources/Source_Information/Scene_Source/SUN_AZIMUTH',
                 metadata.METADATA_SUN_ELEVATION:'Dataset_Sources/Source_Information/Scene_Source/SUN_ELEVATION',
@@ -52,6 +52,12 @@ class Dimap_Tropforest_Product(Directory_Product):
     def __init__(self, path=None):
         Directory_Product.__init__(self, path)
         print " init class Dimap_Tropforest_Product"
+
+    #
+    # called at the end of the doOneProduct, before the index/shopcart creation
+    #
+    def afterProductDone(self):
+        pass
 
     #
     # 
@@ -175,12 +181,12 @@ class Dimap_Tropforest_Product(Directory_Product):
     #
     #
     def buildTypeCode(self):
-        if self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)=='AVNIR':
-            self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'AV2_OBS_2F')
-        elif self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)=='SLIM-6-22':
-            self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'SL6_L1T_2F') # or SL6_L1R_1P
-        elif self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)==None:  # KOMPSAT
-            self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'MSC_MS__2F ') 
+        if self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)=='AVNIR': #ALOS
+            self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'AL1_AV2_2F')
+        elif self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)=='SLIM-6-22': #DEIMOS
+            self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'DE1_SL6_2F') 
+        elif self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)==None: # KOMPSAT
+            self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'KO2_MSC_2F ') 
         else:
             self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'###_###_##')
 
@@ -260,21 +266,27 @@ class Dimap_Tropforest_Product(Directory_Product):
         #print "DISTANCE=%s" % dist
         
         # set platform Id and instrument. Overwrite readed values
+        # set also operational mode
         if self.metadata.getMetadataValue(metadata.METADATA_PLATFORM)=='ALOS':
+            self.metadata.setMetadataPair(metadata.METADATA_SENSOR_OPERATIONAL_MODE, 'OBS')
             #if self.metadata.getMetadataValue(metadata.METADATA_PLATFORM_ID)==None:
             self.metadata.setMetadataPair(metadata.METADATA_PLATFORM_ID, '1')
             #if self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT)==None:
             self.metadata.setMetadataPair(metadata.METADATA_INSTRUMENT, 'AVNIR-2')
         elif self.metadata.getMetadataValue(metadata.METADATA_PLATFORM)=='KOMPSAT':
+            self.metadata.setMetadataPair(metadata.METADATA_SENSOR_OPERATIONAL_MODE, 'MS')
             #if self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT)==None:
             self.metadata.setMetadataPair(metadata.METADATA_INSTRUMENT, 'MSC')
             #if self.metadata.getMetadataValue(metadata.METADATA_PLATFORM_ID)==None:
             self.metadata.setMetadataPair(metadata.METADATA_PLATFORM_ID, '2')
         elif self.metadata.getMetadataValue(metadata.METADATA_PLATFORM)=='DEIMOS':
+            self.metadata.setMetadataPair(metadata.METADATA_SENSOR_OPERATIONAL_MODE, 'NA')
             #if self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT)==None:
             self.metadata.setMetadataPair(metadata.METADATA_INSTRUMENT, 'SLIM6')
             #if self.metadata.getMetadataValue(metadata.METADATA_PLATFORM_ID)==None:
             self.metadata.setMetadataPair(metadata.METADATA_PLATFORM_ID, '1')
+
+
 
         # add time 00:00:00 to processing time if needed
         tmp = self.metadata.getMetadataValue(metadata.METADATA_PROCESSING_TIME)

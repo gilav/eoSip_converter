@@ -28,6 +28,14 @@ import imageUtil
 
 class ingester_spot(ingester.Ingester):
 
+        #
+        # called at the end of the doOneProduct, before the index/shopcart creation
+        # set the METADATA_BOUNDING_BOX_CW_CLOSED into FOOTPRINT to hace 'correct' browse display in EoliSa
+        #
+        def afterProductDone(self, processInfo):
+                print " ####################################\n ####################################\nset footprint for shopcart/index to:%s" % processInfo.destProduct.metadata.getMetadataValue(metadata.METADATA_BOUNDING_BOX_CW_CLOSED)
+                processInfo.destProduct.metadata.setMetadataPair(metadata.METADATA_FOOTPRINT_CW, processInfo.destProduct.metadata.getMetadataValue(metadata.METADATA_BOUNDING_BOX_CW_CLOSED))
+
     
         #
         # Override
@@ -99,6 +107,14 @@ class ingester_spot(ingester.Ingester):
             met.setMetadataPair(metadata.METADATA_STOP_TIME, met.getMetadataValue(metadata.METADATA_START_TIME))
 
             # extrack track frome from DATASET_ID. is like: SCENE 4 020-263 07/05/26 11:33:41 1 I
+            # BUT there is also this info in the parent identifier: Dataset_Sources/Source_Information/SOURCE_ID like: 10223228810091145361X
+            # SPOT has GRS (K, J) pair. J is lat. K is long. also track/frame
+            # <S><KKK><JJJ><YY><MM><DD><HH><MM><SS><I><M>: 21 cars
+            #    S is the satellite number
+            #    KKK and JJJ are the GRS designator of the scene (lon, lat)
+            #    YY, MM, DD, HH, MM, SS are the date and time of the center of the scene 
+            #    I is the instrument number
+            #    M is the spectral mode of acquisition
             try:
                     trackFrame=met.getMetadataValue(metadata.METADATA_DATASET_NAME).split(' ')[2]
                     #print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ trackFrame:%s" % trackFrame
@@ -117,8 +133,8 @@ class ingester_spot(ingester.Ingester):
                             frame=formatUtils.normaliseNumber(frame, 3, '0')
                             met.setMetadataPair(metadata.METADATA_TRACK, track)
                             met.setMetadataPair(metadata.METADATA_FRAME, frame)
-                            met.setMetadataPair('METADATA_WRS_LONGITUDE_GRID_NORMALISED', track)
-                            met.setMetadataPair('METADATA_WRS_LATITUDE_GRID_NORMALISED', frame)
+                            met.setMetadataPair(metadata.METADATA_WRS_LONGITUDE_GRID_NORMALISED, track)
+                            met.setMetadataPair(metadata.METADATA_WRS_LATITUDE_GRID_NORMALISED, frame)
                                     
                     #else:
                             #print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ no - in trackFrame:%s" % trackFrame
@@ -217,10 +233,15 @@ class ingester_spot(ingester.Ingester):
             processInfo.addLog("\n - will make browse")
             self.logger.info(" will make browse")
             try:
-                    browseSrcPath=processInfo.srcProduct.preview_path
-                    browseExtension=definitions_EoSip.getBrowseExtension(0, definitions_EoSip.getDefinition('BROWSE_JPEG_EXT'))
+                    # copy source JPEG
+                    #browseSrcPath=processInfo.srcProduct.preview_path
+                    browseSrcPath=processInfo.srcProduct.imagery_path
+                    browseExtension=definitions_EoSip.getBrowseExtension(0, definitions_EoSip.getDefinition('BROWSE_PNG_EXT'))
                     browseDestPath="%s/%s.%s" % (processInfo.eosipTmpFolder, processInfo.destProduct.packageName, browseExtension)
-                    shutil.copyfile(browseSrcPath, browseDestPath)
+                    #shutil.copyfile(browseSrcPath, browseDestPath)
+
+                    # NEW: make a transparent jpeg
+                    ok=imageUtil.makeBrowse("PNG", browseSrcPath, browseDestPath, -1, transparent=True)
                     processInfo.destProduct.addSourceBrowse(browseDestPath, [])
                     processInfo.addLog("  => browse image created:%s" %  (browseDestPath))
                     self.logger.info("  browse image created:%s" % browseDestPath)
@@ -290,6 +311,8 @@ class ingester_spot(ingester.Ingester):
                         # make a thumbnail FOR TEST
                         if processInfo.create_thumbnail==1:
                                 self.make_thumbnail(processInfo, firstPath)
+                                # move also browse image
+                                self.move_browse(processInfo, firstPath)
 
                         # output link in other path
                         i=0
@@ -302,26 +325,48 @@ class ingester_spot(ingester.Ingester):
                                         processInfo.addLog("  Eo-Sip product link writen in folder[%d]:%s\n" %  (i, otherPath))
                                         self.logger.info("  Eo-Sip product link writen in folder[%d]:%s\n" %  (i, otherPath))
                                 i=i+1
+
+
+        #
+        # move a browse in the destination fodler
+        #
+        def move_browse(self, processInfo, destPath):
+                processInfo.addLog("\n - will move browse")
+                self.logger.info("  will move browse")
+                try:
+                        if len(processInfo.destProduct.sourceBrowsesPath)>0:
+                                tmp=os.path.split(processInfo.destProduct.sourceBrowsesPath[0])[1]
+                                res=shutil.copyfile(processInfo.destProduct.sourceBrowsesPath[0], "%s/%s" % (destPath, tmp.split("/")[-1]))
+                                print "copy browse file into:%s/%s: res=%s" % (destPath, tmp.split("/")[-1], res)
+
+                except Exception, e:
+                        print " browse move Error"
+                        exc_type, exc_obj, exc_tb = sys.exc_info()
+                        traceback.print_exc(file=sys.stdout)
+                        self.logger.info(" ERROR: %s  %s" %  (exc_type, exc_obj))
+                        processInfo.addLog("  => ERROR: %s  %s" %  (exc_type, exc_obj))
+                        processInfo.addLog="%s" %  (traceback.format_exc())
                                 
         #
-        # make a thumbnail
+        # make a thumbnail in the destination fodler
         #
-        def make_thumbnail(self, processInfo, path):
+        def make_thumbnail(self, processInfo, destPath):
                 # make a thumbnail FOR TEST
                 processInfo.addLog("\n - will make thumbnail")
                 self.logger.info("  will make thumbnail")
                 try:
                         if len(processInfo.destProduct.sourceBrowsesPath)>0:
                                 tmp=os.path.split(processInfo.destProduct.sourceBrowsesPath[0])[1]
-                                tmpb=tmp.split('.')[-1]
+                                tmpb=tmp.split('.')[-1:]
                                 tmpa=tmp.split('.')[0:-1]
-                                thumbnail = "%s.TN.%s" % ("".join(tmpa),tmpb)
+                                thumbnail = "%s.TN.%s" % (".".join(tmpa),".".join(tmpb))
                                 processInfo.destProduct.metadata.setMetadataPair(metadata.METADATA_THUMBNAIL,thumbnail)
-                                thumbnail="%s/%s" % (path, thumbnail)
-                                imageUtil.makeJpeg("%s" % (processInfo.destProduct.sourceBrowsesPath[0]), thumbnail, 25 )
-                                print "builded thumbnail file:%s/%s_TN.%s" % (path,tmpa,tmpb)
-                                self.logger.info("builded thumbnail file:%s/%s_TN.%s" % (path,tmpa,tmpb))
-                                processInfo.addLog("builded thumbnail file:%s/%s_TN.%s" % (path,tmpa,tmpb))
+                                thumbnail="%s/%s" % (destPath, thumbnail)
+                                imageUtil.makeBrowse('JPG', "%s" % (processInfo.destProduct.sourceBrowsesPath[0]), thumbnail, 25 )
+                                print "builded thumbnail file:  destPath=%s" % destPath
+                                print "builded thumbnail file:  tmp=%s ==> %s/%s_TN.%s" % (tmp,destPath,tmpa,tmpb)
+                                self.logger.info("builded thumbnail file:%s/%s_TN.%s" % (destPath,tmpa,tmpb))
+                                processInfo.addLog("builded thumbnail file:%s/%s_TN.%s" % (destPath,tmpa,tmpb))
                         
                         else:
                                 print "there is no browse so no thumbnail to create in final folder"
@@ -335,6 +380,7 @@ class ingester_spot(ingester.Ingester):
                         self.logger.info(" ERROR: %s  %s" %  (exc_type, exc_obj))
                         processInfo.addLog("  => ERROR: %s  %s" %  (exc_type, exc_obj))
                         processInfo.addLog="%s" %  (traceback.format_exc())
+                        #raise e
 
 
 
@@ -345,7 +391,7 @@ if __name__ == '__main__':
             ingester.starts(sys.argv)
             
         else:
-            print "syntax: python ingester_xxx.py configuration_file.cfg"
+            print "syntax: python ingester_xxx.py configuration_file.cfg [batch-name][batch-index]"
             sys.exit(1)
             
     except Exception, e:

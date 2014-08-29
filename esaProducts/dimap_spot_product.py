@@ -25,17 +25,20 @@ import imageUtil
 class Dimap_Spot_Product(Directory_Product):
 
     PREVIEW_NAME='preview.jpg'
+    IMAGERY_NAME='imagery.tif'
     METADATA_NAME='metadata.dim'
     EXTRACTED_PATH=None
     preview_data=None
     metadata_data=None
     preview_path=None
     metadata_path=None
+    imagery_path=None
 
 
 
     xmlMapping={metadata.METADATA_START_DATE:'Dataset_Sources/Source_Information/Scene_Source/IMAGING_DATE',
                 metadata.METADATA_START_TIME:'Dataset_Sources/Source_Information/Scene_Source/IMAGING_TIME',
+                metadata.METADATA_PARENT_IDENTIFIER:'Dataset_Sources/Source_Information/SOURCE_ID',
                 metadata.METADATA_PROCESSING_TIME:'Production/DATASET_PRODUCTION_DATE',
                 metadata.METADATA_PROCESSING_CENTER:'Production/Production_Facility/PROCESSING_CENTER',
                 metadata.METADATA_SOFTWARE_NAME:'Production/Production_Facility/SOFTWARE_NAME',
@@ -45,7 +48,7 @@ class Dimap_Spot_Product(Directory_Product):
                 metadata.METADATA_PARENT_PRODUCT:'Dataset_Sources/Source_Information/SOURCE_ID',
                 metadata.METADATA_PLATFORM:'Dataset_Sources/Source_Information/Scene_Source/MISSION',
                 metadata.METADATA_PLATFORM_ID:'Dataset_Sources/Source_Information/Scene_Source/MISSION_INDEX',
-                metadata.METADATA_PROCESSING_LEVEL:'Dataset_Sources/Source_Information/Scene_Source/SCENE_PROCESSING_LEVEL',
+                #metadata.METADATA_PROCESSING_LEVEL:'Dataset_Sources/Source_Information/Scene_Source/SCENE_PROCESSING_LEVEL',
                 metadata.METADATA_INSTRUMENT:'Dataset_Sources/Source_Information/Scene_Source/INSTRUMENT',
                 metadata.METADATA_INSTRUMENT_ID:'Dataset_Sources/Source_Information/Scene_Source/INSTRUMENT_INDEX',
                 metadata.METADATA_SENSOR_NAME:'Dataset_Sources/Source_Information/Scene_Source/INSTRUMENT',
@@ -67,6 +70,8 @@ class Dimap_Spot_Product(Directory_Product):
         Directory_Product.__init__(self, path)
         print " init class Dimap_Spot_Product"
 
+
+
     #
     #
     #
@@ -77,7 +82,7 @@ class Dimap_Spot_Product(Directory_Product):
     #
     #
     def extractToPath(self, folder=None):
-        global METADATA_NAME,PREVIEW_NAME
+        global METADATA_NAME,PREVIEW_NAME,IMAGERY_NAME
         if not os.path.exists(folder):
             raise Exception("destination fodler does not exists:%s" % folder)
         if self.debug!=0:
@@ -94,6 +99,9 @@ class Dimap_Spot_Product(Directory_Product):
                 self.preview_path="%s/%s" % (folder, name)
             elif name.find(self.METADATA_NAME)>=0:
                 self.metadata_path="%s/%s" % (folder, name)
+            elif name.find(self.IMAGERY_NAME)>=0:
+                self.imagery_path="%s/%s" % (folder, name)
+                
             print "   %s extracted at path:%s" % (name, folder+'/'+name)
             if name.endswith('/'):
                 d=d+1
@@ -208,7 +216,7 @@ class Dimap_Spot_Product(Directory_Product):
         self.extractFootprint(helper, met)
 
         # keep the original product name, add it to local attributes
-        met.addLocalAttribute("original_name", self.origName)
+        #met.addLocalAttribute("original_name", self.origName)
                             
         return num_added
 
@@ -258,19 +266,7 @@ class Dimap_Spot_Product(Directory_Product):
 
         # set scene center time, from the only we have: start time
         tmp = "%sT%sZ" % (self.metadata.getMetadataValue(metadata.METADATA_START_DATE), self.metadata.getMetadataValue(metadata.METADATA_START_TIME))
-        #self.metadata.setMetadataPair(metadata.METADATA_SCENE_CENTER, "%sZ" % tmp)
         self.metadata.setMetadataPair(metadata.METADATA_SCENE_CENTER_TIME, tmp)
-
-        # set start stop time from scene center time
-        #scene_center_date=datetime.strptime(tmp, '%Y-%m-%dT%H:%M:%S')
-        #print " @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ sceneCenter=%s; %s" % (tmp,scene_center_date.strftime('%Y-%m-%dT%H:%M:%S'))
-        #scene_start=scene_center_date - timedelta(seconds=4, milliseconds=512)
-        #scene_end=scene_center_date + timedelta(seconds=4, milliseconds=512)
-        #self.metadata.setMetadataPair(metadata.METADATA_START_DATE, scene_start.strftime('%Y-%m-%d'))
-        #self.metadata.setMetadataPair(metadata.METADATA_START_TIME, scene_start.strftime('%H:%M:%S.%f'))
-        #self.metadata.setMetadataPair(metadata.METADATA_STOP_DATE, scene_end.strftime('%Y-%m-%d'))
-        #self.metadata.setMetadataPair(metadata.METADATA_STOP_TIME, scene_end.strftime('%H:%M:%S.%f'))
-
         # new:
         start=formatUtils.datePlusMsec(tmp, -4512)
         stop=formatUtils.datePlusMsec(tmp, 4512)
@@ -280,8 +276,49 @@ class Dimap_Spot_Product(Directory_Product):
         toks=stop.split('T')
         self.metadata.setMetadataPair(metadata.METADATA_STOP_DATE, toks[0])
         self.metadata.setMetadataPair(metadata.METADATA_STOP_TIME, toks[1][0:-1])
-        
-        
+
+        # verify that the WRS grid is ok: vs the scene id
+        # BUT there is also this info in the parent identifier: Dataset_Sources/Source_Information/SOURCE_ID like: 10223228810091145361X
+        # SPOT has GRS (K, J) pair. J is lat. K is long. also track/frame
+        # <S><KKK><JJJ><YY><MM><DD><HH><MM><SS><I><M>: 21 cars
+        #    S is the satellite number
+        #    KKK and JJJ are the GRS designator of the scene (lon, lat)
+        #    YY, MM, DD, HH, MM, SS are the date and time of the center of the scene 
+        #    I is the instrument number
+        #    M is the spectral mode of acquisition
+        id = self.metadata.getMetadataValue(metadata.METADATA_PARENT_IDENTIFIER)
+        print "@@@@@@@@@@@@@@@@@@@@@@@@@  id:%s" % id
+        if id==None:
+            raise Exception("no parent identifier:'%s'" % (id))
+        if len(id)!=21:
+            raise Exception("parent identifier is not 21 cars but %d:'%s'" % (len(id), id))
+
+        tmp=self.metadata.getMetadataValue(metadata.METADATA_PLATFORM_ID)
+        if id[0]!=tmp:
+            raise Exception("parent identifier/METADATA_PLATFORM_ID missmatch:%s/'%s'" % (id[0],tmp))
+            
+        tmp = self.metadata.getMetadataValue(metadata.METADATA_WRS_LONGITUDE_GRID_NORMALISED)
+        if id[1:4]!=tmp:
+            raise Exception("parent identifier/METADATA_WRS_LONGITUDE_GRID_NORMALISED missmatch:%s/'%s'" % (id[1:4],tmp))
+
+        tmp = self.metadata.getMetadataValue(metadata.METADATA_WRS_LATITUDE_GRID_NORMALISED)
+        if id[4:7]!=tmp:
+            raise Exception("parent identifier/METADATA_WRS_LATITUDE_GRID_NORMALISED missmatch:%s/'%s'" % (id[1:4],tmp))
+
+        # check vs scene center time: 1988-10-09T11:45:36Z
+        tmp = self.metadata.getMetadataValue(metadata.METADATA_SCENE_CENTER_TIME)
+        if id[7:9]!=tmp[2:4]:
+            raise Exception("parent identifier/METADATA_SCENE_CENTER_TIME YY missmatch:%s/'%s'" % (id[7:9],tmp[2:4]))
+        if id[9:11]!=tmp[5:7]:
+            raise Exception("parent identifier/METADATA_SCENE_CENTER_TIME MM missmatch:%s/'%s'" % (id[9:11],tmp[5:7]))
+        if id[11:13]!=tmp[8:10]:
+            raise Exception("parent identifier/METADATA_SCENE_CENTER_TIME DD missmatch:%s/'%s'" % (id[11:12],tmp[8:10]))
+        if id[13:15]!=tmp[11:13]:
+            raise Exception("parent identifier/METADATA_SCENE_CENTER_TIME HH missmatch:%s/'%s'" % (id[13:15],tmp[11:13]))
+        if id[15:17]!=tmp[14:16]:
+            raise Exception("parent identifier/METADATA_SCENE_CENTER_TIME MN missmatch:%s/'%s'" % (id[15:17],tmp[14:16]))
+        if id[17:19]!=tmp[17:19]:
+            raise Exception("parent identifier/METADATA_SCENE_CENTER_TIME SS missmatch:%s/'%s'" % (id[17:19],tmp[17:19]))
         # 
         self.buildTypeCode()
 
@@ -290,32 +327,7 @@ class Dimap_Spot_Product(Directory_Product):
     #
     #
     def extractQuality(self, helper, met):
-        #helper.setDebug(1)
-        quality=[]
-        helper.getNodeByPath(None, 'Quality_Assesment/Quality_Parameter/QUALITY_PARAMETER_DESC', None, quality)
-        index=-1
-        n=0
-        for item in quality:
-            #print "############@@@@@@@@@@@@@@@@@ quality[%d]=%s" % (n, helper.getNodeText(item))
-            if helper.getNodeText(item)=='QC2 - % Clouds':
-                index=n
-            n=n+1
-        #print "############@@@@@@@@@@@@@@@@@ want quality value at index:%d" % index
-
-        
-        quality=[]
-        qualityValue=None
-        helper.getNodeByPath(None, 'Quality_Assesment/Quality_Parameter/QUALITY_PARAMETER_VALUE', None, quality)
-        #print "############@@@@@@@@@@@@@@@@@ quality=%d" % len(quality)
-        n=0;
-        for item in quality:
-            #print "############@@@@@@@@@@@@@@@@@ quality[%d]=%s" % (n, helper.getNodeText(item))
-            if index==n:
-                qualityValue=helper.getNodeText(item)
-            n=n+1
-        #print "############@@@@@@@@@@@@@@@@@ cloud qualityValue=%s" % (qualityValue)
-        met.setMetadataPair(metadata.METADATA_CLOUD_COVERAGE, qualityValue)
-        return 1
+        return 0
 
 
     #
@@ -391,11 +403,17 @@ class Dimap_Spot_Product(Directory_Product):
                 
 
             # make sure the footprint is CCW
+            # also prepare CW for EoliSa index and shopcart
             browseIm = BrowseImage()
             browseIm.setFootprint(footprint)
+            browseIm.calculateBoondingBox()
             browseIm.setColRowList(rowCol)
             print "browseIm:%s" % browseIm.info()
             if not browseIm.getIsCCW():
+                # keep for eolisa
+                met.setMetadataPair(metadata.METADATA_FOOTPRINT_CW, browseIm.getFootprint())
+
+                # and reverse
                 print "############### reverse the footprint; before:%s; colRowList:%s" % (footprint,rowCol)
                 browseIm.reverseFootprint()
                 print "###############             after;%s; colRowList:%s" % (browseIm.getFootprint(), browseIm.getColRowList())
@@ -404,9 +422,15 @@ class Dimap_Spot_Product(Directory_Product):
             else:
                 met.setMetadataPair(metadata.METADATA_FOOTPRINT, footprint)
                 met.setMetadataPair(metadata.METADATA_FOOTPRINT_IMAGE_ROWCOL, rowCol)
-                pass
-            #
-            met.addLocalAttribute("boundingBox", met.getMetadataValue(metadata.METADATA_FOOTPRINT))
+
+                #reverse for eolisa
+                met.setMetadataPair(metadata.METADATA_FOOTPRINT_CW, browseIm.reverseSomeFootprint(footprint))
+                
+            # boundingBox is needed in the localAttributes
+            met.setMetadataPair(metadata.METADATA_BOUNDING_BOX, browseIm.boondingBox)
+            closedBoundingBox = "%s %s %s" % (browseIm.boondingBox, browseIm.boondingBox.split(" ")[0], browseIm.boondingBox.split(" ")[1])
+            met.setMetadataPair(metadata.METADATA_BOUNDING_BOX_CW_CLOSED, browseIm.reverseSomeFootprint(closedBoundingBox))
+            met.addLocalAttribute("boundingBox", met.getMetadataValue(metadata.METADATA_BOUNDING_BOX))
 
             
         return footprint, rowCol

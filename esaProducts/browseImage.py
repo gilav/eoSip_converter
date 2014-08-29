@@ -150,6 +150,7 @@ class BrowseImage():
                     return
             oldLon=lon
         self.isCrossing=False
+
             
     #
     # get the boundingBox
@@ -165,7 +166,8 @@ class BrowseImage():
         toks=self.footprint.split(" ")
         nPair = 1
         numPair=len(toks)/2
-        print " calculateEnvelope isCrossing=%s" % self.isCrossing
+        if self.debug!=0:
+            print " calculateEnvelope isCrossing=%s" % self.isCrossing
 
         maxLat=-90
         minLat=90
@@ -194,10 +196,12 @@ class BrowseImage():
 
         if maxLon > 180:
             maxLon = maxLon -360
-        print "############ minLat=%s  maxLat=%s   minLon=%s   maxLon=%s" % (minLat, maxLat, minLon, maxLon)
+        if self.debug!=0:
+            print "############ minLat=%s  maxLat=%s   minLon=%s   maxLon=%s" % (minLat, maxLat, minLon, maxLon)
         # we want 4 points: uper left corner, then ccw
         self.boondingBox = "%s %s %s %s %s %s %s %s" % (maxLat, minLon, minLat, minLon,
-                                                        minLat, maxLon, maxLat, maxLon)    
+                                                        minLat, maxLon, maxLat, maxLon)
+        
     #
     # get the footprint envelope: calculate biggest x/y axe arc-distance from coord[n] to center.
     #
@@ -296,6 +300,26 @@ class BrowseImage():
 
             self.testIsCCW()
             return ccw
+
+    #
+    #
+    #
+    def reverseSomeFootprint(self, aFootprint):
+        toks=aFootprint.split(" ")
+        ccw=""
+        nPair=1
+        numPair=len(toks)/2
+        if self.debug!=0:
+                print " numPair=%s" % numPair
+        for item in range(len(toks)/2):
+                if self.debug!=0:
+                        print " pair[%d]:%d:" % (nPair-1, (numPair-nPair)*2)
+                if len(ccw)>0:
+                        ccw="%s " % ccw
+                ccw="%s%s %s" % (ccw, toks[(numPair-nPair)*2], toks[(numPair-nPair)*2+1])
+                nPair=nPair+1
+        return ccw
+        
 
     #
     #

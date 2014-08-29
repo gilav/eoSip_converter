@@ -118,6 +118,9 @@ class EOSIP_Product(Directory_Product):
         self.productReport=None
         # the browse report info
         self.browsesReport=None
+        # the browse report generated
+        self.browsesReportPath=None
+        
         #
         #
         self.productReportName=None
@@ -402,8 +405,7 @@ class EOSIP_Product(Directory_Product):
         n=0
         browseReport=None
         browseReportName=None
-        allBrowseReportNames=[]
-        allBrowseReportFullPath=[]
+        self.browsesReportPath=[]
         i=0
         for browsePath in self.sourceBrowsesPath:
             bmet=self.browse_metadata_dict[browsePath]
@@ -413,7 +415,6 @@ class EOSIP_Product(Directory_Product):
             #
             browseReportName="%s.%s" % (bmet.getMetadataValue(browse_metadata.BROWSE_METADATA_NAME), definitions_EoSip.getDefinition('XML_EXT'))
             bmet.setMetadataPair(browse_metadata.BROWSE_METADATA_REPORT_NAME, browseReportName)
-            allBrowseReportNames.append(browseReportName)
             if self.debug!=0:
                 print "  browse metadata report[%d] name:%s" % (n, browseReportName)
                 
@@ -435,27 +436,26 @@ class EOSIP_Product(Directory_Product):
             
             #
             # write it
-            thisBrowseFullPath="%s/%s" % (self.folder, browseReportName)
-            allBrowseReportFullPath.append(thisBrowseFullPath)
-            self.browseFullPath.append(thisBrowseFullPath)
+            thisBrowseReportFullPath="%s/%s" % (self.folder, browseReportName)
+            self.browsesReportPath.append(thisBrowseReportFullPath)
             #print " browse report content:\n%s" % browseReport
             fd=open(thisBrowseFullPath, "w")
             fd.write(browseReport)
             fd.close()
             if self.debug!=0:
-                print "   browse report written at path:%s" % thisBrowseFullPath
+                print "   browse report written at path:%s" % thisBrowseReportFullPath
 
             if self.processInfo.verify_xml:
                 print " call external xml validator" 
                 # call xml validator service
                 validator = xmlValidateServiceClient.XmlValidateServiceClient(self.processInfo)
-                validator.useXmlValidateService(self.processInfo, BROWSE_SCHEMA_TYPE, thisBrowseFullPath)
+                validator.useXmlValidateService(self.processInfo, BROWSE_SCHEMA_TYPE, thisBrowseReportFullPath)
             else :
                 print " dont use external xml validator" 
                 
             i=i+1
                 
-        return allBrowseReportFullPath
+        return self.browsesReportPath
 
 
     #
@@ -597,10 +597,11 @@ class EOSIP_Product(Directory_Product):
             if self.debug==0:
                 print "   write EoSip content[1]; product browse:%s  as:%s" % (browsePath, name)                                                                 
             zipf.write(browsePath, name)
-            #
-            name=bmet.getMetadataValue(browse_metadata.BROWSE_METADATA_REPORT_NAME)
-            path = "%s/%s" % (folder, name)
-            zipf.write(path, name)
+            # if we have build the browse reports
+            if self.browsesReportPath != None:
+                name=bmet.getMetadataValue(browse_metadata.BROWSE_METADATA_REPORT_NAME)
+                path = "%s/%s" % (folder, name)
+                zipf.write(path, name)
         #
 
         # write product reports

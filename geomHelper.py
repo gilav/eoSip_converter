@@ -13,7 +13,8 @@ debug=0
 #
 #
 def coordinateBetween(lat1, lon1, lat2, lon2):
-    print "\n\n\n coordinateBetween deg %s %s %s %s" % (lat1, lon1, lat2, lon2)
+    if debug != 0:
+       print "\n\n\n coordinateBetween deg %s %s %s %s" % (lat1, lon1, lat2, lon2)
     # convert decimal degrees to radians 
     lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
 
@@ -22,7 +23,8 @@ def coordinateBetween(lat1, lon1, lat2, lon2):
     lat3 = atan2(sin(lat1) + sin(lat2),  sqrt((cos(lat1) + bx) * (cos(lat1)  + bx) + by**2))
     lon3 = lon1 + atan2(by, cos(lat1) + bx)
 
-    print "\n\n\n coordinateBetween res deg: %s %s" % (degrees(lat3), degrees(lon3))
+    if debug != 0:
+       print "\n\n\n coordinateBetween res deg: %s %s" % (degrees(lat3), degrees(lon3))
     return degrees(lat3), degrees(lon3)
 
 
@@ -61,13 +63,15 @@ def sphericalDistance(lat1, lon1, lat2, lon2):
 
 # from java. OK
 def getIntermediatePoint(lat1, lon1, lat2, lon2, f):
-        print " @@@@@@@@@@@@@@@@ getIntermediatePoint deg %s %s %s %s" % (lat1, lon1, lat2, lon2)
+        if debug != 0:
+            print " @@@@@@@@@@@@@@@@ getIntermediatePoint deg %s %s %s %s" % (lat1, lon1, lat2, lon2)
         lon = 999999
         lat = 999999
         
         # get distance a-b
         d = sphericalDistance(lat1, lon1, lat2, lon2)
-        print " @@@@@@@@@@@@@@@@ d0:%s    %s" % (d, degrees(d))
+        if debug != 0:
+            print " @@@@@@@@@@@@@@@@ d0:%s    %s" % (d, degrees(d))
         #d = arcDistanceBetween(lat1, lon1, lat2, lon2)
         #print " @@@@@@@@@@@@@@@@ d1:%s    %s" % (d, degrees(d))
 
@@ -95,7 +99,8 @@ def getIntermediatePoint(lat1, lon1, lat2, lon2, f):
 # returns the arc distance in radian
 #
 def arcDistanceBetween(lat1, lon1, lat2, lon2):
-    print "\n\n\n arcDistanceBetween deg %s %s %s %s" % (lat1, lon1, lat2, lon2)
+    if debug != 0:
+        print "\n\n\n arcDistanceBetween deg %s %s %s %s" % (lat1, lon1, lat2, lon2)
     # convert decimal degrees to radians 
     lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
     #print " arcDistanceBetween rad %s %s %s %s" % (lat1, lon1, lat2, lon2)

@@ -155,16 +155,19 @@ class ingester_tropforest(ingester.Ingester):
 
         #
         # Override
-        # make the jpeg brose image from the TIFF image
+        # make the Jpeg (or Png) browse image from the TIFF image. We want Jpeg
         # construct the browse_metadatareport footprint block: it is the rectifedBrowse for tropforest
         #
-        def makeBrowses(self,processInfo):
+        def makeBrowses(self, processInfo, ratio=50):
             try:
                     browseSrcPath="%s/%s" % (processInfo.workFolder , processInfo.srcProduct.TIF_FILE_NAME)
-                    browseExtension=definitions_EoSip.getBrowseExtension(0, definitions_EoSip.getDefinition('BROWSE_PNG_EXT'))
+                    #browseExtension=definitions_EoSip.getBrowseExtension(0, definitions_EoSip.getDefinition('BROWSE_PNG_EXT'))
+                    browseExtension=definitions_EoSip.getBrowseExtension(0, definitions_EoSip.getDefinition('BROWSE_JPEG_EXT'))
                     browseDestPath="%s/%s.%s" % (processInfo.eosipTmpFolder, processInfo.destProduct.packageName, browseExtension)
                     processInfo.addLog("  makeBrowse: ext=%s; src=%s;  dest=%s" % (browseExtension, browseSrcPath, browseDestPath))
-                    imageUtil.makeBrowse('PNG', browseSrcPath, browseDestPath, 50 )
+                    imageUtil.makeBrowse('JPG', browseSrcPath, browseDestPath, ratio )
+
+                    #
                     #imageUtil.externalMakeJpeg(browseSrcPath, browseDestPath)
                     processInfo.destProduct.addSourceBrowse(browseDestPath, [])
 
