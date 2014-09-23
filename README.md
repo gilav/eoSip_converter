@@ -14,6 +14,9 @@ Supported products are at this time:
 History:
 ========
 
+2014-09-23:
+ - run multiple converter at once using Pyro4
+
 2014-08-20:
  - ready for tropforest (again...)
  - allow to make PNG with transparency (PIL only)

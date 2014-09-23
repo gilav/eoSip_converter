@@ -14,7 +14,7 @@ class Service:
     name=None
     propertieFile=None
     properties=None
-    ready=False
+    ready=True
 
 
     #
@@ -29,13 +29,14 @@ class Service:
     #
     # init
     #
-    # param: p is usually the path of a property file
+    # param: p is usually the path of a property file, can be local to ingester './xxx.props' or absolute '/...path.../xxx.props'
     #
     def init(self, p=None, ingester=None):
         if self.debug:
-            print " init class Service with parameter:%s" % p
-        if p[0:1]=="./":
-            p="%s%s" % (ingester.getConverterHomeDir(), p)
+            print "### init class Service with parameter:%s" % (p)
+        if p[0:2]=="./":
+            p="%s/%s" % (ingester.getConverterHomeDir(), p[2:])
+        print " using service property file at path:'%s'" % p
         self.propertieFile=p
         self.loadProperties()
 

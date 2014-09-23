@@ -27,6 +27,7 @@ import traceback
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 # import parent
 parentdir = os.path.dirname(currentdir)
+print "##### eoSip converter dir:%s" % parentdir
 try:
     sys.path.index(parentdir)
 except:
@@ -129,6 +130,7 @@ SETTING_CREATE_SHOPCART='CREATE_SHOPCART'
 SETTING_INDEX_ADDED_FIELD='INDEX_ADDED_FIELD'
 SETTING_FIXED_BATCH_NAME='FIXED_BATCH_NAME'
 SETTING_PRODUCT_OVERWRITE='PRODUCT_OVERWRITE'
+SETTING_CREATE_BROWSE_REPORT='CREATE_BROWSE_REPORT'
 # eoSip
 SETTING_EOSIP_TYPOLOGY='TYPOLOGY'
 SETTING_EOSIP_STORE_TYPE='STORE_TYPE'
@@ -158,9 +160,11 @@ verify_xml=True
 create_index=False
 create_thumbnail=False
 create_shopcart=False
+create_browse_report=True
 index_added=None
 fixed_batch_name=None
 product_overwrite=False
+daemon=False
 
 # eoSip
 eoSip_store_type=None
@@ -178,15 +182,6 @@ DEBUG=0
 LOG_FOLDER="./log"
 file_doBeDoneList="%s/%s" % (LOG_FOLDER, 'product_list.txt')
 
-# EO_SIP validation schema
-#SCHEMA_FROM_TYPOLOGY="SCHEMA_MD"
-#SCHEMA_SIP="ressources/xml_validator"
-#SCHEMA_BI="ressources/xml_validator/report/IF-ngEO-BrowseReport.xsd"
-#SCHEMA_MD_OPT="ressources/xml_validator/opt.xsd"
-#SCHEMA_MD_SAR="ressources/xml_validator/sar.xsd"
-#SCHEMA_MD_EOP="ressources/xml_validator/eop.xsd"
-#SCHEMA_MD_ALT="ressources/xml_validator/alt.xsd"
-#SCHEMA_MD_LMB="ressources/xml_validator/lmb.xsd"
 
 
 class Ingester():
@@ -273,7 +268,7 @@ class Ingester():
         def readConfig(self, path=None):
                 global CONFIG_NAME, __config, OUTSPACE, INBOX, TMPSPACE, LIST_TYPE, LIST_BUILD, FILES_NAMEPATTERN, FILES_EXTPATTERN, DIRS_NAMEPATTERN, DIRS_ISLEAF,\
                 DIRS_ISEMPTY, LIST_LIMIT, LIST_STARTDATE, LIST_STOPDATE, OUTPUT_EO_SIP_PATTERN, OUTPUT_RELATIVE_PATH_TREES, max_product_done,verify_xml,\
-                create_index,create_shopcart,create_thumbnail,index_added,verify_product,fixed_batch_name,product_overwrite,TYPOLOGY,eoSip_store_type
+                create_index,create_shopcart,create_thumbnail,create_browse_report,index_added,verify_product,fixed_batch_name,product_overwrite,TYPOLOGY,eoSip_store_type
 
                 if not os.path.exists(path):
                     raise Exception("cofiguration file:'%s' doesn't exists" % path)
@@ -375,7 +370,10 @@ class Ingester():
                             product_overwrite = __config.getboolean(SETTING_workflowp, SETTING_PRODUCT_OVERWRITE)
                         except:
                             pass
-
+                        try:
+                            create_browse_report= __config.getboolean(SETTING_workflowp, SETTING_CREATE_BROWSE_REPORT)
+                        except:
+                            pass
 
                         # eoSip:
                         # mandatory block
@@ -459,17 +457,93 @@ class Ingester():
         #
         #
         # 
-        def starts(self, argv):
-            if len(argv) < 2:
-                raise Exception("not enough parameter passed, need 1, has %d" % (len(argv)-1))
-            self.readConfig(sys.argv[1])
+        def starts(self, args):
+            global fixed_batch_name,OUTSPACE,TMPSPACE,max_product_done,daemon
+            #if len(argv) < 2:
+            #    raise Exception("not enough parameter passed, need at least 1, has %d" % (len(argv)-1))
+            #self.readConfig(sys.argv[1])
+            #self.makeFolders()
+            #self.getMissionDefaults()
+            #if len(sys.argv)==3:
+            #    self.setProductsList(sys.argv[2])
+            #else:
+            #    self.findProducts()
+
+
+            # new: use optparse package
+            from optparse import OptionParser
+            parser = OptionParser()
+            parser.add_option("-c", "--config", dest="configFile", help="path of the configuration file")
+            parser.add_option("-l", "--list", dest="productListFile", help="path of the file containg the products list")
+            parser.add_option("-b", "--batch", dest="batchName", help="name of the batch job")
+            parser.add_option("-i", "--batchId", dest="batchId", type="int", help="index of the batch job")
+            parser.add_option("-o", "--outspace", dest="outbox", help="output folder")
+            parser.add_option("-t", "--tmpspace", dest="tmpbox", help="tmp folder")
+            parser.add_option("-m", "--max", dest="max", help="max product to do")
+            parser.add_option("-d", "--daemon", dest="daemon", default=False, help="run in daemon mode, remotely controled")
+            options, args = parser.parse_args(args)
+
+            if options.configFile!=None:
+                print "options readed:\n configuration file:%s" % options.configFile
+            else:
+                raise Exception("need at least a configuration file path as argument")
+            if options.productListFile!=None:
+                print " product list file:%s" % options.productListFile
+            if options.batchName!=None:
+                print " batch name:%s" % options.batchName
+            if options.batchId!=None:
+                print " batch id:%s" % options.batchId
+
+            #
+            self.readConfig(options.configFile)
+            if options.batchName!=None:
+                if options.batchId==None:
+                    fixed_batch_name=options.batchName
+                else:
+                    fixed_batch_name="%s%d" % (options.batchName, options.batchId)
+                print " ==> batchName overwritten by passed parameter:%s" % fixed_batch_name
+                self.logger.info(" ==> batchName overwritten by passed parameter:%s" % fixed_batch_name)
+            else:
+                if options.batchId!=None:
+                    fixed_batch_name="%s%d" % (fixed_batch_name, options.batchId)
+                    print " ==> batchName overwritten by passed parameter:%s" % fixed_batch_name
+                    self.logger.info(" ==> batchName overwritten by passed parameter:%s" % fixed_batch_name)
+
+
+            if options.outbox!=None:
+                OUTSPACE=options.outbox
+                print " ==> OUTSPACE overwritten by passed parameter:%s" % OUTSPACE
+                self.logger.info(" ==> OUTSPACE overwritten by passed parameter:%s" % OUTSPACE)
+
+            if options.tmpbox!=None:
+                TMPSPACE=options.tmpbox
+                print " ==> TMPSPACE overwritten by passed parameter:%s" % TMPSPACE
+                self.logger.info(" ==> TMPSPACE overwritten by passed parameter:%s" % TMPSPACE)
+
+            if options.max!=None:
+                max_product_done=options.max
+                print " ==> max_product_done overwritten by passed parameter:%s" % max_product_done
+                self.logger.info(" ==> max_product_done overwritten by passed parameter:%s" % max_product_done)
+
+            if options.daemon!=None:
+                daemon=options.daemon
+                print " ==> run in daemon mode"
+                self.logger.info(" ==> run in daemon mode")
+
             self.makeFolders()
             self.getMissionDefaults()
-            if len(sys.argv)>2:
-                self.setProductsList(sys.argv[2])
+
+            # find and process products if not in daemon mode
+            if daemon:
+                print " ==> run in daemon mode"
+                self.logger.info(" ==> run in daemon mode")
             else:
-                self.findProducts()
-            self.processProducts()
+                if options.productListFile!=None:
+                    self.setProductsList(options.productListFile)
+                else:
+                    self.findProducts()
+                
+                self.processProducts()
 
             
 
@@ -664,7 +738,81 @@ class Ingester():
 
 
         #
-        # process the products
+        # process just one products
+        #
+        def processSingleProduct(self, productPath, jobId):
+                global CONFIG_NAME, DEBUG, num,num_total,num_done,num_error,list_done,list_error,description_error,max_product_done,create_index,create_thumbnail,create_shopcart,index_added,fixed_batch_name
+                #
+                #
+                if fixed_batch_name!=None:
+                    self.batchName="batch_%s_%s" % (CONFIG_NAME, fixed_batch_name)
+                else:
+                    self.batchName="batch_%s_%s" % (CONFIG_NAME, formatUtils.dateNow(pattern="%m%d-%H%M%S"))
+
+                single_runStartTime=time.time()
+
+                aProcessInfo=processInfo.processInfo()
+                aProcessInfo.srcPath=productPath
+                aProcessInfo.num=jobId
+                # set some usefull flags
+                aProcessInfo.create_thumbnail=create_thumbnail
+                aProcessInfo.create_index=create_index
+                aProcessInfo.create_shopcart=create_shopcart
+                aProcessInfo.verify_xml=verify_xml
+                
+                #try:
+
+                self.logger.info("")
+                self.logger.info("")
+                self.logger.info("")
+                self.logger.info("")
+                self.logger.info("doing single product: jobId=%s, path:%s" % (jobId, productPath))
+                aProcessInfo.addLog("\n\ndoing single product: jobId=%s, path:%s" % (jobId, productPath))
+                
+                try:
+                        self.doOneProduct(aProcessInfo)
+                except Exception, e:
+                        exc_type, exc_obj, exc_tb = sys.exc_info()
+                        
+                        try:
+                            self.logger.error("Error:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc()))
+                            aProcessInfo.addLog("Error:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc()))
+                        except  Exception, ee:
+                            self.logger.error(" Error: adding log info into processInfo:%s" % aProcessInfo)
+                            exc_type, exc_obj, exc_tb = sys.exc_info()
+                            print " ERROR adding error in log:%s  %s" %  (exc_type, exc_obj)
+
+                        # write log
+                        try:
+                                prodLogPath="%s/bad_convertion_%d.log" % (aProcessInfo.workFolder, num_error)
+                                fd=open(prodLogPath, 'w')
+                                fd.write(aProcessInfo.prodLog)
+                                fd.close()
+                        except Exception, eee:
+                                print "Error: problem writing convertion log in fodler:%s" % aProcessInfo.workFolder
+                                exc_type, exc_obj, exc_tb = sys.exc_info()
+                                print " problem is:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc())
+
+
+                        # save the pinfo in workfolder
+                        try:
+                            self.saveProcessInfo(aProcessInfo)
+                        except:
+                            self.logger.error(" Error: saving processInfo file")
+                            exc_type, exc_obj, exc_tb = sys.exc_info()
+                            print " ERROR saving processInfo file:%s  %s%s\n" %  (exc_type, exc_obj, traceback.format_exc())
+                            
+                        # save the matadata file in workfolder
+                        try:
+                            self.saveMetadata(aProcessInfo)
+                        except:
+                            self.logger.error(" Error: saving metadata files")
+                            exc_type, exc_obj, exc_tb = sys.exc_info()
+                            print " ERROR saving metadata files:%s  %s%s\n" %  (exc_type, exc_obj, traceback.format_exc())
+                            
+
+        #
+        # process the list of products
         #
         def processProducts(self):
                 global CONFIG_NAME, DEBUG, num,num_total,num_done,num_error,list_done,list_error,description_error,max_product_done,create_index,create_thumbnail,create_shopcart,index_added,fixed_batch_name
@@ -748,6 +896,7 @@ class Ingester():
 
                                 if create_shopcart:
                                     try:
+                                        #self.shopcartCreator.debug=1
                                         if len(aProcessInfo.destProduct.browse_metadata_dict)>0: # there is at least one browse
                                             firstBrowsePath=aProcessInfo.destProduct.browse_metadata_dict.iterkeys().next()
                                             self.shopcartCreator.addOneProduct(aProcessInfo.destProduct.metadata, aProcessInfo.destProduct.browse_metadata_dict[firstBrowsePath])
@@ -834,7 +983,6 @@ class Ingester():
 
 
                         if max_product_done!=-1 and num>=max_product_done:
-                                aProcessInfo.addLog("max number of product to be done reached:%s; STOPPING" % max_product_done)
                                 self.logger.info("max number of product to be done reached:%s; STOPPING" % max_product_done)
                                 break
 
@@ -946,7 +1094,7 @@ class Ingester():
 
                 # instanciate destination product
                 self.createDestinationProduct(pInfo)
-                # set processInfo into destination product, to make it access things like the serProduct or ingester
+                # set processInfo into destination product, to make it access things like the srcProduct or ingester
                 pInfo.destProduct.TYPOLOGY=TYPOLOGY
                 pInfo.destProduct.src_product_stored=eoSip_store_type
                 pInfo.destProduct.setProcessInfo(pInfo)
@@ -1005,14 +1153,15 @@ class Ingester():
 
 
                 # browse reports
-                pInfo.addLog("\n - will build browse reports")
-                self.logger.info("  will build browse reports")
-                tmp=pInfo.destProduct.buildBrowsesReportFile()
-                n=0
-                for item in tmp:
-                    pInfo.addLog("  => browse[%d] report file built:%s\n" %  (n, item))
-                    self.logger.info("  browse[%d] report file built:%s" %  (n, item))
-                    n=n+1
+                if create_browse_report == True:
+                    pInfo.addLog("\n - will build browse reports")
+                    self.logger.info("  will build browse reports")
+                    tmp=pInfo.destProduct.buildBrowsesReportFile()
+                    n=0
+                    for item in tmp:
+                        pInfo.addLog("  => browse[%d] report file built:%s\n" %  (n, item))
+                        self.logger.info("  browse[%d] report file built:%s" %  (n, item))
+                        n=n+1
 
                 # metadata report
                 pInfo.addLog("\n - will build product report")
@@ -1030,8 +1179,11 @@ class Ingester():
                 # save metadata in working folder
                 self.saveMetadata(pInfo)
 
-                processingDuration=time.time()-startProcessing
+                # 
+                self.afterProductDone(pInfo)
+                
                 # compute stats
+                processingDuration=time.time()-startProcessing
                 try:
                     # TODO: move get size into product??
                     size=os.stat(pInfo.destProduct.path).st_size
@@ -1060,6 +1212,7 @@ class Ingester():
                 self.logger.info("   Create thumbnail: %s" % create_thumbnail)
                 self.logger.info("   Create index: %s" % create_index)
                 self.logger.info("   Create shopcart: %s" % create_shopcart)
+                self.logger.info("   Create browse report: %s" % create_browse_report)
                 self.logger.info("   Index added: %s" % index_added)
                 self.logger.info("   Fixed batch name: %s" % fixed_batch_name)
                 self.logger.info("   Product overwrite: %s" % product_overwrite)
@@ -1154,6 +1307,13 @@ class Ingester():
                     pInfo.addLog("ERROR saving pinfo files:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc()))
                     self.logger.info("ERROR saving pinfo files")
                     print"ERROR saving pinfo files:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc())
+
+        #
+        # should be abstract
+        #
+        @abstractmethod
+        def afterProductDone(self, processInfo):
+                raise Exception("abstractmethod")
 
                 
         #

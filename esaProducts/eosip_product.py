@@ -439,7 +439,7 @@ class EOSIP_Product(Directory_Product):
             thisBrowseReportFullPath="%s/%s" % (self.folder, browseReportName)
             self.browsesReportPath.append(thisBrowseReportFullPath)
             #print " browse report content:\n%s" % browseReport
-            fd=open(thisBrowseFullPath, "w")
+            fd=open(thisBrowseReportFullPath, "w")
             fd.write(browseReport)
             fd.close()
             if self.debug!=0:

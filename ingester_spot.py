@@ -1,5 +1,5 @@
 #
-# This is a specialized class that ingest TropForest dataset
+# This is a specialized class that ingest Spot dataset
 #
 # For Esa/ lite dissemination project
 #

@@ -32,6 +32,12 @@ class ingester_tropforest(ingester.Ingester):
         #
         def prepareBrowseMetadata(self, processInfo):
                 pass
+
+        #
+        # called at the end of the doOneProduct, before the index/shopcart creation
+        #
+        def afterProductDone(self, processInfo):
+                pass
     
         #
         # Override
@@ -266,7 +272,7 @@ if __name__ == '__main__':
             ingester.starts(sys.argv)
             
         else:
-            print "syntax: python ingester_xxx.py configuration_file.cfg"
+            print "syntax: python ingester_xxx.py -c configuration_file.cfg [-l list_of_product_file]"
             sys.exit(1)
             
     except Exception, e:
