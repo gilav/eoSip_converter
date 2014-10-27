@@ -9,4 +9,7 @@ class om_featureOfInterest(SipMessageBuilder):
 
     REPRESENTATION = ["eop_Footprint"]
 
-    REPRESENTATION_ALT = ["alt_nominalTrack"]
+    REPRESENTATION_ALT = ["alt_Footprint"]
+
+
+    OPTIONAL = ["eop_Footprint", "alt_Footprint"]

@@ -6,6 +6,19 @@
 # - the ingester used
 #
 from cStringIO import StringIO
+import os,sys
+import time
+from datetime import datetime
+import traceback
+
+
+#
+#
+#
+DEFAULT_DATE_PATTERN="%Y-%m-%d %H:%M:%S"
+def dateNow(pattern=DEFAULT_DATE_PATTERN):
+        d=datetime.fromtimestamp(time.time())
+        return d.strftime(pattern)
 
 class processInfo():
 
@@ -18,23 +31,43 @@ class processInfo():
         self.destProduct=None
         self.eosipTmpFolder=None
         self.ingester=None
+        self.error=''
+        self.test_dont_extract=False
+        self.test_dont_write=False
+        self.test_dont_do_browse=False
+        self.infoKeeper=None
         print "init processInfo"
+
+    def addInfo(self, n,v):
+            if self.infoKeeper!=None:
+                    self.infoKeeper.addInfo(n,v)
+            else:
+                    raise Exception("no infoKeeper")
 
     def addLog(self, mess):
         try:
-            self.prodLog="%s%s\n" % (self.prodLog, mess)
+            self.prodLog="%s%s: %s\n" % (self.prodLog, dateNow(), mess)
         except:
             print " ERROR: processInfo.addLog problem"
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            self.error="%s%s%s\n" % (self.error, exc_type, exc_obj)
             pass
 
     
     def toString(self):
         out=StringIO()
-        print >>out, '\nworkFolder:%s\n' % self.workFolder
-        print >>out, 'srcPath:%s\n' % (self.srcPath)
-        print >>out, 'num:%s\n' % (self.num)
-        print >>out, 'srcProduct:%s\n' % (self.srcProduct)
-        print >>out, 'destProduct:%s\n' % (self.destProduct)
-        print >>out, 'eosipTmpFolder:%s\n' % (self.eosipTmpFolder)
+        print >>out, '\nworkFolder:%s' % self.workFolder
+        print >>out, 'srcPath:%s' % (self.srcPath)
+        print >>out, 'num:%s' % (self.num)
+        print >>out, 'srcProduct:%s' % (self.srcProduct)
+        print >>out, 'destProduct:%s' % (self.destProduct)
+        print >>out, 'eosipTmpFolder:%s' % (self.eosipTmpFolder)
+        
+        print >>out, '!! test_dont_extract:%s' % (self.test_dont_extract)
+        print >>out, '!! test_dont_write:%s' % (self.test_dont_write)
+        print >>out, '!! test_dont_do_browse:%s' % (self.test_dont_do_browse)
+        
+        print >>out, 'Error:%s' % (self.error)
+        print >>out, 'LOG:\n%s' % (self.prodLog)
         return out.getvalue()
         

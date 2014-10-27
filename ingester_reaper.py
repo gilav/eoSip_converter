@@ -26,7 +26,12 @@ import imageUtil
 
 class ingester_reaper(ingester.Ingester):
 
-    
+        #
+        # called at the end of the doOneProduct, before the index/shopcart creation
+        #
+        def afterProductDone(self, processInfo):
+                pass
+        
         #
         # Override
         #

@@ -14,6 +14,7 @@ from directory_product import Directory_Product
 import metadata
 import browse_metadata
 import formatUtils
+from browseImage import BrowseImage
 from sectionIndentedDocument import SectionDocument
 
 class Ikonos_Product(Directory_Product):
@@ -55,7 +56,7 @@ class Ikonos_Product(Directory_Product):
         return self.metadata_data
 
 
-    def extractToPath(self, folder=None):
+    def extractToPath(self, folder=None, dont_extract=False):
         global METADATA_NAME,PREVIEW_NAME
         if not os.path.exists(folder):
             raise Exception("destination fodler does not exists:%s" % folder)
@@ -64,7 +65,9 @@ class Ikonos_Product(Directory_Product):
         fh = open(self.path, 'rb')
         z = zipfile.ZipFile(fh)
 
-        
+
+        # keep list of content
+        self.contentList=[]
         n=0
         d=0
         for name in z.namelist():
@@ -79,9 +82,12 @@ class Ikonos_Product(Directory_Product):
                 print "   %s extracted at path:%s" % (name, folder+'/'+name)
             if name.endswith('/'):
                 d=d+1
+            self.contentList.append(name)
+
+        # IKONOS products only have one scene in one folder
         if d==1:
-            z.extractall(folder)
-            fh.close()
+            if dont_extract!=True:
+                z.extractall(folder)
             if self.metadata_path!=None:
                 fd=open(self.metadata_path, 'r')
                 self.metadata_data=fd.read()
@@ -96,6 +102,8 @@ class Ikonos_Product(Directory_Product):
                 print " ################### self.preview_path:%s" % self.preview_path 
         else:
             raise Exception("More than 1 directory in product:%d" % d)
+        z.close()
+        fh.close()
 
 
     def buildTypeCode(self):
@@ -144,10 +152,19 @@ class Ikonos_Product(Directory_Product):
                     print "  metadata:%s='%s'" % (field, aValue)
             else:
                 aValue=sectionDoc.getValue(toks[0], toks[1])
+            # supress initial space is any
+            if aValue[0]==' ':
+                aValue=aValue[1:]
             met.setMetadataPair(field, aValue)
             num_added=num_added+1
             
         self.metadata=met
+
+        # METADATA_PARENT_IDENTIFIER: source product name 'NNAA,20090721222747_po_2627437_0000000.zip' without NNAA and zip
+        tmp=self.origName.replace('NNAA,','')
+        tmp=tmp.replace('.zip','')
+        self.metadata.setMetadataPair(metadata.METADATA_PARENT_IDENTIFIER, tmp)
+        num_added=num_added+1
    
         return num_added
 
@@ -211,7 +228,6 @@ class Ikonos_Product(Directory_Product):
 
 
         self.extractQuality(None, self.metadata)
-
         self.extractFootprint(None, self.metadata)
         
         return 1
@@ -244,6 +260,19 @@ class Ikonos_Product(Directory_Product):
         
         tmp="1 %s %s %s %s 1 1 1 1 %s" % (ncols, nrows, ncols, nrows, ncols)
         met.setMetadataPair(metadata.METADATA_FOOTPRINT_IMAGE_ROWCOL, tmp)
+
+        # calculate scene center
+        browseIm = BrowseImage()
+        browseIm.setFootprint(met.getMetadataValue(metadata.METADATA_FOOTPRINT))
+        browseIm.calculateBoondingBox()
+        lat, lon = browseIm.calculateCenter()
+        met.setMetadataPair(metadata.METADATA_SCENE_CENTER, "%s %s" % (lat, lon))
+        met.setMetadataPair(metadata.METADATA_SCENE_CENTER_LAT, lat)
+        met.setMetadataPair(metadata.METADATA_SCENE_CENTER_LON, lon)
+
+        # boundingBox is needed in the localAttributes
+        met.setMetadataPair(metadata.METADATA_BOUNDING_BOX, browseIm.boondingBox)
+        met.addLocalAttribute("boundingBox", met.getMetadataValue(metadata.METADATA_BOUNDING_BOX))
         return
         
 

@@ -65,6 +65,10 @@ EOSIP_METADATA_MAPPING={'acquisitionStation':metadata.METADATA_ACQUISITION_CENTE
                         'instrumentElevationAngle':metadata.METADATA_INSTRUMENT_ZENITH_ANGLE,
                         'illuminationElevationAngle':metadata.METADATA_SUN_ELEVATION,
                         'incidenceAngle':metadata.METADATA_INSTRUMENT_INCIDENCE_ANGLE,
+
+                        'alongTrackIncidenceAngle':metadata.METADATA_INSTRUMENT_ALONG_TRACK_INCIDENCE_ANGLE,
+                        'acrossTrackIncidenceAngle':metadata.METADATA_INSTRUMENT_ACROSS_TRACK_INCIDENCE_ANGLE,
+                        
                         'instrumentZenithAngle':metadata.METADATA_INSTRUMENT_ZENITH_ANGLE,
                         'instrumentElevationAngle':metadata.METADATA_INSTRUMENT_ELEVATION_ANGLE,
                         'productSize':metadata.METADATA_PRODUCT_SIZE,
@@ -111,7 +115,7 @@ class SipBuilder:
     __metaclass__=ABCMeta
 
     debug=0
-    debugUnused=0
+    debugUnused=1
     debugCondition=0
     # the matadata to xml node mapping in use
     USED_METADATA_MAPPING=EOSIP_METADATA_MAPPING
@@ -193,10 +197,11 @@ class SipBuilder:
         if path[0]!='/':
             path="/%s" % (path)
         # is closing node:
-        if rep[0:2]=='</':
-            if self.debug!=0 or self.debugUnused!=0:
-                print "### isFieldUsed: CLOSING NODE: USED"
-            return 1
+        #if rep[0:2]=='</':
+        #    if self.debug!=0 or self.debugUnused!=0:
+        #        print "### isFieldUsed: CLOSING NODE: USED"
+        #    return 1
+        
         # normalyse path 
         # replace path blocks like '/eop_Sensor@eop_sensor/...' with eop_Sensor
         # this is because of windows filename case problem, so workarround
@@ -220,7 +225,8 @@ class SipBuilder:
         if len(pathOk)==0:
             pathOk=path
 
-        #pathOk=pathOk.replace(":","_")
+        # replace 
+
         if self.debug!=0 or self.debugUnused!=0:
             print "### isFieldUsed: pathOk:'%s'" % pathOk
         name=self.getFieldName(rep)

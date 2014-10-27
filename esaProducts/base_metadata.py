@@ -16,19 +16,11 @@ METADATATYPE_BROWSE='METADATATYPE_BROWSE'
 METADATATYPE_BASE='METADATATYPE_BASE'
 
 class Base_Metadata:
-    # type of metadata:
-    #METADATATYPE_PRODUCT='METADATATYPE_PRODUCT'
-    #METADATATYPE_BROWSE='METADATATYPE_BROWSE'
-    #METADATATYPE_BASE='METADATATYPE_BASE'
     
     #
     counter=0
     #
     debug=0
-    # the metadata dictionnary
-    #dict=None
-    # the localAttibutes
-    #localAttributes=[]
     # the mapping of nodes used in xml report. keys is node path
     xmlNodeUsedMapping={}
 

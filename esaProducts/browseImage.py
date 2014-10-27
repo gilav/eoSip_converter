@@ -271,7 +271,9 @@ class BrowseImage():
             #print "@@@@@@@@@@@@@@@@@@@@@@@getIntermediatePoint 2:%s  %s" % (self.centerLat, self.centerLon)
             self.centerLat = formatUtils.EEEtoNumber("%s" % self.centerLat)
             self.centerLon = formatUtils.EEEtoNumber("%s" % self.centerLon)
-        
+        else:
+            raise Exception("footprint has not 10 tokens but %d:%s" % (len(toks), self.footprint))
+            
         return self.centerLat, self.centerLon
     
     #
@@ -433,25 +435,30 @@ class BrowseImage():
 
 if __name__ == '__main__':
     browse = BrowseImage()
-    # razvan MD
-    #browse.setFootprint('50.536655 0.184164 51.295147 -0.438592 50.869156 -1.717447 50.116280 -1.076581 50.536655 0.184164')
-    # f130:
-    #browse.setFootprint('50.706326 -1.422633 51.509552 -2.083871 51.082394 -3.366864 50.284790 -2.687338 50.706326 -1.422633')
-    # d79f:
-    browse.setFootprint('57.548565 -6.235787 58.214821 -7.003214 57.726082 -8.463278 57.067547 -7.676068 57.548565 -6.235787')
+    # razvan 27
+    #browse.setFootprint('54.655415 -7.145371 53.940960 -7.356686 53.818336 -6.196528 54.532104 -5.964681 54.655415 -7.145371')
+    # bf:
+    browse.setFootprint('44.8291 33.1096 44.1762 32.9438 44.0111 34.1619 44.6621 34.3406 44.8291 33.1096')
+    # c4:
+    #browse.setFootprint('66.412445 -20.979864 65.727463 -21.312971 65.586067 -19.664280 66.268730 -19.287031 66.412445 -20.979864')
     browse.calculateCenter()
     print browse.info()
     browse.reverse()
     print "\nreversed:"
     print browse.info()
     print "\n\n\n\n"
+    
+    fd=open("boundingBox_try.txt", "w")
+    fd.write(browse.info())
+    fd.close()
+    
+    sys.exit(0)
     # razvan BI
     #browse.setFootprint('50.875046 -1.722543 51.310780 -0.413662 50.546196 0.213645 50.116253 -1.076558 50.875046 -1.722543')
     # f130:
     #browse.setFootprint('51.107277 -3.388437 51.544346 -2.074867 50.715931 -1.393089 50.284798 -2.687346 51.107277 -3.388437')
     # d79f:
-    #browse.setFootprint('57.555702 -6.213644 57.067524 -7.676043 57.731705 -8.470135 58.227787 -6.987471 57.555702 -6.213644')
-    #browse.setFootprint('-50 170 -20 175 -20 -170 -50 -175 -50 170')
+    #browse.setFootprint('66.412445 -20.979864 65.727463 -21.312971 65.586067 -19.664280 66.268730 -19.287031 66.412445 -20.979864')
     browse.setFootprint("0.43 112.969 -0.421 112.969 -0.421 113.443 0.43 113.443 0.43 112.969")
     browse.calculateCenter()
     browse.calculateBoondingBox()

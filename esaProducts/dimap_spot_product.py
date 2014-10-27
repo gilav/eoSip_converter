@@ -21,6 +21,7 @@ from datetime import datetime, timedelta
 #currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 #sys.path.insert(0,currentdir)
 import imageUtil
+from definitions_EoSip import sipBuilder
 
 class Dimap_Spot_Product(Directory_Product):
 
@@ -55,7 +56,10 @@ class Dimap_Spot_Product(Directory_Product):
                 metadata.METADATA_SENSOR_CODE:'Dataset_Sources/Source_Information/Scene_Source/SENSOR_CODE',
                 metadata.METADATA_DATA_FILE_PATH:'Data_Access/Data_File/DATA_FILE_PATH@href',
                 metadata.METADATA_DATASET_PRODUCTION_DATE:'Production/DATASET_PRODUCTION_DATE',
-                metadata.METADATA_INSTRUMENT_INCIDENCE_ANGLE:'Dataset_Sources/Source_Information/Scene_Source/INCIDENCE_ANGLE',
+                
+                #metadata.METADATA_INSTRUMENT_INCIDENCE_ANGLE:'Dataset_Sources/Source_Information/Scene_Source/INCIDENCE_ANGLE',
+                metadata.METADATA_INSTRUMENT_ALONG_TRACK_INCIDENCE_ANGLE:'Dataset_Sources/Source_Information/Scene_Source/INCIDENCE_ANGLE',
+                
                 metadata.METADATA_VIEWING_ANGLE:'Dataset_Sources/Source_Information/Scene_Source/VIEWING_ANGLE',
                 metadata.METADATA_SUN_AZIMUTH:'Dataset_Sources/Source_Information/Scene_Source/SUN_AZIMUTH',
                 metadata.METADATA_SUN_ELEVATION:'Dataset_Sources/Source_Information/Scene_Source/SUN_ELEVATION',
@@ -79,22 +83,27 @@ class Dimap_Spot_Product(Directory_Product):
         return self.metadata_data
 
     #
+    # extract the source product in workfolder.
+    # keep the metadata file content
+    # dont_extract parameter can be used to not do the extract: to correct a faulty product then re package it in EoSip 
     #
-    #
-    def extractToPath(self, folder=None):
+    def extractToPath(self, folder=None, dont_extract=False):
         global METADATA_NAME,PREVIEW_NAME,IMAGERY_NAME
         if not os.path.exists(folder):
-            raise Exception("destination fodler does not exists:%s" % folder)
+            raise Exception("destination folder does not exists:%s" % folder)
         if self.debug!=0:
             print " will exttact product to path:%s" % folder
         fh = open(self.path, 'rb')
         z = zipfile.ZipFile(fh)
-        
+
+        # keep list of content
+        self.contentList=[]
         n=0
         d=0
         for name in z.namelist():
             n=n+1
-            print "  zip content[%d]:%s" % (n, name)
+            if self.debug!=0:
+                print "  zip content[%d]:%s" % (n, name)
             if name.find(self.PREVIEW_NAME)>=0:
                 self.preview_path="%s/%s" % (folder, name)
             elif name.find(self.METADATA_NAME)>=0:
@@ -102,12 +111,16 @@ class Dimap_Spot_Product(Directory_Product):
             elif name.find(self.IMAGERY_NAME)>=0:
                 self.imagery_path="%s/%s" % (folder, name)
                 
-            print "   %s extracted at path:%s" % (name, folder+'/'+name)
+            if self.debug!=0:
+                print "   %s extracted at path:%s" % (name, folder+'/'+name)
             if name.endswith('/'):
                 d=d+1
+            self.contentList.append(name)
+
+        # ESA SPOT products only have one scene in one folder
         if d==1:
-            z.extractall(folder)
-            fh.close()
+            if dont_extract!=True:
+                z.extractall(folder)
             if self.metadata_path!=None:
                 fd=open(self.metadata_path, 'r')
                 self.metadata_data=fd.read()
@@ -118,9 +131,12 @@ class Dimap_Spot_Product(Directory_Product):
                 self.preview_data=fd.read()
                 fd.close()
             self.EXTRACTED_PATH=folder
-            print " ################### self.preview_path:%s" % self.preview_path 
+            if self.debug!=0:
+                print " ################### self.preview_path:%s" % self.preview_path 
         else:
             raise Exception("More than 1 directory in product:%d" % d)
+        z.close()
+        fh.close()
 
 
 
@@ -139,6 +155,7 @@ class Dimap_Spot_Product(Directory_Product):
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRV2_X__1P')
             else:
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRV#_#_##')
+                self.processInfo.addInfo("STRANGE", "%s: sensorName:%s sensorName:%s" % (self.path, metadata.METADATA_SENSOR_NAME, self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)))
                         
         elif (self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)=='HRVIR'):
             if self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)=='1' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='M':
@@ -151,6 +168,7 @@ class Dimap_Spot_Product(Directory_Product):
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRI2_X__1P')
             else:
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRVI_#_##')
+                self.processInfo.addInfo("STRANGE", "%s: sensorName:%s sensorName:%s" % (self.path, metadata.METADATA_SENSOR_NAME, self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)))
 
         elif (self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)=='HRG'):
             if self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)=='1' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='J':
@@ -159,9 +177,16 @@ class Dimap_Spot_Product(Directory_Product):
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRG2_X__1P')
             else:
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRG#_#_##')
+                self.processInfo.addInfo("STRANGE", "%s: sensorName:%s sensorName:%s" % (self.path, metadata.METADATA_SENSOR_NAME, self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)))
 
         else:
+            self.processInfo.addInfo("STRANGE 2", "%s: sensorName:%s sensorName:%s" % (self.path, metadata.METADATA_SENSOR_NAME, self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)))
             raise Exception("Product type UNKNOWN")
+        
+        self.processInfo.addInfo(metadata.METADATA_SENSOR_CODE, self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE))
+        self.processInfo.addInfo(metadata.METADATA_INSTRUMENT_ID, self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID))
+        self.processInfo.addInfo(metadata.METADATA_SENSOR_NAME, self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME))
+        self.processInfo.addInfo(metadata.METADATA_TYPECODE, self.metadata.getMetadataValue(metadata.METADATA_TYPECODE))
 
        
     #
@@ -215,8 +240,15 @@ class Dimap_Spot_Product(Directory_Product):
 
         self.extractFootprint(helper, met)
 
-        # keep the original product name, add it to local attributes
-        #met.addLocalAttribute("original_name", self.origName)
+        # extract 'Dataset_Sources/Source_Information/Scene_Source/VIEWING_ANGLE' which is only in SPOT5, set it in acrossTrackIncidenceAngle 
+        tmpNodes=[]
+        helper.getNodeByPath(None, 'Dataset_Sources/Source_Information/Scene_Source/VIEWING_ANGLE', None, tmpNodes)
+        if len(tmpNodes)==1:
+            tmp=helper.getNodeText(tmpNodes[0])
+            #print "  ############# VIEWING_ANGLE=%s" % viewingAngle
+            self.metadata.setMetadataPair(metadata.METADATA_INSTRUMENT_ACROSS_TRACK_INCIDENCE_ANGLE, tmp)
+        #else:
+        #    print "###################### no VIEWING_ANGLE"
                             
         return num_added
 
@@ -245,8 +277,17 @@ class Dimap_Spot_Product(Directory_Product):
         tmp = self.metadata.getMetadataValue(metadata.METADATA_SUN_ELEVATION)
         self.metadata.setMetadataPair(metadata.METADATA_SUN_ELEVATION, formatUtils.EEEtoNumber(tmp))
 
-        tmp = self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_INCIDENCE_ANGLE)
-        self.metadata.setMetadataPair(metadata.METADATA_INSTRUMENT_INCIDENCE_ANGLE, formatUtils.EEEtoNumber(tmp))
+        #tmp = self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_INCIDENCE_ANGLE)
+        #if tmp!=None:
+        #    self.metadata.setMetadataPair(metadata.METADATA_INSTRUMENT_INCIDENCE_ANGLE, formatUtils.EEEtoNumber(tmp))
+
+        tmp = self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ALONG_TRACK_INCIDENCE_ANGLE)
+        if tmp!=sipBuilder.VALUE_NOT_PRESENT:
+            self.metadata.setMetadataPair(metadata.METADATA_INSTRUMENT_ALONG_TRACK_INCIDENCE_ANGLE, formatUtils.EEEtoNumber(tmp))
+
+        tmp = self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ACROSS_TRACK_INCIDENCE_ANGLE)
+        if tmp!=sipBuilder.VALUE_NOT_PRESENT:
+            self.metadata.setMetadataPair(metadata.METADATA_INSTRUMENT_ACROSS_TRACK_INCIDENCE_ANGLE, formatUtils.EEEtoNumber(tmp))
 
         # fix production date: from 2008-10-01T14:52:01.000000 to 2008-10-01T14:52:01Z
         tmp = self.metadata.getMetadataValue(metadata.METADATA_DATASET_PRODUCTION_DATE)

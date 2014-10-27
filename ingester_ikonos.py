@@ -27,7 +27,12 @@ import imageUtil
 
 class ingester_ikonos(ingester.Ingester):
 
-    
+        #
+        # called at the end of the doOneProduct, before the index/shopcart creation
+        #
+        def afterProductDone(self, processInfo):
+                pass
+        
         #
         # Override
         #
@@ -109,6 +114,13 @@ class ingester_ikonos(ingester.Ingester):
                     processInfo.destProduct.addSourceBrowse(browseDestPath, [])
                     processInfo.addLog("  browse image created:%s" %  (browseDestPath))
                     self.logger.info("  browse image created:%s" % browseDestPath)
+
+                    # NEW: make a transparent jpeg, resize to 33% -> 1000*1000
+                    #if processInfo.test_dont_do_browse!=True:
+                    #        ok=imageUtil.makeBrowse("PNG", browseSrcPath, browseDestPath, -1, transparent=True)
+                    #processInfo.destProduct.addSourceBrowse(browseDestPath, [])
+                    #processInfo.addLog("  => browse image created:%s" %  (browseDestPath))
+                    #self.logger.info("  browse image created:%s" % browseDestPath)
 
                     # create browse choice for browse metadata report
                     bmet=processInfo.destProduct.browse_metadata_dict[browseDestPath]

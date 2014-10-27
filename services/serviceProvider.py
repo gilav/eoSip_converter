@@ -69,8 +69,10 @@ class ServiceProvider():
             print " got class"
         aclass.init(parameters, ingester);
         self.services[name]=aclass
-        if self.debug!=0:
-            print " service ready"
+        if 0==0:
+            print " service ready:"
+            print aclass.dumpProperty()
+
 
 
     #

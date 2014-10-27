@@ -87,7 +87,7 @@ class ingester_tropforest(ingester.Ingester):
         def prepareProducts(self,processInfo):
                 processInfo.addLog(" prepare product in:%s" % (processInfo.workFolder))
                 self.logger.info(" prepare product");
-                processInfo.srcProduct.extractToPath(processInfo.workFolder)
+                processInfo.srcProduct.extractToPath(processInfo.workFolder, processInfo.test_dont_extract)
                 processInfo.addLog("  extracted inside:%s" % (processInfo.workFolder))
                 self.logger.info("  extracted inside:%s" % (processInfo.workFolder))
 
@@ -171,7 +171,8 @@ class ingester_tropforest(ingester.Ingester):
                     browseExtension=definitions_EoSip.getBrowseExtension(0, definitions_EoSip.getDefinition('BROWSE_JPEG_EXT'))
                     browseDestPath="%s/%s.%s" % (processInfo.eosipTmpFolder, processInfo.destProduct.packageName, browseExtension)
                     processInfo.addLog("  makeBrowse: ext=%s; src=%s;  dest=%s" % (browseExtension, browseSrcPath, browseDestPath))
-                    imageUtil.makeBrowse('JPG', browseSrcPath, browseDestPath, ratio )
+                    if processInfo.test_dont_do_browse!=True:
+                            imageUtil.makeBrowse('JPG', browseSrcPath, browseDestPath, ratio )
 
                     #
                     #imageUtil.externalMakeJpeg(browseSrcPath, browseDestPath)

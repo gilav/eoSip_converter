@@ -13,6 +13,7 @@ debug = False
 from service import Service
 
 class HttpCall(Service):
+    SETTING_TIMEOUT='TIMEOUT'
 
 
     #
@@ -35,7 +36,10 @@ class HttpCall(Service):
 
 
     #
-    # 
+    # init done after the properties are loaded
+    # do:
+    # - check if DEBUG option set
+    # - handle proxy + timeout options
     #
     def my_init(self, proxy=0, timeout=5):
         self.timeout=timeout
@@ -47,12 +51,23 @@ class HttpCall(Service):
         self.proxy=None
         self.opener=None
 
+        # DEBUG setting
+        if self.getProperty(self.SETTING_DEBUG)!=None:
+            print "@@@@@@@@@@@@@@@@@@ DEBUG setting:%s" % self.getProperty(self.SETTING_DEBUG)
+            if self.getProperty(self.SETTING_DEBUG)=="true":
+                self.debug=True
+
+        # TIMEOUT setting
+        if self.getProperty(self.SETTING_TIMEOUT)!=None:
+            print "@@@@@@@@@@@@@@@@@@ TIMEOUT setting:%s" % self.getProperty(self.SETTING_TIMEOUT)
+            self.timeout = int(self.getProperty(self.SETTING_TIMEOUT))
+
         if proxy==0:
-            if debug:
+            if self.debug:
                 print " disabling proxy"
             proxy_handler = urllib2.ProxyHandler({})
             self.opener = urllib2.build_opener(proxy_handler)
-            if debug:
+            if self.debug:
                 print " proxy disabled"
 
 
@@ -60,6 +75,7 @@ class HttpCall(Service):
     #
     #
     def processRequest(self, url, data):
+        print "@@@@@@@@@@@@@@@@@@ processRequest, timeout=%d" % self.timeout
         return self.retrieveUsingPost(url, data)
     
 
@@ -73,19 +89,20 @@ class HttpCall(Service):
         self.url=u
         self.params=p
         self.proxy=pr
-        if debug:
+        if self.debug:
             print " will do GET: url=%s; params=%s;" % (self.url, self.params)
         self.encodedParams = urllib.quote(self.params)
-        if debug:
+        if self.debug:
             print " encodedParams=%s" % (self.encodedParams)
         self.request = urllib2.Request(url="%s?%s" % (self.url, self.params))
         if self.opener==None:
-            if debug:
+            if self.debug:
                 print " use default proxy"
             f = urllib2.urlopen(self.request, timeout = self.timeout)
         else:
 
-            if debug:print " dont use proxy"
+            if self.debug:
+                print " dont use proxy"
             f = self.opener.open(self.request, timeout = self.timeout)
         return f.read().decode()
     
@@ -100,16 +117,16 @@ class HttpCall(Service):
         self.url=u
         self.postData=d
         self.proxy=pr
-        if debug:
+        if self.debug:
             print " will do POST: url=%s; params=%s;" % (self.url, self.params)
         self.request = urllib2.Request(url=self.url)
         self.request.add_data(self.postData)
         if self.opener==None:
-            if debug:
+            if self.debug:
                 print " use default proxy"
             f = urllib2.urlopen(self.request, timeout = self.timeout)
         else:
-            if debug:
+            if self.debug:
                 print " don't use proxy"
             f = self.opener.open(self.request, timeout = self.timeout)
         return f.read().decode()
@@ -122,29 +139,30 @@ class HttpCall(Service):
 
 
 if __name__ == '__main__':
-    a="C:/Users/glavaux/Shared/LITE/spaceTmp/batch_tropforest_tropforest_workfolder_0/AL1_OPER_AV2_OBS_11_20090517T025758_20090517T025758_000000_E113_N000/AL1_OPER_AV2_OBS_11_20090517T025758_20090517T025758_000000_E113_N000.MD.XML"
+    a="C:/Users/glavaux/Shared/LITE/spaceTmp/SP1_OPER_HRV1_X__1P_19881009T114531_19881009T114540_000029_0022_0322.MD_before.XML"
     b = "C:/Users/glavaux/LITE/OGC_Schemas/opt.xsd";
     data="XML_PATH=%s&XSD_PATH=%s" % (a,b)
     dataBad="XSD_PATH=%s" % (b)
 
     #print f.read(1000)
     call = HttpCall()
+    call.init()
 
     # GET
     print "\nSHOULD BE OK:"
-    print "returned:%s" % call.retrieveUsingGet("http://127.0.0.1:7002/validate", data)
+    print "returned:%s" % call.retrieveUsingGet("http://127.0.0.1:7000/validate", data)
     
     print "\nSHOULD BE BAD:"
-    print "returned:%s" % call.retrieveUsingGet("http://127.0.0.1:7002/validate", dataBad)
-    print "returned:%s" % call.retrieveUsingGet("http://127.0.0.1:7002/validate1", data)
+    print "returned:%s" % call.retrieveUsingGet("http://127.0.0.1:7000/validate", dataBad)
+    print "returned:%s" % call.retrieveUsingGet("http://127.0.0.1:7000/validate1", data)
 
     # POST
     print "\n\n\n\nSHOULD BE OK:"
-    print "returned:%s" % call.retrieveUsingPost("http://127.0.0.1:7002/validate", data)
+    print "returned:%s" % call.retrieveUsingPost("http://127.0.0.1:7000/validate", data)
 
     print "\nSHOULD BE BAD:"
-    print "returned:%s" % call.retrieveUsingPost("http://127.0.0.1:7002/validate", dataBad)
-    print "returned:%s" % call.retrieveUsingGet("http://127.0.0.1:7002/validate1", data)
+    print "returned:%s" % call.retrieveUsingPost("http://127.0.0.1:7000/validate", dataBad)
+    print "returned:%s" % call.retrieveUsingGet("http://127.0.0.1:7000/validate1", data)
 
 
 

@@ -6,8 +6,7 @@ class alt_EarthObservationEquipment(SipMessageBuilder):
     this = ["<alt:EarthObservationEquipment gml:id=\"@gmlId@_$$getNextCounter()$$\">", "</alt:EarthObservationEquipment>"]
 
 
-    REPRESENTATION = ["eop_platform",
+    REPRESENTATION = [
         "eop_instrument",
-        "eop_sensor",
-        "eop_acquisitionParameters",
+        "alt_platform"
         ]

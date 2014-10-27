@@ -244,9 +244,13 @@ class netCDF_reaper_Product(netCDF_Product):
         self.metadata=met
 
         # use also the filename
-        # is like: E2_TEST_ERS_ALT_2S_20010212T105332_20010212T115740_COM5.NC
+        # is like: GDR: E2_TEST_ERS_ALT_2__20010212T060425_20010212T080124_COM5.NC
+        # is like: SGDR: E2_TEST_ERS_ALT_2S_20010212T105332_20010212T115740_COM5.NC
         toks=met.getMetadataValue(metadata.METADATA_PRODUCTNAME).split('_')
-        met.setMetadataPair(metadata.METADATA_TYPECODE, "%s_%s_%s" % (toks[2],toks[3],toks[4]))
+        if len(toks[4])==1:
+            met.setMetadataPair(metadata.METADATA_TYPECODE, "%s_%s__%s" % (toks[2],toks[3],toks[4]))
+        else:
+            met.setMetadataPair(metadata.METADATA_TYPECODE, "%s_%s_%s" % (toks[2],toks[3],toks[4]))
         met.setMetadataPair(metadata.METADATA_PLATFORM_ID,toks[0][1])
         
         
@@ -313,8 +317,13 @@ class netCDF_reaper_Product(netCDF_Product):
         self.metadata.setMetadataPair(metadata.METADATA_TRACK, "%s" % tmp)
 
         
-
+    #
+    # ERS_ALT_2_ lat variable: lat, in
+    # ERS_ALT_2_ lat variable: lat, in
+    #
     def getFootprint(self, number=0, reduce=50):
+        return
+    
         v=self.dataset.variables['latitude']
         v2=self.dataset.variables['longitude']
         n=0

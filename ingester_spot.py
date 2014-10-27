@@ -85,7 +85,7 @@ class ingester_spot(ingester.Ingester):
         def prepareProducts(self,processInfo):
                 processInfo.addLog("\n - prepare product, will extract inside working folder:%s" % (processInfo.workFolder))
                 self.logger.info(" prepare product")
-                processInfo.srcProduct.extractToPath(processInfo.workFolder)
+                processInfo.srcProduct.extractToPath(processInfo.workFolder, processInfo.test_dont_extract)
                 processInfo.addLog("  => extracted inside:%s" % (processInfo.workFolder))
                 self.logger.info("  extracted inside:%s" % (processInfo.workFolder))
 
@@ -226,7 +226,7 @@ class ingester_spot(ingester.Ingester):
 
         #
         # Override
-        # copy the source browse image into work folder
+        # copy the source browse image into work folder, or for better quality generate the browse from the TIF image
         # construct the browse_metadatareport footprint block(BROWSE_CHOICE): it is the rep:footprint for spot
         #
         def makeBrowses(self,processInfo):
@@ -240,8 +240,9 @@ class ingester_spot(ingester.Ingester):
                     browseDestPath="%s/%s.%s" % (processInfo.eosipTmpFolder, processInfo.destProduct.packageName, browseExtension)
                     #shutil.copyfile(browseSrcPath, browseDestPath)
 
-                    # NEW: make a transparent jpeg
-                    ok=imageUtil.makeBrowse("PNG", browseSrcPath, browseDestPath, -1, transparent=True)
+                    # NEW: make a transparent jpeg, resize to 33% -> 1000*1000
+                    if processInfo.test_dont_do_browse!=True:
+                            ok=imageUtil.makeBrowse("PNG", browseSrcPath, browseDestPath, 35, transparent=True)
                     processInfo.destProduct.addSourceBrowse(browseDestPath, [])
                     processInfo.addLog("  => browse image created:%s" %  (browseDestPath))
                     self.logger.info("  browse image created:%s" % browseDestPath)
@@ -391,7 +392,7 @@ if __name__ == '__main__':
             ingester.starts(sys.argv)
             
         else:
-            print "syntax: python ingester_xxx.py configuration_file.cfg [batch-name][batch-index]"
+            print "syntax: python ingester_xxx.py -c configuration_file.cfg [-l list_of_product_file]"
             sys.exit(1)
             
     except Exception, e:

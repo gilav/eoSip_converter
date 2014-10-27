@@ -58,6 +58,7 @@ import statsUtil
 from data import dataProvider
 from services import serviceProvider
 import sipBuilder
+import infoKeeper
 
 
 #
@@ -131,9 +132,14 @@ SETTING_INDEX_ADDED_FIELD='INDEX_ADDED_FIELD'
 SETTING_FIXED_BATCH_NAME='FIXED_BATCH_NAME'
 SETTING_PRODUCT_OVERWRITE='PRODUCT_OVERWRITE'
 SETTING_CREATE_BROWSE_REPORT='CREATE_BROWSE_REPORT'
+# workflow, test stuff
+SETTING_TEST_DONT_EXTRACT='TEST_DONT_EXTRACT'
+SETTING_TEST_DONT_WRITE='TEST_DONT_WRITE'
+SETTING_TEST_DONT_DO_BROWSE='TEST_DONT_DO_BROWSE'
 # eoSip
 SETTING_EOSIP_TYPOLOGY='TYPOLOGY'
 SETTING_EOSIP_STORE_TYPE='STORE_TYPE'
+SETTING_EOSIP_STORE_COMPRESSION='STORE_COMPRESSION'
 # data provider
 #SETTING_DATA_PROVIDER='provider'
 
@@ -164,10 +170,16 @@ create_browse_report=True
 index_added=None
 fixed_batch_name=None
 product_overwrite=False
+test_dont_extract=False
+test_dont_write=False
+test_dont_do_browse=False
+
+# daemon
 daemon=False
 
 # eoSip
 eoSip_store_type=None
+eoSip_store_compression=None
 
 # data provider stuff
 dataProviders={}
@@ -182,6 +194,13 @@ DEBUG=0
 LOG_FOLDER="./log"
 file_doBeDoneList="%s/%s" % (LOG_FOLDER, 'product_list.txt')
 
+# convertion status var names:
+CONVERSION_RESULT='CONVERSION_RESULT'
+CONVERSION_ERROR='CONVERSION_ERROR'
+CONVERSION_FULL_ERROR='CONVERSION_FULL_ERROR'
+SUCCESS='SUCCESS'
+FAILURE='FAILURE'
+
 
 
 class Ingester():
@@ -192,7 +211,7 @@ class Ingester():
         #
         #
         def __init__(self):
-                global DEBUG
+                #global DEBUG
                 print ' init base ingester'
                 # logger stuff
                 self.logger = logging.getLogger()
@@ -223,6 +242,8 @@ class Ingester():
                 #
                 self.dataProviders={}
                 self.servicesProvider=None
+                #
+                self.infoKeeper = infoKeeper.infoKeeper()
 
         #
         # return the home dir of the converter software
@@ -230,6 +251,13 @@ class Ingester():
         def getConverterHomeDir(self):
             res = "%s" % parentdir
             return res
+
+        #
+        #
+        #
+        def keepInfo(self, info, value):
+            self.infoKeeper.addInfo(info, value)
+
 
         #
         # TODO: move it into service code 
@@ -268,7 +296,8 @@ class Ingester():
         def readConfig(self, path=None):
                 global CONFIG_NAME, __config, OUTSPACE, INBOX, TMPSPACE, LIST_TYPE, LIST_BUILD, FILES_NAMEPATTERN, FILES_EXTPATTERN, DIRS_NAMEPATTERN, DIRS_ISLEAF,\
                 DIRS_ISEMPTY, LIST_LIMIT, LIST_STARTDATE, LIST_STOPDATE, OUTPUT_EO_SIP_PATTERN, OUTPUT_RELATIVE_PATH_TREES, max_product_done,verify_xml,\
-                create_index,create_shopcart,create_thumbnail,create_browse_report,index_added,verify_product,fixed_batch_name,product_overwrite,TYPOLOGY,eoSip_store_type
+                create_index,create_shopcart,create_thumbnail,create_browse_report,index_added,verify_product,fixed_batch_name,product_overwrite,TYPOLOGY,\
+                eoSip_store_compression,eoSip_store_type,test_dont_extract,test_dont_write,test_dont_do_browse
 
                 if not os.path.exists(path):
                     raise Exception("cofiguration file:'%s' doesn't exists" % path)
@@ -374,7 +403,20 @@ class Ingester():
                             create_browse_report= __config.getboolean(SETTING_workflowp, SETTING_CREATE_BROWSE_REPORT)
                         except:
                             pass
-
+                        
+                        try:
+                            test_dont_extract= __config.getboolean(SETTING_workflowp, SETTING_TEST_DONT_EXTRACT)
+                        except:
+                            pass
+                        try:
+                            test_dont_write= __config.getboolean(SETTING_workflowp, SETTING_TEST_DONT_WRITE)
+                        except:
+                            pass
+                        try:
+                            test_dont_do_browse= __config.getboolean(SETTING_workflowp, SETTING_TEST_DONT_DO_BROWSE)
+                        except:
+                            pass
+                        
                         # eoSip:
                         # mandatory block
                         try:
@@ -400,6 +442,11 @@ class Ingester():
                             eoSip_store_type = __config.get(SETTING_eosip, SETTING_EOSIP_STORE_TYPE)
                         except:
                             pass
+
+                        try:
+                            eoSip_store_compression = __config.get(SETTING_eosip, SETTING_EOSIP_STORE_COMPRESSION)
+                        except:
+                            eoSip_store_compression = True
 
                         # dataProvider: optional
                         try:
@@ -458,7 +505,7 @@ class Ingester():
         #
         # 
         def starts(self, args):
-            global fixed_batch_name,OUTSPACE,TMPSPACE,max_product_done,daemon
+            #global fixed_batch_name,OUTSPACE,TMPSPACE,max_product_done,daemon
             #if len(argv) < 2:
             #    raise Exception("not enough parameter passed, need at least 1, has %d" % (len(argv)-1))
             #self.readConfig(sys.argv[1])
@@ -609,7 +656,7 @@ class Ingester():
         # make working folder
         #
         def makeWorkingFolders(self, processInfo):
-                global TMPSPACE
+                #global TMPSPACE
                 # make working folder
                 tmpPath=TMPSPACE+"/%s_workfolder_%s" % (self.batchName, processInfo.num)
                 processInfo.addLog("\n - create working folder if needed; working folder:%s" % (tmpPath))
@@ -679,7 +726,8 @@ class Ingester():
         # is defined in the configuration file
         #
         def getMissionDefaults(self):
-                global __config, xmlMappingMetadata, xmlMappingBrowse, FINAL_PATH_LIST, mission_metadatas
+                #global __config, xmlMappingMetadata, xmlMappingBrowse, FINAL_PATH_LIST, mission_metadatas
+                global xmlMappingMetadata, xmlMappingBrowse, FINAL_PATH_LIST, mission_metadatas
                 # get mission specific metadata values, taken from configuration file
                 mission_metadatas={}
                 missionSpecificSrc=dict(__config.items(SETTING_MISSION_SPECIFIC))
@@ -741,7 +789,9 @@ class Ingester():
         # process just one products
         #
         def processSingleProduct(self, productPath, jobId):
-                global CONFIG_NAME, DEBUG, num,num_total,num_done,num_error,list_done,list_error,description_error,max_product_done,create_index,create_thumbnail,create_shopcart,index_added,fixed_batch_name
+                #global CONFIG_NAME,DEBUG,num,num_total,num_done,num_error,list_done,list_error,description_error,max_product_done,create_index,\
+                #create_thumbnail,create_shopcart,index_added,fixed_batch_name
+                global num,num_total,num_done,num_error,list_done,list_error
                 #
                 #
                 if fixed_batch_name!=None:
@@ -769,10 +819,15 @@ class Ingester():
                 self.logger.info("doing single product: jobId=%s, path:%s" % (jobId, productPath))
                 aProcessInfo.addLog("\n\ndoing single product: jobId=%s, path:%s" % (jobId, productPath))
                 
+                status={}
                 try:
                         self.doOneProduct(aProcessInfo)
+                        status[CONVERSION_RESULT]=SUCCESS
                 except Exception, e:
+                        status[CONVERSION_RESULT]=FAILURE
                         exc_type, exc_obj, exc_tb = sys.exc_info()
+                        status[CONVERSION_FULL_ERROR]="Error:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc())
+                        status[CONVERSION_ERROR]="Error:%s  %s\n" %  (exc_type, exc_obj)
                         
                         try:
                             self.logger.error("Error:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc()))
@@ -809,13 +864,16 @@ class Ingester():
                             self.logger.error(" Error: saving metadata files")
                             exc_type, exc_obj, exc_tb = sys.exc_info()
                             print " ERROR saving metadata files:%s  %s%s\n" %  (exc_type, exc_obj, traceback.format_exc())
+
+                return status
                             
 
         #
         # process the list of products
         #
         def processProducts(self):
-                global CONFIG_NAME, DEBUG, num,num_total,num_done,num_error,list_done,list_error,description_error,max_product_done,create_index,create_thumbnail,create_shopcart,index_added,fixed_batch_name
+                #global CONFIG_NAME, DEBUG, num,num_total,num_done,num_error,list_done,list_error,description_error,max_product_done,create_index,create_thumbnail,create_shopcart,index_added,fixed_batch_name
+                global num_total,num_done,num_error,list_done,list_error,description_error
                 #
                 if fixed_batch_name!=None:
                     self.batchName="batch_%s_%s" % (CONFIG_NAME, fixed_batch_name)
@@ -864,6 +922,10 @@ class Ingester():
                         aProcessInfo.create_index=create_index
                         aProcessInfo.create_shopcart=create_shopcart
                         aProcessInfo.verify_xml=verify_xml
+                        aProcessInfo.test_dont_extract=test_dont_extract
+                        aProcessInfo.test_dont_write=test_dont_write
+                        aProcessInfo.test_dont_do_browse=test_dont_do_browse
+                        aProcessInfo.infoKeeper=self.infoKeeper
                         
                         #try:
                         num=num+1
@@ -998,6 +1060,13 @@ class Ingester():
                 fd.write(tmp)
                 fd.close()
                 print " batch done log '%s' written in:%s" % (self.batchName, path)
+
+                # write keeped info in any
+                path="%s/%s_KEEPED.txt" % (LOG_FOLDER, self.batchName)
+                fd=open(path, "w")
+                fd.write(self.infoKeeper.toString())
+                fd.close()
+                print " keeped information '%s' written in:%s" % (self.batchName, path)
                 
                 # write done list
                 path="%s/%s_DONE.log" % (LOG_FOLDER, self.batchName)
@@ -1041,7 +1110,7 @@ class Ingester():
         #
         #
         def summary(self):
-            global num,num_total,num_done,num_error,list_done,list_error,TMPSPACE,OUTSPACE
+            #global num,num_total,num_done,num_error,list_done,list_error,TMPSPACE,OUTSPACE
             res="Summary:\nbatch name:%s\n Started at: %s" % (self.batchName, formatUtils.dateFromSec((self.runStartTime)))
             res="%s\n Stoped at: %s\n" % (res, formatUtils.dateFromSec(self.runStopTime))
             res="%s Duration: %s sec\n" % (res, (self.runStopTime-self.runStartTime))
@@ -1070,16 +1139,18 @@ class Ingester():
         # do one product
         #
         def doOneProduct(self, pInfo):
-                global product_overwrite ,eoSip_store_type, OUTPUT_EO_SIP_PATTERN, OUTSPACE
+                #global product_overwrite,eoSip_store_type,eoSip_store_compression,OUTPUT_EO_SIP_PATTERN,OUTSPACE
 
                 startProcessing=time.time()
+                # create work folder
+                workfolder=self.makeWorkingFolders(pInfo)
                 #
                 if verify_product==1:
                     self.verifySourceProduct(pInfo)
-                # create work folder
-                workfolder=self.makeWorkingFolders(pInfo)
                 # instanciate source product
                 self.createSourceProduct(pInfo)
+                # make processInfo available in source product
+                pInfo.srcProduct.processInfo=pInfo
                 # prepare it: move/decompress it in work folder
                 self.prepareProducts(pInfo)
                 # create empty metadata
@@ -1097,6 +1168,7 @@ class Ingester():
                 # set processInfo into destination product, to make it access things like the srcProduct or ingester
                 pInfo.destProduct.TYPOLOGY=TYPOLOGY
                 pInfo.destProduct.src_product_stored=eoSip_store_type
+                pInfo.destProduct.src_product_stored_compression=eoSip_store_compression
                 pInfo.destProduct.setProcessInfo(pInfo)
                 # set the EOP typology used
                 met.setOtherInfo("TYPOLOGY_SUFFIX", TYPOLOGY)
@@ -1174,7 +1246,8 @@ class Ingester():
                 print pInfo.destProduct.info()
                 
                 # output Eo-Sip product
-                self.output_eoSip(pInfo, OUTSPACE, OUTPUT_RELATIVE_PATH_TREES, product_overwrite)
+                if test_dont_write!=True:
+                    self.output_eoSip(pInfo, OUTSPACE, OUTPUT_RELATIVE_PATH_TREES, product_overwrite)
 
                 # save metadata in working folder
                 self.saveMetadata(pInfo)
@@ -1183,21 +1256,26 @@ class Ingester():
                 self.afterProductDone(pInfo)
                 
                 # compute stats
+                #print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  00"
                 processingDuration=time.time()-startProcessing
+                size=None
                 try:
                     # TODO: move get size into product??
-                    size=os.stat(pInfo.destProduct.path).st_size
-                    self.statsUtil.oneDone(processingDuration, size)
-                    self.logger.info("  batch run will be completed at:%s" % self.statsUtil.getEndDate())
-                except Exception, e:
+                    if pInfo.destProduct.path!=None:
+                        size=os.stat(pInfo.destProduct.path).st_size
+                    #self.logger.info("  batch run will be completed at:%s" % self.statsUtil.getEndDate())
+                    #print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  11"
+                except:
                     exc_type, exc_obj, exc_tb = sys.exc_info()
                     pInfo.addLog("Error:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc()))
                     self.logger.info("Error doing stats")
-                    pass
+                    #pass
+                #print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  22"
+                self.statsUtil.oneDone(processingDuration, size)
                 print "\n\n\n\nLog:%s\n" % pInfo.prodLog
-
                 print "\n\n\n\nProcess info:%s\n" % pInfo.toString()
-
+                self.logger.info("\n####\n####\n    batch run will be completed at:%s\n####\n####" % self.statsUtil.getEndDate())
+                #print "\n####\n  batch run will be completed at:%s\n####" % self.statsUtil.getEndDate()
 
         #
         # dump info
@@ -1220,6 +1298,10 @@ class Ingester():
                 self.logger.info("   OUTPUT_RELATIVE_PATH_TREES: %s" % OUTPUT_RELATIVE_PATH_TREES)
                 self.logger.info("   eoSip typology: %s" % TYPOLOGY)
                 self.logger.info("   eoSip store type: %s" % eoSip_store_type)
+                self.logger.info("   eoSip store compression: %s" % eoSip_store_compression)
+                self.logger.info("   TEST; don't extract source product: %s" % test_dont_extract)
+                self.logger.info("   TEST; don't write destination product: %s" % test_dont_write)
+                self.logger.info("   TEST; don't do browse: %s" % test_dont_do_browse)
                 #if len(dataProviders) > 0:
                 self.logger.info("   additional data providers:%s" % self.dataProviders)
                 #else:

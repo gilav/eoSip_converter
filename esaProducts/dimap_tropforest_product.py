@@ -52,6 +52,7 @@ class Dimap_Tropforest_Product(Directory_Product):
     def __init__(self, path=None):
         Directory_Product.__init__(self, path)
         print " init class Dimap_Tropforest_Product"
+        self.isDeimos=False
 
     #
     # called at the end of the doOneProduct, before the index/shopcart creation
@@ -60,7 +61,7 @@ class Dimap_Tropforest_Product(Directory_Product):
         pass
 
     #
-    # 
+    # read matadata file
     #
     def getMetadataInfo(self):
         if self.XML_FILE_NAME==None:
@@ -74,13 +75,29 @@ class Dimap_Tropforest_Product(Directory_Product):
             print " extract metadata from:%s" % data
         return data
 
+    #
+    # deimos has 2 metadata file: a .XML and a .met
+    # country is only in .XML
+    #
+    def getDeimosMetadataInfo(self):
+        if self.XML_FILE_NAME_MET==None:
+            raise Exception(" no metadata file")
+        if self.debug!=0:
+            print " metadata source file:%s" % self.EXTRACTED_PATH+'/'+self.XML_FILE_NAME_MET
+        fd=open(self.EXTRACTED_PATH+'/'+self.XML_FILE_NAME_MET, 'r')
+        data=fd.read()
+        fd.close()
+        if self.debug!=0:
+            print " extract metadata from:%s" % data
+        return data
 
     #
     # extract the tropforest product
     # keep the metadata+browse file path
-    # Note that Deimos metadata in .met file are more conplet
+    # Note that Deimos metadata in .met file has more information
+    # dont_extract parameter can be used to not do the extract: to correct a faulty product then re package it in EoSip 
     #
-    def extractToPath(self, folder=None):
+    def extractToPath(self, folder=None, dont_extract=False):
         if not os.path.exists(folder):
             raise Exception("destination fodler does not exists:%s" % folder)
         if self.debug!=0:
@@ -96,20 +113,24 @@ class Dimap_Tropforest_Product(Directory_Product):
             n=n+1
             if self.debug!=0:
                 print "  extract[%d]:%s" % (n, name)
-            outfile = open(folder+'/'+name, 'wb')
-            outfile.write(z.read(name))
-            outfile.close()
+            if dont_extract!=True:
+                outfile = open(folder+'/'+name, 'wb')
+                outfile.write(z.read(name))
+                outfile.close()
             if name.find(self.TIF_FILE_SUFFIX)>=0:
                 self.TIF_FILE_NAME=name
             elif name.find(self.XML_FILE_SUFFIX)>=0:
                 # test if Deimos product: DE1 in filename
                 if name.find("DE1")>0:
-                    self.XML_FILE_NAME=name.replace(self.XML_FILE_SUFFIX, ".met")
+                    self.isDeimos=True
+                    self.XML_FILE_NAME_MET=name.replace(self.XML_FILE_SUFFIX, ".met")
+                    self.XML_FILE_NAME=name
                 else:
                     self.XML_FILE_NAME=name
             if self.debug!=0:
                 print "   %s extracted at path:%s" % (name, folder+'/'+name)
             self.contentList.append(name)
+        z.close()
         fh.close()
         self.EXTRACTED_PATH=folder
 
@@ -189,6 +210,7 @@ class Dimap_Tropforest_Product(Directory_Product):
             self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'KO2_MSC_2F ') 
         else:
             self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'###_###_##')
+        self.processInfo.addInfo(metadata.METADATA_TYPECODE, self.metadata.getMetadataValue(metadata.METADATA_TYPECODE))
 
 
     #
@@ -201,7 +223,6 @@ class Dimap_Tropforest_Product(Directory_Product):
         # set some evident values
         met.setMetadataPair(metadata.METADATA_PRODUCTNAME, self.origName)
         
-        # use what contains the metadata file
         metContent=self.getMetadataInfo()
         
         # extact metadata
@@ -239,14 +260,14 @@ class Dimap_Tropforest_Product(Directory_Product):
         self.metadata=met
 
         self.extractQuality(helper, met)
+        if self.isDeimos:
+            metContent=self.getDeimosMetadataInfo()
+            helper=xmlHelper.XmlHelper()
+            helper.setData(metContent);
+            helper.parseData()
 
         self.extractFootprint(helper, met)
 
-        # keep the original product name, add it to local attributes
-        #met.addLocalAttribute("original_name", met.getMetadataValue(metadata.METADATA_DATASET_NAME))
-        #met.addLocalAttribute("original_name", self.origName)
-
-                            
         return num_added
 
 
@@ -257,13 +278,6 @@ class Dimap_Tropforest_Product(Directory_Product):
     # - build type code
     #
     def refineMetadata(self):
-        # test that footprint is valid (not almost a point)
-        tmp=self.metadata.getMetadataValue(metadata.METADATA_FOOTPRINT)
-        toks=tmp.split(" ")
-        dist=geomHelper.metersDistanceBetween(float(toks[0]), float(toks[1]), float(toks[2]), float(toks[3]))
-        if dist < 1000: # in meters
-            raise Exception("footprint is too small:%s" % dist)
-        #print "DISTANCE=%s" % dist
         
         # set platform Id and instrument. Overwrite readed values
         # set also operational mode
@@ -312,63 +326,11 @@ class Dimap_Tropforest_Product(Directory_Product):
         # 
         self.buildTypeCode() 
 
-    #
-    # extract quality for deimos
-    #
-    def extractDeimosQuality(self, helper, met):
-        tmp = self.EXTRACTED_PATH+'/'+self.XML_FILE_NAME
-        tmp = tmp.replace('.met', '.XML')
-        if self.debug!=0:
-        	print "############@@@@@@@@@@@@@@@@@ deimos .XML file=%s" % tmp
-        fd=open(tmp, 'r')
-        data=fd.read()
-        fd.close()
-
-        helper=xmlHelper.XmlHelper()
-        helper.setData(data);
-        helper.parseData()
-        
-        #helper.setDebug(1)
-        quality=[]
-        helper.getNodeByPath(None, 'Quality_Assesment/Quality_Parameter/QUALITY_PARAMETER_DESC', None, quality)
-        index=-1
-        if self.debug!=0:
-        	print "############@@@@@@@@@@@@@@@@@ 0 quality=%d" % len(quality)
-        n=0
-        for item in quality:
-            if self.debug!=0:
-            	    print "############@@@@@@@@@@@@@@@@@ quality[%d]=%s" % (n, helper.getNodeText(item))
-            if helper.getNodeText(item)=='QC2 - % Clouds':
-                index=n
-            n=n+1
-        #print "############@@@@@@@@@@@@@@@@@ want quality value at index:%d" % index
-
-        
-        quality=[]
-        qualityValue=None
-        helper.getNodeByPath(None, 'Quality_Assesment/Quality_Parameter/QUALITY_PARAMETER_VALUE', None, quality)
-        if self.debug!=0:
-        	print "############@@@@@@@@@@@@@@@@@ 1 quality=%d" % len(quality)
-        n=0;
-        for item in quality:
-            if self.debug!=0:
-            	    print "############@@@@@@@@@@@@@@@@@ quality[%d]=%s" % (n, helper.getNodeText(item))
-            if index==n:
-                qualityValue=helper.getNodeText(item)
-            n=n+1
-        #print "############@@@@@@@@@@@@@@@@@ cloud qualityValue=%s" % (qualityValue)
-        met.setMetadataPair(metadata.METADATA_CLOUD_COVERAGE, qualityValue)
-        return 1 
         
     #
-    # extract quality for kompsat and avnir
+    # extract quality: use .XML for all product type
     #
     def extractQuality(self, helper, met):
-        # for deimos we use the .met xml. but the cloud cover is only in the .xml. 
-        if met.getMetadataValue(metadata.METADATA_PLATFORM)=='DEIMOS':
-            self.extractDeimosQuality(helper, met)
-            return 1
-        
         #helper.setDebug(1)
         quality=[]
         helper.getNodeByPath(None, 'Quality_Assesment/Quality_Parameter/QUALITY_PARAMETER_DESC', None, quality)
@@ -399,6 +361,13 @@ class Dimap_Tropforest_Product(Directory_Product):
             n=n+1
         #print "############@@@@@@@@@@@@@@@@@ cloud qualityValue=%s" % (qualityValue)
         met.setMetadataPair(metadata.METADATA_CLOUD_COVERAGE, qualityValue)
+
+        nodes=[]
+        helper.getNodeByPath(None, 'Geoposition/Geoposition_Insert', None, nodes)
+        country = helper.getNodeText(helper.getFirstNodeByPath(nodes[0], 'COUNTRY', None))
+        met.setMetadataPair(metadata.METADATA_COUNTRY, country)
+        met.addLocalAttribute("observedCountry", country)
+        
         return 1
 
 
@@ -406,6 +375,8 @@ class Dimap_Tropforest_Product(Directory_Product):
     # extract the footprint posList point, ccw, lat lon
     # NOTE: Deimos products have UTM coordinates in meters
     # prepare the browse report footprint block
+    #
+    # use .XML for KOMPSAT and AVNIR, .met for deimos
     #
     def extractFootprint(self, helper, met):
         nodes=[]
@@ -488,17 +459,6 @@ class Dimap_Tropforest_Product(Directory_Product):
                     raise Exception(" ERROR: Dataset_Frame/Vertex not found:%d" % len(nodes2))
 
 
-            # extract also COUNTRY, add it to local attributes
-            # Deimos doesn't have this info
-            if met.getMetadataValue(metadata.METADATA_PLATFORM)!='DEIMOS':
-                #print "@@@@@@@@@@@@@ nodes=%s" % nodes
-                #print "@@@@@@@@@@@@@ nodes[0]=%s" % nodes[0]
-                #helper.setDebug(1)
-                country = helper.getNodeText(helper.getFirstNodeByPath(nodes[0], 'COUNTRY', None))
-                met.setMetadataPair(metadata.METADATA_COUNTRY, country)
-                met.addLocalAttribute("observedCountry", country)
-
-
             # make sure the footprint is CCW
             browseIm = BrowseImage()
             browseIm.setFootprint(footprint)
@@ -528,6 +488,15 @@ class Dimap_Tropforest_Product(Directory_Product):
             met.setMetadataPair(metadata.METADATA_BOUNDING_BOX, browseIm.boondingBox)
             met.addLocalAttribute("boundingBox", met.getMetadataValue(metadata.METADATA_BOUNDING_BOX))
 
+            # test that footprint is valid (not almost a point)
+            tmp=self.metadata.getMetadataValue(metadata.METADATA_BOUNDING_BOX)
+            toks=tmp.split(" ")
+            for n in range((len(toks)/2) -1):
+                print "test bounding box distance %d" % n
+                dist=geomHelper.metersDistanceBetween(float(toks[n*2]), float(toks[n*2+1]), float(toks[n*2+2]), float(toks[n*2+3]))
+                print "DISTANCE=%s" % dist
+                if dist < 1000: # in meters
+                    raise Exception("footprint is too small:%s meter" % dist)
 
         else:
             print " ERROR: Geoposition/Geoposition_Insert has not 1 subnode but:%d" % len(nodes)

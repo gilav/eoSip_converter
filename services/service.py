@@ -4,21 +4,26 @@
 #
 #
 from abc import ABCMeta, abstractmethod
+from cStringIO import StringIO
 import os, sys
 import logging
 import ConfigParser
 
 
 class Service:
-    debug=False
+    SETTING_DEBUG='DEBUG'
+    
+    debug=True
     name=None
     propertieFile=None
     properties=None
+    ingester=None
     ready=True
 
 
     #
-    # class init
+    # init simple
+    # param: p is a string
     #
     def __init__(self, name=None):
         self.name=name
@@ -27,18 +32,25 @@ class Service:
 
 
     #
-    # init
+    # init with ingester + property file
     #
-    # param: p is usually the path of a property file, can be local to ingester './xxx.props' or absolute '/...path.../xxx.props'
+    # param: p is usually the path of a property file, can be local to ingester './xxx.props' or absolute '/...path.../xxx.props'. Can be None
+    #        ingester is the ingester instance, is used to get the property file path
+    #
+    # TODO: leave the ingester load the ressources 
     #
     def init(self, p=None, ingester=None):
-        if self.debug:
+        self.ingester=ingester
+        if p!=None:
             print "### init class Service with parameter:%s" % (p)
-        if p[0:2]=="./":
-            p="%s/%s" % (ingester.getConverterHomeDir(), p[2:])
-        print " using service property file at path:'%s'" % p
-        self.propertieFile=p
-        self.loadProperties()
+            if p[0:2]=="./":
+                p="%s/%s" % (self.ingester.getConverterHomeDir(), p[2:])
+            print " using service property file at path:'%s'" % p
+            self.propertieFile=p
+            self.loadProperties()
+        else:
+            print "### init class Service with no parameter"
+
 
 
     #
@@ -61,8 +73,21 @@ class Service:
     # return a property value
     #
     def getProperty(self, propName=None):
-        return self.properties[propName]
+        try:
+            return self.properties[propName]
+        except:
+            return None
 
+    #
+    #
+    #
+    def dumpProperty(self):
+        out=StringIO()
+        print >>out, 'service properties dump:'
+        for key in self.properties.keys():
+                print >>out, " key:'%s'; value:'%s'" % (key, self.properties[key])
+
+        return out.getvalue()
 
     #
     # process a request

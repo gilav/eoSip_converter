@@ -22,8 +22,8 @@ class eop_Acquisition(SipMessageBuilder):
         "<eop:instrumentZenithAngle uom=\"degrees\">@instrumentZenithAngle@</eop:instrumentZenithAngle>",
         "<eop:instrumentElevationAngle uom=\"degrees\">@instrumentElevationAngle@</eop:instrumentElevationAngle>",
         "<eop:incidenceAngle uom=\"degrees\">@incidenceAngle@</eop:incidenceAngle>",
-        "<eop:acrossTrackIncidenceAngle uom=\"degrees\">@acrossTrackIncidenceAngle@</eop:acrossTrackIncidenceAngle>",
         "<eop:alongTrackIncidenceAngle uom=\"degrees\">@alongTrackIncidenceAngle@</eop:alongTrackIncidenceAngle>",
+        "<eop:acrossTrackIncidenceAngle uom=\"degrees\">@acrossTrackIncidenceAngle@</eop:acrossTrackIncidenceAngle>",
         "<eop:pitch uom=\"degrees\">@pitch@</eop:pitch>",
         "<eop:roll uom=\"degrees\">@roll@</eop:roll>",
         "<eop:yaw uom=\"degrees\">@yaw@</eop:yaw>"]
@@ -45,8 +45,8 @@ class eop_Acquisition(SipMessageBuilder):
         "<eop:instrumentZenithAngle uom=\"degrees\">@instrumentZenithAngle@</eop:instrumentZenithAngle>",
         "<eop:instrumentElevationAngle uom=\"degrees\">@instrumentElevationAngle@</eop:instrumentElevationAngle>",
         "<eop:incidenceAngle uom=\"degrees\">@incidenceAngle@</eop:incidenceAngle>",
-        "<eop:acrossTrackIncidenceAngle uom=\"degrees\">@acrossTrackIncidenceAngle@</eop:acrossTrackIncidenceAngle>",
         "<eop:alongTrackIncidenceAngle uom=\"degrees\">@alongTrackIncidenceAngle@</eop:alongTrackIncidenceAngle>",
+        "<eop:acrossTrackIncidenceAngle uom=\"degrees\">@acrossTrackIncidenceAngle@</eop:acrossTrackIncidenceAngle>",
         "<eop:pitch uom=\"degrees\">@pitch@</eop:pitch>",
         "<eop:roll uom=\"degrees\">@roll@</eop:roll>",
         "<eop:yaw uom=\"degrees\">@yaw@</eop:yaw>"]
