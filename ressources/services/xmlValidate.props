@@ -17,3 +17,7 @@ SCHEMA_MD_SAR="ressources/xml_validator/sar.xsd"
 SCHEMA_MD_EOP="ressources/xml_validator/eop.xsd"
 SCHEMA_MD_ALT="ressources/xml_validator/alt.xsd"
 SCHEMA_MD_LMB="ressources/xml_validator/lmb.xsd"
+
+#
+DEBUG=true
+TIMEOUT=60

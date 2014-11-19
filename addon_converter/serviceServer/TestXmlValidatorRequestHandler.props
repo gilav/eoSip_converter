@@ -2,11 +2,13 @@
 # the name of the handler this properties are for
 #
 serverPort=7000
+timeout=30
 handlerClass=server.httpHandler.XmlValidatorRequestHandler
 
 LocalSchemaCachePath=/tmp/XmlTransformator/cache
 UseCache=true
 SaveSchema=true
 WantLog=false
-Proxy.port=3128
-Proxy.host=131.176.221.102
+#Proxy.port=3128
+#Proxy.host=131.176.221.102
+DEBUG=false

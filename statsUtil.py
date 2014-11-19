@@ -60,7 +60,7 @@ class StatsUtil():
             print " stats: calcEndDate: avtime=%s; *=%s" % (avtime, (self.total-self.numDone))
             print " stats: calcEndDate: startTime to date:%s" % formatUtils.dateFromSec(self.startTime)
         finalTime = time.time() + (avtime *(self.total-self.numDone))
-        self.endDate=formatUtils.dateFromSec(finalTime)
+        self.endDate=formatUtils.dateFromSec(finalTime).replace("T", " ").replace("Z", "")
 
     
     #

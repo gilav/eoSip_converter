@@ -23,7 +23,7 @@ SUPPORTED_TYPE=["JPEG", "JPG","PNG"]
 # debug
 debug=1
 # command line used to build the browse, when PIL is not used
-externalConverterCommand="/bin/sh -c \"/usr/bin/gm convert -verbose -scale 25%"
+externalConverterCommand="/bin/sh -c \"/usr/bin/gm convert -verbose "
 
 
 import struct
@@ -92,7 +92,7 @@ def makeBrowse(type="JPEG", src=None, dest=None, resizePercent=-1, w=-1, h=-1, e
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 traceback.print_exc(file=sys.stdout)
             try:
-                externalMakeBrowse(type, src, dest, transparent)
+                externalMakeBrowse(type, src, dest, resizePercent, transparent)
             except Exception, e:
                 print " Error making browse using external call:"
                 exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -101,27 +101,33 @@ def makeBrowse(type="JPEG", src=None, dest=None, resizePercent=-1, w=-1, h=-1, e
                 pass
     else:
         try:
-            externalMakeBrowse(type, src, dest)
+            externalMakeBrowse(type, src, dest, resizePercent, transparent)
         except Exception, e:
             print " Error making browse using external call:"
             exc_type, exc_obj, exc_tb = sys.exc_info()
             traceback.print_exc(file=sys.stdout)
-            #raise e
-            pass
+            raise e
+            #pass
+
+    # test image exists
+    
         
 
 #
 # run external command to generate the browse
 #
-def externalMakeBrowse(type="JPEG", src=None, dest=None):
+def externalMakeBrowse(type="JPEG", src=None, dest=None, scale=100, transparent=False):
     try:
         src=src.replace("//","/")
         dest=dest.replace("//","/")
         if debug!=0:
             print " external resize image:%s into:%s" % (src, dest)
-        command="%s %s %s\"" % (externalConverterCommand, src, dest)
-        if debug!=0:
-            print "command:%s" % command
+        if scale==-1 or scale==100:
+            command="%s %s %s\"" % (externalConverterCommand, src, dest)
+        else:
+            command="%s -scale %s%s %s %s\"" % (externalConverterCommand, scale , '%', src, dest)
+        #if debug!=0:
+        print "command:'%s'" % command
         retval = subprocess.call(command, shell=True)
         if debug!=0:
             print "  retval:%s" % retval
@@ -234,8 +240,9 @@ def makeBrowsePil(type="JPEG", src=None, dest=None, resizePercent=-1, w=-1, h=-1
 if __name__ == '__main__':
     #src="C:/Users/glavaux/Shared/LITE/tmp/unzipped/N00-E113_AVN_20090517_PRO_0.tif"
     #src="C:/Users/glavaux/Shared/LITE/tmp/unzipped/imagery.tif"
-    src="C:/Users/glavaux/Shared/LITE/spaceTmp/batch_dimap_spot_workfolder_0/SP1_OPER_HRV1_X__1P_19881009T114531_19881009T114540_000029_0022_0322/SP1_OPER_HRV1_X__1P_19881009T114531_19881009T114540_000029_0022_0322.BI.JPG"
-    dest="C:/Users/glavaux/Shared/LITE/tmp/unzipped/test.png"
+    src="C:/Users/glavaux/Shared/LITE/tmp/imagery_pb.tif"
+    dest="C:/Users/glavaux/Shared/LITE/tmp/test.png"
     ok=makeBrowse("PNG", src, dest, 50, transparent=True)
+    print "DONE?:%s" % ok
     #dest="C:/Users/glavaux/Shared/LITE/tmp/unzipped/test.jpeg"
     #ok=makeBrowse("JPG", src, dest, 50)

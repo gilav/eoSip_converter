@@ -72,17 +72,21 @@ class HttpCall(Service):
 
 
     #
+    # url: is the url to call
+    # data: is the data to send. can be a string or a dictionnary of names/values
     #
-    #
-    def processRequest(self, url, data):
+    def processRequest(self, url, data, usePost=True):
         print "@@@@@@@@@@@@@@@@@@ processRequest, timeout=%d" % self.timeout
-        return self.retrieveUsingPost(url, data)
+        if usePost:
+            return self.retrieveUsingPost(url, data)
+        else:
+            return self.retrieveUsingGet(url, data)
     
 
     #
     # perform GET 
     # - u is URL path
-    # - paramsa are params
+    # - p are params: url encoded string or dictionnary(that will be url encoded)
     # - p is proxies
     #
     def retrieveUsingGet(self, u, p="", pr=None):
@@ -91,9 +95,22 @@ class HttpCall(Service):
         self.proxy=pr
         if self.debug:
             print " will do GET: url=%s; params=%s;" % (self.url, self.params)
-        self.encodedParams = urllib.quote(self.params)
+        #self.encodedParams = urllib.quote(self.params)
         if self.debug:
             print " encodedParams=%s" % (self.encodedParams)
+
+        # prepare the 'key=value&key2=value2&...'
+        encodedData = ""
+        # if the passed params str or dict?
+        if isinstance(self.params, dict):
+            print "## httpService: params are in a dict"
+            for key in self.params.keys():
+                if len(encodedData)>0:
+                    encodedData="%s&" % encodedData
+                encodedData="%s%s=%s" % (encodedData, key, self.params[key])
+        else:
+            print "## httpService: params are in a string"
+            
         self.request = urllib2.Request(url="%s?%s" % (self.url, self.params))
         if self.opener==None:
             if self.debug:
@@ -110,8 +127,8 @@ class HttpCall(Service):
     #
     # perform POST
     # - u is URL path
-    # - paramsa are params
-    # - p is proxies
+    # - p are params: url encoded string or dictionnary
+    # - pr is proxies
     #
     def retrieveUsingPost(self, u, d="", pr=None):
         self.url=u

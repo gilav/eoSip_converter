@@ -138,12 +138,13 @@ class Dimap_Spot_Product(Directory_Product):
         z.close()
         fh.close()
 
-
-
     #
+    # HRV_PAN_2A
     #
-    #
-    def buildTypeCode(self):
+    def buildTypeCodeSpot1_3(self):
+        self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRV__PAN_2A')
+        return
+    
         if (self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)=='HRV'):
             if self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)=='1' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='P':
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRV1_P__1P')
@@ -176,12 +177,50 @@ class Dimap_Spot_Product(Directory_Product):
             elif self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)=='2' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='J':
                 self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRG2_X__1P')
             else:
-                self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRG#_#_##')
+                self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRG##_#_1P')
                 self.processInfo.addInfo("STRANGE", "%s: sensorName:%s sensorName:%s" % (self.path, metadata.METADATA_SENSOR_NAME, self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)))
 
         else:
             self.processInfo.addInfo("STRANGE 2", "%s: sensorName:%s sensorName:%s" % (self.path, metadata.METADATA_SENSOR_NAME, self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)))
             raise Exception("Product type UNKNOWN")
+
+    #
+    # HRV_X__2A
+    # HRI_X__2A
+    # HRI_PAN_2A
+    #
+    def buildTypeCodeSpot4(self):
+        if (self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)=='HRVIR'):
+                self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRV__X__2A')
+        elif (self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)=='HRV'):
+                self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRI__X__2A')
+        else:
+                self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HR###_#_2A')
+                self.processInfo.addInfo("STRANGE SPOT4", "%s: sensorName:%s sensorName:%s" % (self.path, metadata.METADATA_SENSOR_NAME, self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)))
+
+
+    #
+    # HRG_X__2A
+    # HRG_I__2A
+    #
+    def buildTypeCodeSpot5(self):
+        if self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='A' or self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='B' or self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='J':
+                self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRG__X__2A')
+        else:
+                self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRG##_#_2A')
+                self.processInfo.addInfo("STRANGE SPOT5", "%s: sensorName:%s sensorName:%s" % (self.path, metadata.METADATA_SENSOR_NAME, self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)))
+
+
+    #
+    # APPLY CHANGES FOR: xxx_2A TYPECODE
+    #
+    def buildTypeCode(self):
+        if (self.metadata.getMetadataValue(metadata.METADATA_PLATFORM_ID)=='5'):
+            self.buildTypeCodeSpot5()
+        elif (self.metadata.getMetadataValue(metadata.METADATA_PLATFORM_ID)=='4'):
+            self.buildTypeCodeSpot4()
+        else:
+            self.buildTypeCodeSpot1_3()
         
         self.processInfo.addInfo(metadata.METADATA_SENSOR_CODE, self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE))
         self.processInfo.addInfo(metadata.METADATA_INSTRUMENT_ID, self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID))
@@ -347,20 +386,22 @@ class Dimap_Spot_Product(Directory_Product):
             raise Exception("parent identifier/METADATA_WRS_LATITUDE_GRID_NORMALISED missmatch:%s/'%s'" % (id[1:4],tmp))
 
         # check vs scene center time: 1988-10-09T11:45:36Z
-        tmp = self.metadata.getMetadataValue(metadata.METADATA_SCENE_CENTER_TIME)
-        if id[7:9]!=tmp[2:4]:
-            raise Exception("parent identifier/METADATA_SCENE_CENTER_TIME YY missmatch:%s/'%s'" % (id[7:9],tmp[2:4]))
-        if id[9:11]!=tmp[5:7]:
-            raise Exception("parent identifier/METADATA_SCENE_CENTER_TIME MM missmatch:%s/'%s'" % (id[9:11],tmp[5:7]))
-        if id[11:13]!=tmp[8:10]:
-            raise Exception("parent identifier/METADATA_SCENE_CENTER_TIME DD missmatch:%s/'%s'" % (id[11:12],tmp[8:10]))
-        if id[13:15]!=tmp[11:13]:
-            raise Exception("parent identifier/METADATA_SCENE_CENTER_TIME HH missmatch:%s/'%s'" % (id[13:15],tmp[11:13]))
-        if id[15:17]!=tmp[14:16]:
-            raise Exception("parent identifier/METADATA_SCENE_CENTER_TIME MN missmatch:%s/'%s'" % (id[15:17],tmp[14:16]))
-        if id[17:19]!=tmp[17:19]:
-            raise Exception("parent identifier/METADATA_SCENE_CENTER_TIME SS missmatch:%s/'%s'" % (id[17:19],tmp[17:19]))
-        # 
+        # NO:
+        if 1==2:
+            tmp = self.metadata.getMetadataValue(metadata.METADATA_SCENE_CENTER_TIME)
+            if id[7:9]!=tmp[2:4]:
+                raise Exception("parent identifier/METADATA_SCENE_CENTER_TIME YY missmatch:%s/'%s'" % (id[7:9],tmp[2:4]))
+            if id[9:11]!=tmp[5:7]:
+                raise Exception("parent identifier/METADATA_SCENE_CENTER_TIME MM missmatch:%s/'%s'" % (id[9:11],tmp[5:7]))
+            if id[11:13]!=tmp[8:10]:
+                raise Exception("parent identifier/METADATA_SCENE_CENTER_TIME DD missmatch:%s/'%s'" % (id[11:12],tmp[8:10]))
+            if id[13:15]!=tmp[11:13]:
+                raise Exception("parent identifier/METADATA_SCENE_CENTER_TIME HH missmatch:%s/'%s'" % (id[13:15],tmp[11:13]))
+            if id[15:17]!=tmp[14:16]:
+                raise Exception("parent identifier/METADATA_SCENE_CENTER_TIME MN missmatch:%s/'%s'" % (id[15:17],tmp[14:16]))
+            if id[17:19]!=tmp[17:19]:
+                raise Exception("parent identifier/METADATA_SCENE_CENTER_TIME SS missmatch:%s/'%s'" % (id[17:19],tmp[17:19]))
+            # 
         self.buildTypeCode()
 
 

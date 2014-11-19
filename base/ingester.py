@@ -23,6 +23,8 @@ import zipfile
 import re
 import string
 import traceback
+import subprocess
+import urllib
 
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 # import parent
@@ -57,8 +59,10 @@ import indexCreator, shopcartCreator
 import statsUtil
 from data import dataProvider
 from services import serviceProvider
+from serviceClients import ApercuServiceClient
 import sipBuilder
 import infoKeeper
+
 
 
 #
@@ -244,6 +248,10 @@ class Ingester():
                 self.servicesProvider=None
                 #
                 self.infoKeeper = infoKeeper.infoKeeper()
+                #
+                self.apercuReporter = None
+                #
+
 
         #
         # return the home dir of the converter software
@@ -941,7 +949,10 @@ class Ingester():
 
                                 num_done=num_done+1
                                 list_done.append(item+"|"+aProcessInfo.workFolder)
-                                
+
+                                # apercu report
+                                self.reportToApercu(aProcessInfo, "NAME=EoSip-converter&BINDING=converter:ingester&all=%s&done=%s&total=%s&error=%s&endTime=%s" % (num_all, num_done, num_total, num_error, urllib.quote(self.statsUtil.getEndDate())))
+
                                 if create_index:
                                     try:
                                         if len(aProcessInfo.destProduct.browse_metadata_dict)>0: # there is at least one browse
@@ -1006,6 +1017,10 @@ class Ingester():
                                 num_error=num_error+1
                                 list_error.append("%s|%s" % (item,aProcessInfo.workFolder))
                                 exc_type, exc_obj, exc_tb = sys.exc_info()
+
+                                # apercu report
+                                self.reportToApercu(aProcessInfo, "NAME=EoSip-converter&BINDING=converter:ingester&done=%s&total=%s&error=%s&endTime=%s" % (num_done, num_total, num_error, urllib.quote(self.statsUtil.getEndDate())))
+
                                 
                                 try:
                                     self.logger.error("Error:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc()))
@@ -1389,6 +1404,20 @@ class Ingester():
                     pInfo.addLog("ERROR saving pinfo files:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc()))
                     self.logger.info("ERROR saving pinfo files")
                     print"ERROR saving pinfo files:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc())
+
+
+        #
+        #
+        #
+        def reportToApercu(self, pInfo, urlParams):
+            try:
+                # create apercu client first time
+                if self.apercuReporter==None:
+                    self.apercuReporter = ApercuServiceClient.ApercuServiceClient(pInfo)
+                # send some name=values pairs
+                self.apercuReporter.reportToApercuService(pInfo, urlParams)
+            except:
+                pass
 
         #
         # should be abstract

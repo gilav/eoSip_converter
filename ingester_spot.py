@@ -213,6 +213,9 @@ class ingester_spot(ingester.Ingester):
             processInfo.srcProduct.refineMetadata()
 
             # do a check: look if it's equal to metadata.METADATA_TYPECODE
+            # NOT ANYMORE AFTER CHANGES FOR: xxx_2A TYPECODE
+            return
+        
             if productId!=None:
                     pos = productId.find('.')
                     if pos>0:

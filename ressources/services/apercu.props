@@ -1,0 +1,13 @@
+
+
+[GLOBAL]
+#
+# the pattern using to build the http call to apercu
+#
+# is like: URL_PATTERN=http://127.0.0.1:7002/report?NAME=client&BINDING=converter:client&failure=4&done=13&total=20
+URL_PATTERN=http://127.0.0.1:7904/report?
+
+
+#
+DEBUG=true
+TIMEOUT=1

@@ -14,6 +14,9 @@ Supported products are at this time:
 History:
 ========
 
+2014-11-19:
+ - reporting service added, report to http server. Apercu used at this time...
+
 2014-09-23:
  - run multiple converter at once using Pyro4
 
