@@ -49,7 +49,7 @@ class Dimap_Spot_Product(Directory_Product):
                 metadata.METADATA_PARENT_PRODUCT:'Dataset_Sources/Source_Information/SOURCE_ID',
                 metadata.METADATA_PLATFORM:'Dataset_Sources/Source_Information/Scene_Source/MISSION',
                 metadata.METADATA_PLATFORM_ID:'Dataset_Sources/Source_Information/Scene_Source/MISSION_INDEX',
-                #metadata.METADATA_PROCESSING_LEVEL:'Dataset_Sources/Source_Information/Scene_Source/SCENE_PROCESSING_LEVEL',
+                metadata.METADATA_PROCESSING_LEVEL:'Data_Processing/PROCESSING_LEVEL',
                 metadata.METADATA_INSTRUMENT:'Dataset_Sources/Source_Information/Scene_Source/INSTRUMENT',
                 metadata.METADATA_INSTRUMENT_ID:'Dataset_Sources/Source_Information/Scene_Source/INSTRUMENT_INDEX',
                 metadata.METADATA_SENSOR_NAME:'Dataset_Sources/Source_Information/Scene_Source/INSTRUMENT',
@@ -139,93 +139,80 @@ class Dimap_Spot_Product(Directory_Product):
         fh.close()
 
     #
-    # HRV_PAN_2A
+    #HRV__X__1A
+    #HRV__p__1A
+    #HRV__X__1B
+    #HRV__P__1B
+    #HRV__X__2A
+    #HRV__P__2A
     #
     def buildTypeCodeSpot1_3(self):
-        self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRV__PAN_2A')
-        return
+        pass
     
-        if (self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)=='HRV'):
-            if self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)=='1' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='P':
-                self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRV1_P__1P')
-            elif self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)=='2' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='P':
-                self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRV2_P__1P')
-            elif self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)=='1' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='X':
-                self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRV1_X__1P')
-            elif self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)=='2' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='X':
-                self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRV2_X__1P')
-            else:
-                self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRV#_#_##')
-                self.processInfo.addInfo("STRANGE", "%s: sensorName:%s sensorName:%s" % (self.path, metadata.METADATA_SENSOR_NAME, self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)))
-                        
-        elif (self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)=='HRVIR'):
-            if self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)=='1' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='M':
-                self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRV1_P__1P')
-            elif self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)=='2' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='M':
-                self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRV2_P__1P')
-            elif self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)=='1' and (self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='I' or self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='X'):
-                self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRI1_X__1P')
-            elif self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)=='2' and (self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='I' or self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='X'):
-                self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRI2_X__1P')
-            else:
-                self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRVI_#_##')
-                self.processInfo.addInfo("STRANGE", "%s: sensorName:%s sensorName:%s" % (self.path, metadata.METADATA_SENSOR_NAME, self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)))
-
-        elif (self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)=='HRG'):
-            if self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)=='1' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='J':
-                self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRG1_X__1P')
-            elif self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID)=='2' and self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='J':
-                self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRG2_X__1P')
-            else:
-                self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRG##_#_1P')
-                self.processInfo.addInfo("STRANGE", "%s: sensorName:%s sensorName:%s" % (self.path, metadata.METADATA_SENSOR_NAME, self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)))
-
-        else:
-            self.processInfo.addInfo("STRANGE 2", "%s: sensorName:%s sensorName:%s" % (self.path, metadata.METADATA_SENSOR_NAME, self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)))
-            raise Exception("Product type UNKNOWN")
-
     #
-    # HRV_X__2A
-    # HRI_X__2A
-    # HRI_PAN_2A
+    #HRI__X__1A
+    #HRI__I__1A
+    #HRI__M__1A
+    #HRI__M__1B
+    #HRI__I__1B
+    #HRI__I__2A
+    #HRI__X__2A
     #
     def buildTypeCodeSpot4(self):
-        if (self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)=='HRVIR'):
-                self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRV__X__2A')
-        elif (self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)=='HRV'):
-                self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRI__X__2A')
-        else:
-                self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HR###_#_2A')
-                self.processInfo.addInfo("STRANGE SPOT4", "%s: sensorName:%s sensorName:%s" % (self.path, metadata.METADATA_SENSOR_NAME, self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)))
-
+        pass
 
     #
-    # HRG_X__2A
-    # HRG_I__2A
+    #HRG__J__1A
+    #HRG__A__1A
+    #HRG__J__1B
+    #HRG__A__1B
+    #HRG__J__2A
+    #HRG__B__2A
+    #HRG__A__2A
     #
     def buildTypeCodeSpot5(self):
-        if self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='A' or self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='B' or self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)=='J':
-                self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRG__X__2A')
-        else:
-                self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,'HRG##_#_2A')
-                self.processInfo.addInfo("STRANGE SPOT5", "%s: sensorName:%s sensorName:%s" % (self.path, metadata.METADATA_SENSOR_NAME, self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)))
-
+        pass
 
     #
-    # APPLY CHANGES FOR: xxx_2A TYPECODE
+    # sensor__sensorMode__level
+    # list of possible typecode:
+    #A)	Spot 1-3:
+    #HRV__X__1A
+    #HRV__p__1A
+    #HRV__X__1B
+    #HRV__P__1B
+    #HRV__X__2A
+    #HRV__P__2A
+    # 
+    #B)	Spot 4:
+    #HRI__X__1A
+    #HRI__I__1A
+    #HRI__M__1A
+    #HRI__M__1B
+    #HRI__I__1B
+    #HRI__I__2A
+    #HRI__X__2A
+    # 
+    #C)	Spot 5:
+    #HRG__J__1A
+    #HRG__A__1A
+    #HRG__J__1B
+    #HRG__A__1B
+    #HRG__J__2A
+    #HRG__B__2A
+    #HRG__A__2A
     #
     def buildTypeCode(self):
-        if (self.metadata.getMetadataValue(metadata.METADATA_PLATFORM_ID)=='5'):
-            self.buildTypeCodeSpot5()
-        elif (self.metadata.getMetadataValue(metadata.METADATA_PLATFORM_ID)=='4'):
-            self.buildTypeCodeSpot4()
-        else:
-            self.buildTypeCodeSpot1_3()
+        sensor=self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)
+        if sensor=='HRVIR':
+            sensor='HRI'
+        self.metadata.setMetadataPair(metadata.METADATA_TYPECODE,"%s__%s__%s" % (sensor, self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE), self.metadata.getMetadataValue(metadata.METADATA_PROCESSING_LEVEL)))
         
         self.processInfo.addInfo(metadata.METADATA_SENSOR_CODE, self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE))
         self.processInfo.addInfo(metadata.METADATA_INSTRUMENT_ID, self.metadata.getMetadataValue(metadata.METADATA_INSTRUMENT_ID))
         self.processInfo.addInfo(metadata.METADATA_SENSOR_NAME, self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME))
         self.processInfo.addInfo(metadata.METADATA_TYPECODE, self.metadata.getMetadataValue(metadata.METADATA_TYPECODE))
+        self.processInfo.addInfo(metadata.METADATA_PROCESSING_LEVEL, self.metadata.getMetadataValue(metadata.METADATA_PROCESSING_LEVEL))
 
        
     #
@@ -401,8 +388,15 @@ class Dimap_Spot_Product(Directory_Product):
                 raise Exception("parent identifier/METADATA_SCENE_CENTER_TIME MN missmatch:%s/'%s'" % (id[15:17],tmp[14:16]))
             if id[17:19]!=tmp[17:19]:
                 raise Exception("parent identifier/METADATA_SCENE_CENTER_TIME SS missmatch:%s/'%s'" % (id[17:19],tmp[17:19]))
-            # 
+            #
+
+        # first build typecode
         self.buildTypeCode()
+
+        # then fix processing level for 2A that is not allowed in the EOP schema
+        procLevel=self.metadata.getMetadataValue(metadata.METADATA_PROCESSING_LEVEL)
+        if procLevel=="2A":
+            self.metadata.setMetadataPair(metadata.METADATA_PROCESSING_LEVEL, "2")
 
 
     #

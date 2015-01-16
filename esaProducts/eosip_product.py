@@ -25,6 +25,7 @@ from directory_product import Directory_Product
 from namingConvention import NamingConvention
 import definitions_EoSip
 import xmlHelper
+import formatUtils
 import browse_metadata, metadata
 from definitions_EoSip import eop_EarthObservation, alt_EarthObservation, sar_EarthObservation, opt_EarthObservation, lmb_EarthObservation, atm_EarthObservation, rep_browseReport, eop_browse, SIPInfo
 from serviceClients import xmlValidateServiceClient
@@ -36,6 +37,11 @@ BROWSE_SCHEMA_TYPE="BI"
 PRODUCT_SCHEMA_TYPE="MD"
 QUALITY_SCHEMA_TYPE="QR"
 SIP_SCHEMA_TYPE="SI"
+
+# ways of storing original productSRC_PRODUCT_AS_FILE="SRC_PRODUCT_AS_FILE"
+SRC_PRODUCT_AS_ZIP="SRC_PRODUCT_AS_ZIP"
+SRC_PRODUCT_AS_DIR="SRC_PRODUCT_AS_DIR"
+SRC_PRODUCT_AS_TAR="SRC_PRODUCT_AS_TAR"
 
 
 #
@@ -58,10 +64,6 @@ class EOSIP_Product(Directory_Product):
     NODES_AS_TEXT_BLOCK_DEFAULT=["","","","","",""]
 
     #
-    # ways of storing original productSRC_PRODUCT_AS_FILE="SRC_PRODUCT_AS_FILE"
-    SRC_PRODUCT_AS_DIR="SRC_PRODUCT_AS_DIR"
-    SRC_PRODUCT_AS_ZIP="SRC_PRODUCT_AS_ZIP"
-    SRC_PRODUCT_AS_TAR="SRC_PRODUCT_AS_TAR"
     LIST_OF_SRC_PRODUCT_STORE_TYPE=[SRC_PRODUCT_AS_DIR,SRC_PRODUCT_AS_ZIP,SRC_PRODUCT_AS_TAR]
 
 
@@ -71,6 +73,11 @@ class EOSIP_Product(Directory_Product):
     #
     def __init__(self, p=None):
         Directory_Product.__init__(self, p)
+
+        self.SRC_PRODUCT_AS_ZIP=SRC_PRODUCT_AS_ZIP
+        self.SRC_PRODUCT_AS_DIR=SRC_PRODUCT_AS_DIR
+        self.SRC_PRODUCT_AS_TAR=SRC_PRODUCT_AS_TAR
+        
         if self.debug!=0:
             print " init class EOSIP_Product, path=%s" % p
         #
@@ -314,7 +321,7 @@ class EOSIP_Product(Directory_Product):
         elif typologyUsed=='SAR':
              productReportBuilder=sar_EarthObservation.sar_EarthObservation()
         #
-        productReportBuilder.debug=0
+        #productReportBuilder.debug=0
         xmldata=productReportBuilder.buildMessage(self.metadata, "%s:EarthObservation" % typologyUsed.lower())
 
 
@@ -381,7 +388,7 @@ class EOSIP_Product(Directory_Product):
             print "   product report written at path:%s" % self.reportFullPath
 
         if self.processInfo.verify_xml:
-            print " call external xml validator" 
+            print " @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@################ call external xml validator:%s" % self.processInfo.verify_xml 
             # call xml validator service
             validator = xmlValidateServiceClient.XmlValidateServiceClient(self.processInfo)
             validator.useXmlValidateService(self.processInfo, PRODUCT_SCHEMA_TYPE, self.reportFullPath)
@@ -447,7 +454,7 @@ class EOSIP_Product(Directory_Product):
                 print "   browse report written at path:%s" % thisBrowseReportFullPath
 
             if self.processInfo.verify_xml:
-                print " call external xml validator" 
+                print " @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@################ call external xml validator:%s" % self.processInfo.verify_xml 
                 # call xml validator service
                 validator = xmlValidateServiceClient.XmlValidateServiceClient(self.processInfo)
                 validator.useXmlValidateService(self.processInfo, BROWSE_SCHEMA_TYPE, thisBrowseReportFullPath)
@@ -576,44 +583,44 @@ class EOSIP_Product(Directory_Product):
         print " @@@@@@@@@@@@@@ will store original product as:%s" % self.src_product_stored
         self.processInfo.addLog("eoSip store type:%s" % self.src_product_stored)
         self.processInfo.addLog("eoSip store compression:%s" % self.src_product_stored_compression)
+        self.processInfo.addLog("eoSip store compression flag type is bool?:%s" % isinstance(self.src_product_stored_compression, bool))
         if self.src_product_stored==self.SRC_PRODUCT_AS_ZIP:
             self.processInfo.addLog("eoSip store as ZIP")
             # source is already a zip
-            if self.sourceProductPath.lower()[-4:]==".zip":
-                self.processInfo.addLog("eoSip store source zip file")
-                if self.src_product_stored_compression==True:
-                    zipf.write(self.sourceProductPath, self.productName, zipfile.ZIP_DEFLATED)
-                    self.processInfo.addLog("deflated")
-                else:
-                    zipf.write(self.sourceProductPath, self.productName, zipfile.ZIP_STORED)
-                    self.processInfo.addLog("stored")
+            #if self.sourceProductPath.lower()[-4:]==".zip": #ext=definitions_EoSip.getDefinition("EOSIP_PRODUCT_EXT")
+            if self.sourceProductPath.upper()[-4:]==".%s" % definitions_EoSip.getDefinition("EOSIP_PRODUCT_EXT"): #ext=definitions_EoSip.getDefinition("EOSIP_PRODUCT_EXT")
+
+                self.processInfo.addLog("eoSip store source zip file: %s" % self.productName)
+                self.writeInZip(zipf, self.sourceProductPath, self.productName, self.src_product_stored_compression)
+                
             else: # zip source product, at this time: assume it is a single file
                 self.processInfo.addLog("eoSip store source file")
                 tmpProductZippedPath="%s/productZipped.zip" % (self.folder)
                 zipTmpProduct = zipfile.ZipFile(tmpProductZippedPath, 'w')
                 if self.src_product_stored_compression==True:
                     zipTmpProduct.write(self.sourceProductPath, os.path.split(self.sourceProductPath)[1], zipfile.ZIP_DEFLATED)
-                    self.processInfo.addLog("deflated")
+                    self.processInfo.addLog("deflated: %s" % self.sourceProductPath)
                 else:
                     zipTmpProduct.write(self.sourceProductPath, os.path.split(self.sourceProductPath)[1], zipfile.ZIP_STORED)
-                    self.processInfo.addLog("stored")
+                    self.processInfo.addLog("stored: %s" % self.sourceProductPath)
                 zipTmpProduct.close()
                 if self.src_product_stored_compression==True:
                     zipf.write(tmpProductZippedPath, self.productName, zipfile.ZIP_DEFLATED)
-                    self.processInfo.addLog("deflated")
+                    self.processInfo.addLog("deflated: %s" % self.sourceProductPath)
                 else:
                     zipf.write(tmpProductZippedPath, self.productName, zipfile.ZIP_STORED)
-                    self.processInfo.addLog("stored")
+                    self.processInfo.addLog("stored: %s" % self.sourceProductPath)
+                    
         elif self.src_product_stored==self.SRC_PRODUCT_AS_DIR:
             self.processInfo.addLog("eoSip store as DIR")
             # 
             for name in self.processInfo.srcProduct.contentList:
                 self.processInfo.addLog("eoSip store:%s" % name)
                 if self.src_product_stored_compression==True:
-                    self.processInfo.addLog("deflated")
+                    self.processInfo.addLog("deflated: %s" % name)
                     zipf.write("%s/%s" % (self.processInfo.workFolder, name), "%s/%s" % (self.packageName, name), zipfile.ZIP_DEFLATED)
                 else:
-                    self.processInfo.addLog("stored")
+                    self.processInfo.addLog("stored: %s" % name)
                     zipf.write("%s/%s" % (self.processInfo.workFolder, name), "%s/%s" % (self.packageName, name), zipfile.ZIP_STORED)
 
 
@@ -621,41 +628,48 @@ class EOSIP_Product(Directory_Product):
         for browsePath in self.sourceBrowsesPath:
             folder=os.path.split(browsePath)[0]
             bmet=self.browse_metadata_dict[browsePath]
-            name= "%s.%s" % (self.packageName, definitions_EoSip.getDefinition('BROWSE_JPEG_EXT'))
-            if self.debug==0:
-                print "   write EoSip content[1]; product browse:%s  as:%s" % (browsePath, name)                                                                 
-            if self.src_product_stored_compression==True:
-                zipf.write(browsePath, name, zipfile.ZIP_DEFLATED)
-                self.processInfo.addLog("deflated")
+            #
+            extension = formatUtils.getFileExtension(browsePath)
+            #name= "%s.%s" % (self.packageName, definitions_EoSip.getDefinition('BROWSE_JPG_EXT'))
+            name= "%s.%s" % (self.packageName, extension)
+            if self.processInfo.test_dont_do_browse!=True:
+                if self.debug==0:
+                    print "   write EoSip browse[n]:%s  as:%s" % (browsePath, name)                                                                 
+                if self.src_product_stored_compression==True:
+                    zipf.write(browsePath, name, zipfile.ZIP_DEFLATED)
+                    self.processInfo.addLog("deflated: %s" % name)
+                else:
+                    zipf.write(browsePath, name, zipfile.ZIP_STORED)
+                    self.processInfo.addLog("stored: %s" % name)
             else:
-                zipf.write(browsePath, name, zipfile.ZIP_STORED)
-                self.processInfo.addLog("stored")
+                print "   dont' do browse flag is set, so don't write EoSip browse[n]:%s  as:%s" % (browsePath, name)   
+                
             # if we have build the browse reports
             if self.browsesReportPath != None:
                 name=bmet.getMetadataValue(browse_metadata.BROWSE_METADATA_REPORT_NAME)
                 path = "%s/%s" % (folder, name)
                 if self.src_product_stored_compression==True:
                     zipf.write(path, name, zipfile.ZIP_DEFLATED)
-                    self.processInfo.addLog("deflated")
+                    self.processInfo.addLog("deflated: %s" % name)
                 else:
                     zipf.write(path, name, zipfile.ZIP_STORED)
-                    self.processInfo.addLog("stored")
+                    self.processInfo.addLog("stored: %s" % name)
         #
 
         # write product reports
         if self.src_product_stored_compression==True:
             zipf.write(self.reportFullPath, os.path.split(self.reportFullPath)[1], zipfile.ZIP_DEFLATED)
-            self.processInfo.addLog("deflated")
+            self.processInfo.addLog("deflated: %s" % os.path.split(self.reportFullPath)[1])
         else:
             zipf.write(self.reportFullPath, os.path.split(self.reportFullPath)[1], zipfile.ZIP_STORED)
-            self.processInfo.addLog("stored")
+            self.processInfo.addLog("stored: %s" % os.path.split(self.reportFullPath)[1])
         # write sip report
         if self.src_product_stored_compression==True:
             zipf.write(self.sipFullPath, os.path.split(self.sipFullPath)[1], zipfile.ZIP_DEFLATED)
-            self.processInfo.addLog("deflated")
+            self.processInfo.addLog("deflated: %s" % os.path.split(self.sipFullPath)[1])
         else:
             zipf.write(self.sipFullPath, os.path.split(self.sipFullPath)[1], zipfile.ZIP_STORED)
-            self.processInfo.addLog("stored")
+            self.processInfo.addLog("stored: %s" % os.path.split(self.sipFullPath)[1])
         zipf.close()
 
     #

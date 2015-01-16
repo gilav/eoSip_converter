@@ -72,6 +72,10 @@ def getIntermediatePoint(lat1, lon1, lat2, lon2, f):
         d = sphericalDistance(lat1, lon1, lat2, lon2)
         if debug != 0:
             print " @@@@@@@@@@@@@@@@ d0:%s    %s" % (d, degrees(d))
+            
+        # a==b case
+        if d==0:
+        	return lat1, lon1
         #d = arcDistanceBetween(lat1, lon1, lat2, lon2)
         #print " @@@@@@@@@@@@@@@@ d1:%s    %s" % (d, degrees(d))
 

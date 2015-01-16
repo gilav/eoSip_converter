@@ -74,7 +74,9 @@ EOSIP_METADATA_MAPPING={'acquisitionStation':metadata.METADATA_ACQUISITION_CENTE
                         'productSize':metadata.METADATA_PRODUCT_SIZE,
                         'referenceSystemIdentifier':metadata.METADATA_REFERENCE_SYSTEM_IDENTIFIER,
                         'href':metadata.METADATA_PRODUCTNAME,
-                        'timePosition':metadata.METADATA_PROCESSING_TIME,
+                        
+                        'timePosition':metadata.METADATA_TIME_POSITION,
+                        
                         'cloudCoverPercentage':metadata.METADATA_CLOUD_COVERAGE,
                         'status':metadata.METADATA_STATUS,
                         'acquisitionType':metadata.METADATA_ACQUISITION_TYPE,
@@ -115,7 +117,7 @@ class SipBuilder:
     __metaclass__=ABCMeta
 
     debug=0
-    debugUnused=1
+    debugUnused=0
     debugCondition=0
     # the matadata to xml node mapping in use
     USED_METADATA_MAPPING=EOSIP_METADATA_MAPPING

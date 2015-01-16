@@ -146,6 +146,7 @@ class SipMessageBuilder(SipBuilder):
             print "\n\n==> buildMessage at currentTreePath:"+currentTreePath+"  deepness:%d on this:" % deepness
 
         thisToUse=self.getThisUsed(metadata)
+        print "#################### thisToUse=%s" % thisToUse
         
         n=0
         firstField=None
@@ -167,9 +168,12 @@ class SipMessageBuilder(SipBuilder):
             print  "\n firstField=%s; lastField=%s" % (firstField, lastField)
 
         sipMessage=self.makeIndent(deepness)
-        sipMessage=self.addToSipMessageLn(sipMessage, thisToUse[0], metadata)
-        if self.debug!=0:
-            print  " => after this; mess is now:%s" % sipMessage
+        if len(thisToUse)>0:
+            sipMessage=self.addToSipMessageLn(sipMessage, thisToUse[0], metadata)
+            if self.debug!=0:
+                print  " => after this; mess is now:%s" % sipMessage
+        else:
+            print "#################### thisToUse is empty"
 
         representationToUse=self.getRepresentationUsed(metadata)
             
@@ -272,24 +276,28 @@ class SipMessageBuilder(SipBuilder):
         closureNeeded = 0;
         done = 0;
         if len(representationToUse) > 0: # need to write closing node
-            if len(thisToUse) == 1: # only starting node is given
-                if  not thisToUse[0].strip()[-2:] == '/>':  # and is not also a closing node
-                    if self.debug!=0:
-                        print "#################%s######" % thisToUse[0][-2:]
-                        print "################# CREATE CLOSING NODE"
+            if len(thisToUse)>0:
+                if len(thisToUse) == 1: # only starting node is given
+                    if  not thisToUse[0].strip()[-2:] == '/>':  # and is not also a closing node
+                        if self.debug!=0:
+                            print "#################%s######" % thisToUse[0][-2:]
+                            print "################# CREATE CLOSING NODE"
+                        sipMessage="%s%s" %  (sipMessage, self.makeIndent(deepness))
+                        sipMessage=self.addToSipMessage(sipMessage, "</", metadata)
+                        sipMessage=self.addToSipMessageLn(sipMessage,thisToUse[0][1:], metadata)
+                        done = 1
+                    else:
+                        if self.debug!=0:
+                            print "#################%s######" % thisToUse[0][-2:]
+                            print "################# ALREADY CLOSED NODE"
+                    
+                else: # use given closing node
                     sipMessage="%s%s" %  (sipMessage, self.makeIndent(deepness))
-                    sipMessage=self.addToSipMessage(sipMessage, "</", metadata)
-                    sipMessage=self.addToSipMessageLn(sipMessage,thisToUse[0][1:], metadata)
+                    sipMessage=self.addToSipMessageLn(sipMessage, thisToUse[1], metadata)
                     done = 1
-                else:
-                    if self.debug!=0:
-                        print "#################%s######" % thisToUse[0][-2:]
-                        print "################# ALREADY CLOSED NODE"
-                
-            else: # use given closing node
-                sipMessage="%s%s" %  (sipMessage, self.makeIndent(deepness))
-                sipMessage=self.addToSipMessageLn(sipMessage, thisToUse[1], metadata)
-                done = 1
+                    
+            else:
+                print "#################### closure: thisToUse is empty"
             
         elif done==0:
             if len(thisToUse) == 1:

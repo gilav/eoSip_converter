@@ -6,11 +6,14 @@ class eop_Acquisition(SipMessageBuilder):
     this = ["<eop:Acquisition>"]
 
     REPRESENTATION = [
-        "<eop:orbitNumber>@orbitNumber@</eop:orbitNumber>",
+        #"<eop:orbitNumber>@orbitNumber@</eop:orbitNumber>",
+        "eop_orbitNumber",
         "<eop:lastOrbitNumber>@lastOrbitNumber@</eop:lastOrbitNumber>",
         "<eop:orbitDirection>@orbitDirection@</eop:orbitDirection>",
-        "<eop:wrsLongitudeGrid codeSpace=\"\">@wrsLongitudeGrid@</eop:wrsLongitudeGrid>",
-        "<eop:wrsLatitudeGrid codeSpace=\"\">@wrsLatitudeGrid@</eop:wrsLatitudeGrid>",
+        #"<eop:wrsLongitudeGrid codeSpace=\"\">@wrsLongitudeGrid@</eop:wrsLongitudeGrid>",
+        #"<eop:wrsLatitudeGrid codeSpace=\"\">@wrsLatitudeGrid@</eop:wrsLatitudeGrid>",
+        "eop_wrsLongitudeGrid",
+        "eop_wrsLatitudeGrid",
         "<eop:ascendingNodedate>@ascendingNodedate@</eop:ascendingNodedate>",
         "<eop:ascendingNodeLongitude>@ascendingNodeLongitude@</eop:ascendingNodeLongitude>",
         "<eop:startTimeFromAscendingNode>@startTimeFromAscendingNode@</eop:startTimeFromAscendingNode>",
@@ -22,8 +25,8 @@ class eop_Acquisition(SipMessageBuilder):
         "<eop:instrumentZenithAngle uom=\"degrees\">@instrumentZenithAngle@</eop:instrumentZenithAngle>",
         "<eop:instrumentElevationAngle uom=\"degrees\">@instrumentElevationAngle@</eop:instrumentElevationAngle>",
         "<eop:incidenceAngle uom=\"degrees\">@incidenceAngle@</eop:incidenceAngle>",
-        "<eop:alongTrackIncidenceAngle uom=\"degrees\">@alongTrackIncidenceAngle@</eop:alongTrackIncidenceAngle>",
         "<eop:acrossTrackIncidenceAngle uom=\"degrees\">@acrossTrackIncidenceAngle@</eop:acrossTrackIncidenceAngle>",
+        "<eop:alongTrackIncidenceAngle uom=\"degrees\">@alongTrackIncidenceAngle@</eop:alongTrackIncidenceAngle>",
         "<eop:pitch uom=\"degrees\">@pitch@</eop:pitch>",
         "<eop:roll uom=\"degrees\">@roll@</eop:roll>",
         "<eop:yaw uom=\"degrees\">@yaw@</eop:yaw>"]
@@ -32,8 +35,10 @@ class eop_Acquisition(SipMessageBuilder):
 
     OPTIONAL = [
         "<eop:lastOrbitNumber>@lastOrbitNumber@</eop:lastOrbitNumber>",
-        "<eop:wrsLongitudeGrid codeSpace=\"\">@wrsLongitudeGrid@</eop:wrsLongitudeGrid>",
-        "<eop:wrsLatitudeGrid codeSpace=\"\">@wrsLatitudeGrid@</eop:wrsLatitudeGrid>",
+        #"<eop:wrsLongitudeGrid codeSpace=\"\">@wrsLongitudeGrid@</eop:wrsLongitudeGrid>",
+        #"<eop:wrsLatitudeGrid codeSpace=\"\">@wrsLatitudeGrid@</eop:wrsLatitudeGrid>",
+        "eop_wrsLongitudeGrid",
+        "eop_wrsLatitudeGrid",
         "<eop:ascendingNodedate>@ascendingNodedate@</eop:ascendingNodedate>",
         "<eop:ascendingNodeLongitude>@ascendingNodeLongitude@</eop:ascendingNodeLongitude>",
         "<eop:startTimeFromAscendingNode>@startTimeFromAscendingNode@</eop:startTimeFromAscendingNode>",

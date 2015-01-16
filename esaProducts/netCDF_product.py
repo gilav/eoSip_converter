@@ -1,6 +1,6 @@
 # -*- coding: cp1252 -*-
 #
-# this class is a base class for directory product
+# this class is a base class for netCdf based product
 #
 #
 import os, sys

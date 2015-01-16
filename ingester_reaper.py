@@ -1,9 +1,9 @@
 #
-# This is a specialized class that ingest Ikonos dataset
+# This is a specialized class that ingest Reaper ERS-RA dataset
 #
 # For Esa/ lite dissemination project
 #
-# Serco 04/2014
+# Serco 07/2014
 # Lavaux Gilles
 #
 # 23/04/2014: V: 0.1

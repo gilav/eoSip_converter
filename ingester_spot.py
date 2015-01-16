@@ -236,19 +236,50 @@ class ingester_spot(ingester.Ingester):
             processInfo.addLog("\n - will make browse")
             self.logger.info(" will make browse")
             try:
-                    # copy source JPEG
-                    #browseSrcPath=processInfo.srcProduct.preview_path
+                    previewSrcPath=processInfo.srcProduct.preview_path
                     browseSrcPath=processInfo.srcProduct.imagery_path
                     browseExtension=definitions_EoSip.getBrowseExtension(0, definitions_EoSip.getDefinition('BROWSE_PNG_EXT'))
                     browseDestPath="%s/%s.%s" % (processInfo.eosipTmpFolder, processInfo.destProduct.packageName, browseExtension)
-                    #shutil.copyfile(browseSrcPath, browseDestPath)
+                    
+                    # what we do depends of ptoduct processing level and platform id:
+                    platformId=processInfo.srcProduct.metadata.getMetadataValue(metadata.METADATA_PLATFORM_ID)
+                    procLevel=processInfo.srcProduct.metadata.getMetadataValue(metadata.METADATA_PROCESSING_LEVEL)
 
-                    # NEW: make a transparent jpeg, resize to 33% -> 1000*1000
                     if processInfo.test_dont_do_browse!=True:
-                            ok=imageUtil.makeBrowse("PNG", browseSrcPath, browseDestPath, 35, transparent=True)
+                            processInfo.addInfo("PLATFORM", platformId)
+                            if platformId=='5':
+                                    # copy source JPEG
+                                    #shutil.copyfile(previewSrcPath, browseDestPath)
+                                    # convert tp PNG
+                                    ok=imageUtil.makeBrowse("PNG", previewSrcPath, browseDestPath, -1, transparent=True)
+                                    print "##############@@@@@@@@@@@@@@@@@@@################### ok:%s" % ok
+                                    if not ok:
+                                            raise Exception("Error creating browse image")
+                                    processInfo.addLog("  => preview image converted:%s" %  (browseDestPath))
+                                    self.logger.info("  browse image copied:%s" % browseDestPath)
+                            elif platformId=='4':
+                                    #raise Exception("skip SPOT4")
+                                    # copy source JPEG
+                                    #shutil.copyfile(previewSrcPath, browseDestPath)
+                                     # convert tp PNG
+                                    ok=imageUtil.makeBrowse("PNG", previewSrcPath, browseDestPath, -1, transparent=True)
+                                    print "##############@@@@@@@@@@@@@@@@@@@################### ok:%s" % ok
+                                    if not ok:
+                                            raise Exception("Error creating browse image")
+                                    processInfo.addLog("  => preview image converted:%s" %  (browseDestPath))
+                                    self.logger.info("  browse image copied:%s" % browseDestPath)
+                            else:  
+                                    #raise Exception("skip SPOT1-3")
+                                    # NEW: make a transparent jpeg, resize to 33% -> 1000*1000
+                                    ok=imageUtil.makeBrowse("PNG", previewSrcPath, browseDestPath, 35, transparent=True)
+                                    print "##############@@@@@@@@@@@@@@@@@@@################### ok:%s" % ok
+                                    print "####@@@@#### MAKE BROWSE RETURNS:%s" % ok
+                                    if not ok:
+                                            raise Exception("Error creating browse image")
+                                    processInfo.addLog("  => browse image created:%s" %  (browseDestPath))
+                                    self.logger.info("  browse image created:%s" % browseDestPath)
+                            
                     processInfo.destProduct.addSourceBrowse(browseDestPath, [])
-                    processInfo.addLog("  => browse image created:%s" %  (browseDestPath))
-                    self.logger.info("  browse image created:%s" % browseDestPath)
 
 
                     # create browse choice for browse metadata report
@@ -283,7 +314,7 @@ class ingester_spot(ingester.Ingester):
                     processInfo.addLog("  => ERROR: %s  %s" %  (exc_type, exc_obj))
                     self.logger.info(" ERROR: %s  %s" %  (exc_type, exc_obj))
                     processInfo.addLog="%s" %  (traceback.format_exc())
-                    #raise e
+                    raise e
 
 
         #

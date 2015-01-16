@@ -162,6 +162,26 @@ class fileHelper:
         
         return selected_dir
 
+    #
+    #
+    #
+    def getFileExtension(self, path):
+        pos = path.find('.')
+        if pos > 0:
+            return path[(pos+1):]
+        else:
+            return None
+
+    #
+    #
+    #
+    def removeFileExtension(self, path):
+        pos = path.find('.')
+        if pos > 0:
+            return path[0:pos]
+        else:
+            return path
+
 
 def main():
     """Main funcion"""

@@ -61,10 +61,14 @@ class infoKeeper():
     def toString(self):
         out=StringIO()
         print >>out, 'infoKeeper dump:'
-        for info in self.dictionnary.keys():
+        keys=self.dictionnary.keys()
+        keys.sort()
+        for info in keys:
                 print >>out, "  info:'%s'" % info
                 n=0
-                for value in self.dictionnary[info]:
+                values=self.dictionnary[info]
+                values.sort()
+                for value in values:
                         print >>out, "    value[%d]:'%s'" % (n,value)
                         n=n+1
                 

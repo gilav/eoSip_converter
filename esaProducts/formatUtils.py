@@ -22,7 +22,25 @@ DEFAULT_DATE_PATTERN_MSEC="%Y-%m-%dT%H:%M:%S.000Z"
 
 debug=0
 
+#
+#
+#
+def getFileExtension(path):
+        pos = path.find('.')
+        if pos > 0:
+            return path[(pos+1):]
+        else:
+            return None
 
+#
+#
+#
+def removeFileExtension(path):
+        pos = path.find('.')
+        if pos > 0:
+            return path[0:pos]
+        else:
+            return path
 
 #
 # wrs for longitude (L Festa suggestion): 0 --> 360 degree

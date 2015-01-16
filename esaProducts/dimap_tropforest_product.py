@@ -139,7 +139,7 @@ class Dimap_Tropforest_Product(Directory_Product):
     # extract the grid from filaname: N00-E113_AVN_20090517_PRO_0.tif or N00_W055_DE1_20101109_PRO_0.tif
     # return a string 
     #
-    def extractGridFromFile(self,value):
+    def extractGridFromFile_colatitide_deprecated(self,value):
         if value==None:
             raise Exception("value (lat/lon) is None")
         pos=self.TIF_FILE_NAME.find('-')
@@ -185,7 +185,7 @@ class Dimap_Tropforest_Product(Directory_Product):
     #
     # normalise the grid to 4 digit
     #
-    def extractGridFromFileNormalised(self, value):
+    def extractGridFromFileNormalised_colatitide_deprecated(self, value):
         if value==None:
             raise Exception("value (lat/lon) is None")
         grid_final=self.extractGridFromFile(value)
@@ -193,10 +193,40 @@ class Dimap_Tropforest_Product(Directory_Product):
             grid_final="%s" % formatUtils.coLatitude(int(grid_final))
         elif value=="lon":
             grid_final="%s" % formatUtils.absoluteLongitude(int(grid_final))
-            
-        grid_final=grid_final.rjust(3,"0")
         return grid_final
 
+
+    #
+    #
+    #
+    def extractGridFromFile(self,value):
+        if value==None:
+            raise Exception("value (lat/lon) is None")
+        pos=self.TIF_FILE_NAME.find('-')
+        if pos>0:
+            grid=self.TIF_FILE_NAME.split('_')[0]
+            if value=="lat":
+                grid_final=grid.split('-')[0]
+            elif value=="lon":
+                grid_final=grid.split('-')[1]
+        else:
+            grid=self.TIF_FILE_NAME.split('_')
+            if value=="lat":
+                grid_final=grid[0]
+            elif value=="lon":
+                grid_final=grid[1]
+        return grid_final
+
+
+    #
+    #
+    #
+    def extractGridFromFileNormalised(self,value):
+        if value==None:
+            raise Exception("value (lat/lon) is None")
+        grid_final=self.extractGridFromFile(value)
+        grid_final=grid_final[0]+grid_final[1:].rjust(3,"0")
+        return grid_final
 
     #
     #
@@ -322,6 +352,9 @@ class Dimap_Tropforest_Product(Directory_Product):
         if tmp != None and tmp[0]=='L':
             tmp = tmp[1:]
             self.metadata.setMetadataPair(metadata.METADATA_INSTRUMENT_INCIDENCE_ANGLE, tmp)
+
+        # build timePosition from endTime + endDate
+        self.metadata.setMetadataPair(metadata.METADATA_TIME_POSITION, "%sT%sZ" % (self.metadata.getMetadataValue(metadata.METADATA_STOP_DATE), self.metadata.getMetadataValue(metadata.METADATA_STOP_TIME)))
             
         # 
         self.buildTypeCode() 
@@ -489,14 +522,15 @@ class Dimap_Tropforest_Product(Directory_Product):
             met.addLocalAttribute("boundingBox", met.getMetadataValue(metadata.METADATA_BOUNDING_BOX))
 
             # test that footprint is valid (not almost a point)
-            tmp=self.metadata.getMetadataValue(metadata.METADATA_BOUNDING_BOX)
-            toks=tmp.split(" ")
-            for n in range((len(toks)/2) -1):
-                print "test bounding box distance %d" % n
-                dist=geomHelper.metersDistanceBetween(float(toks[n*2]), float(toks[n*2+1]), float(toks[n*2+2]), float(toks[n*2+3]))
-                print "DISTANCE=%s" % dist
-                if dist < 1000: # in meters
-                    raise Exception("footprint is too small:%s meter" % dist)
+            # NOT NEEDED
+            #tmp=self.metadata.getMetadataValue(metadata.METADATA_BOUNDING_BOX)
+            #toks=tmp.split(" ")
+            #for n in range((len(toks)/2) -1):
+            #    print "test bounding box distance %d" % n
+            #    dist=geomHelper.metersDistanceBetween(float(toks[n*2]), float(toks[n*2+1]), float(toks[n*2+2]), float(toks[n*2+3]))
+            #    print "DISTANCE=%s" % dist
+            #    if dist < 1000: # in meters
+            #        raise Exception("footprint is too small:%s meter" % dist)
 
         else:
             print " ERROR: Geoposition/Geoposition_Insert has not 1 subnode but:%d" % len(nodes)

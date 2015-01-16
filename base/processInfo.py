@@ -38,7 +38,8 @@ class processInfo():
         self.infoKeeper=None
         print "init processInfo"
 
-    def addInfo(self, n,v):
+
+    def addInfo(self, n, v):
             if self.infoKeeper!=None:
                     self.infoKeeper.addInfo(n,v)
             else:
@@ -46,7 +47,8 @@ class processInfo():
 
     def addLog(self, mess):
         try:
-            self.prodLog="%s%s: %s\n" % (self.prodLog, dateNow(), mess)
+            #now=dateNow()
+            self.prodLog="%s%s: %s\n" % (self.prodLog, dateNow() , mess)
         except:
             print " ERROR: processInfo.addLog problem"
             exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -70,4 +72,14 @@ class processInfo():
         print >>out, 'Error:%s' % (self.error)
         print >>out, 'LOG:\n%s' % (self.prodLog)
         return out.getvalue()
+        
+
+if __name__ == '__main__':
+        print "start"
+        pinfo = processInfo()
+        #pinfo.addInfo("aa", "bbbb")
+        pinfo.addLog("aa")
+        print "pinfo:%s" % pinfo.toString()
+
+
         

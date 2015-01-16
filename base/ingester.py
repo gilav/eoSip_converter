@@ -66,17 +66,16 @@ import infoKeeper
 
 
 #
-__config=None
-# set in configuration file
-CONFIG_NAME=None
-SETTING_CONFIG_NAME='CONFIG_NAME'
-INBOX=None
-SETTING_INBOX='INBOX'
-OUTSPACE=None
-SETTING_OUTSPACE='OUTSPACE'
-TMPSPACE=None
-SETTING_TMPSPACE='TMPSPACE'
+# setting variable name + default values (None in general)
 #
+# folders stuff
+SETTING_CONFIG_NAME='CONFIG_NAME'
+SETTING_INBOX='INBOX'
+SETTING_OUTSPACE='OUTSPACE'
+SETTING_TMPSPACE='TMPSPACE'
+# config name
+CONFIG_NAME=None
+# file find stuff
 LIST_TYPE=None
 SETTING_LIST_TYPE='LIST_TYPE'
 LIST_BUILD='Internal'
@@ -85,23 +84,21 @@ FILES_NAMEPATTERN=None
 SETTING_FILES_NAMEPATTERN='FILES_NAMEPATTERN'
 FILES_EXTPATTERN=None
 SETTING_FILES_EXTPATTERN='FILES_EXTPATTERN'
-
 DIRS_NAMEPATTERN=None
 SETTING_DIRS_NAMEPATTERN='DIRS_NAMEPATTERN'
 DIRS_ISLEAF=None
 SETTING_DIRS_ISLEAF='DIRS_ISLEAF'
 DIRS_ISEMPTY=None
 SETTING_DIRS_ISEMPTY='DIRS_ISEMPTY'
-
-
 LIST_LIMIT=None
 SETTING_LIST_LIMIT='LIST_LIMIT'
 LIST_STARTDATE=None
 SETTING_LIST_STARTDATE='LIST_STARTDATE'
 LIST_STOPDATE=None
 SETTING_LIST_STOPDATE='LIST_STOPDATE'
-TYPOLOGY=None
 #
+TYPOLOGY=None
+# ??
 ENGINE_STATE=None
 SETTING_ENGINE_STATE='ENGINE_STATE'
 ENGINE=None
@@ -116,13 +113,13 @@ SETTING_workflowp='Workflow'
 SETTING_eosip='eoSip'
 SETTING_Data='Data'
 SETTING_Services='Services'
-#
+# setting name in configuration file
 SETTING_metadataReport_usedMap='metadataReport-xml-map'
 SETTING_browseReport_usedMap='browseReport-xml-map'
 SETTING_MISSION_SPECIFIC='Mission-specific-values'
 SETTING_OUTPUT_RELATIVE_PATH_TREES='OUTPUT_RELATIVE_PATH_TREES'
 SETTING_OUTPUT_EO_SIP_PATTERN='OUTPUT_EO_SIP_PATTERN'
-#
+# output stuff
 OUTPUT_RELATIVE_PATH_TREES=None
 OUTPUT_EO_SIP_PATTERN=None
 # workflow
@@ -144,8 +141,7 @@ SETTING_TEST_DONT_DO_BROWSE='TEST_DONT_DO_BROWSE'
 SETTING_EOSIP_TYPOLOGY='TYPOLOGY'
 SETTING_EOSIP_STORE_TYPE='STORE_TYPE'
 SETTING_EOSIP_STORE_COMPRESSION='STORE_COMPRESSION'
-# data provider
-#SETTING_DATA_PROVIDER='provider'
+
 
 #
 #
@@ -177,13 +173,14 @@ product_overwrite=False
 test_dont_extract=False
 test_dont_write=False
 test_dont_do_browse=False
+startJustReadConfig=False
 
 # daemon
 daemon=False
 
 # eoSip
-eoSip_store_type=None
-eoSip_store_compression=None
+eoSip_store_type=eosip_product.SRC_PRODUCT_AS_ZIP
+eoSip_store_compression=True
 
 # data provider stuff
 dataProviders={}
@@ -196,7 +193,7 @@ DEBUG=0
 
 # fixed stuff
 LOG_FOLDER="./log"
-file_doBeDoneList="%s/%s" % (LOG_FOLDER, 'product_list.txt')
+file_toBeDoneList="%s/%s" % (LOG_FOLDER, 'product_list.txt')
 
 # convertion status var names:
 CONVERSION_RESULT='CONVERSION_RESULT'
@@ -215,42 +212,88 @@ class Ingester():
         #
         #
         def __init__(self):
-                #global DEBUG
-                print ' init base ingester'
-                # logger stuff
-                self.logger = logging.getLogger()
-                self.debug=DEBUG
-                self.logger.setLevel(logging.DEBUG)
-                basicFormat='%(asctime)s - [%(levelname)s] : %(message)s'
-                formatter = logging.Formatter(basicFormat)
-                #
-                file_handler = RotatingFileHandler('ingester.log', '', 1000000, 1)
-                file_handler.setLevel(logging.DEBUG)
-                file_handler.setFormatter(formatter)
-                self.logger.addHandler(file_handler)
-                steam_handler = logging.StreamHandler()
-                steam_handler.setLevel(logging.DEBUG)
-                steam_handler.setFormatter(formatter)
-                self.logger.addHandler(steam_handler)
-                # instance vars
-                self.productList=None
-                #
-                self.runStartTime=None
-                self.runStopTime=None
-                #
-                self.indexCreator=None
-                self.shopcartCreator=None
-                self.statsUtil=statsUtil.StatsUtil()
-                # resolved output folders
-                self.outputProductResolvedPaths=None
-                #
-                self.dataProviders={}
-                self.servicesProvider=None
-                #
-                self.infoKeeper = infoKeeper.infoKeeper()
-                #
-                self.apercuReporter = None
-                #
+            #
+            print ' init base ingester'
+            # set default values
+            self.__config=None
+            # file find stuff
+            self.FILES_NAMEPATTERN=FILES_NAMEPATTERN
+            self.FILES_EXTPATTERN=FILES_EXTPATTERN
+            self.DIRS_NAMEPATTERN=DIRS_NAMEPATTERN
+            self.DIRS_ISLEAF=DIRS_ISLEAF
+            self.DIRS_ISEMPTY=DIRS_ISEMPTY
+            self.LIST_LIMIT=LIST_LIMIT
+            self.LIST_STARTDATE=LIST_STARTDATE
+            self.LIST_STOPDATE=LIST_STOPDATE
+            self.TYPOLOGY=TYPOLOGY
+            # output stuff
+            self.OUTPUT_RELATIVE_PATH_TREES=OUTPUT_RELATIVE_PATH_TREES
+            self.OUTPUT_EO_SIP_PATTERN=OUTPUT_EO_SIP_PATTERN
+            # eoSip
+            self.eoSip_store_type=eoSip_store_type
+            self.FINAL_PATH_LIST=FINAL_PATH_LIST
+            # workflow stuff
+            self.create_index=create_index
+            self.create_shopcart=create_shopcart
+            self.create_thumbnail=create_thumbnail
+            self.create_browse_report=create_browse_report
+            self.index_added=index_added
+            self.fixed_batch_name=fixed_batch_name
+            self.verify_product=verify_product
+            self.verify_xml=verify_xml
+            self.max_product_done=max_product_done
+            self.test_dont_extract=test_dont_extract
+            self.test_dont_write=test_dont_write
+            self.test_dont_do_browse=test_dont_do_browse
+            self.startJustReadConfig=startJustReadConfig
+            # counter
+            self.num=0
+            self.num_total=0
+            self.num_done=0
+            self.num_error=0
+            self.list_done=[]
+            self.list_error=[]
+            self.description_error=[]
+            # debug
+            self.debug=DEBUG
+            # logger/debug stuff
+            self.LOG_FOLDER=LOG_FOLDER
+            self.logger = logging.getLogger()
+            self.logger.setLevel(logging.DEBUG)
+            basicFormat='%(asctime)s - [%(levelname)s] : %(message)s'
+            formatter = logging.Formatter(basicFormat)
+            file_handler = RotatingFileHandler('ingester.log', '', 1000000, 1)
+            file_handler.setLevel(logging.DEBUG)
+            file_handler.setFormatter(formatter)
+            self.logger.addHandler(file_handler)
+            steam_handler = logging.StreamHandler()
+            steam_handler.setLevel(logging.DEBUG)
+            steam_handler.setFormatter(formatter)
+            self.logger.addHandler(steam_handler)
+            #
+            self.daemon=daemon
+            #
+            self.file_toBeDoneList=file_toBeDoneList
+            #
+            self.productList=None
+            #
+            self.runStartTime=None
+            self.runStopTime=None
+            #
+            self.indexCreator=None
+            self.shopcartCreator=None
+            self.statsUtil=statsUtil.StatsUtil()
+            # resolved output folders
+            self.outputProductResolvedPaths=None
+            # data/service providers
+            self.dataProviders={}
+            self.servicesProvider=None
+            self.apercuReporter = None
+            # 
+            self.infoKeeper = infoKeeper.infoKeeper()
+            #
+            self.mission_metadatas=mission_metadatas
+            #
 
 
         #
@@ -274,9 +317,9 @@ class Ingester():
             varName="SCHEMA_%s" % (fileType)
 
             if varName==SCHEMA_FROM_TYPOLOGY:
-                if TYPOLOGY!=None:
-                    print "TYPOLOGY:%s" % TYPOLOGY
-                    varName="%s_%s" % (varName, TYPOLOGY)
+                if self.TYPOLOGY!=None:
+                    print "TYPOLOGY:%s" % self.TYPOLOGY
+                    varName="%s_%s" % (varName, self.TYPOLOGY)
                 else:
                     print "TYPOLOGY is None"
             print "get schema from varName:%s" % varName
@@ -302,163 +345,156 @@ class Ingester():
         #
         #
         def readConfig(self, path=None):
-                global CONFIG_NAME, __config, OUTSPACE, INBOX, TMPSPACE, LIST_TYPE, LIST_BUILD, FILES_NAMEPATTERN, FILES_EXTPATTERN, DIRS_NAMEPATTERN, DIRS_ISLEAF,\
-                DIRS_ISEMPTY, LIST_LIMIT, LIST_STARTDATE, LIST_STOPDATE, OUTPUT_EO_SIP_PATTERN, OUTPUT_RELATIVE_PATH_TREES, max_product_done,verify_xml,\
-                create_index,create_shopcart,create_thumbnail,create_browse_report,index_added,verify_product,fixed_batch_name,product_overwrite,TYPOLOGY,\
-                eoSip_store_compression,eoSip_store_type,test_dont_extract,test_dont_write,test_dont_do_browse
-
                 if not os.path.exists(path):
                     raise Exception("cofiguration file:'%s' doesn't exists" % path)
                 
                 try:
                         self.logger.info("\n\n\n\n\n reading configuration...")
-                        __config = ConfigParser.RawConfigParser()
-                        __config.optionxform=str
-                        __config.read(path)
+                        self.__config = ConfigParser.RawConfigParser()
+                        self.__config.optionxform=str
+                        self.__config.read(path)
                         #
-                        CONFIG_NAME = __config.get(SETTING_Main, SETTING_CONFIG_NAME)
-                        INBOX = __config.get(SETTING_Main, SETTING_INBOX)
-                        TMPSPACE = __config.get(SETTING_Main, SETTING_TMPSPACE)
-                        OUTSPACE = __config.get(SETTING_Main, SETTING_OUTSPACE)
+                        self.CONFIG_NAME = self.__config.get(SETTING_Main, SETTING_CONFIG_NAME)
+                        self.INBOX = self.__config.get(SETTING_Main, SETTING_INBOX)
+                        self.TMPSPACE = self.__config.get(SETTING_Main, SETTING_TMPSPACE)
+                        self.OUTSPACE = self.__config.get(SETTING_Main, SETTING_OUTSPACE)
                         #
-                        LIST_TYPE = __config.get(SETTING_Search, SETTING_LIST_TYPE)
-                        if LIST_TYPE=='files':
+                        self.LIST_TYPE = self.__config.get(SETTING_Search, SETTING_LIST_TYPE)
+                        if self.LIST_TYPE=='files':
                                 try:
-                                        FILES_NAMEPATTERN = __config.get(SETTING_Search, SETTING_FILES_NAMEPATTERN)
+                                        self.FILES_NAMEPATTERN = self.__config.get(SETTING_Search, SETTING_FILES_NAMEPATTERN)
                                 except:
                                         pass
                                 try:
-                                        FILES_EXTPATTERN = __config.get(SETTING_Search, SETTING_FILES_EXTPATTERN)
+                                        self.FILES_EXTPATTERN = self.__config.get(SETTING_Search, SETTING_FILES_EXTPATTERN)
                                 except:
                                         pass
-                        elif LIST_TYPE=='dirs':
+                        elif self.LIST_TYPE=='dirs':
                                 try:
-                                        DIRS_NAMEPATTERN = __config.get(SETTING_Search, SETTING_DIRS_NAMEPATTERN)
-                                except:
-                                        pass
-                                try:
-                                        DIRS_ISLEAF = __config.get(SETTING_Search, SETTING_DIRS_ISLEAF)
+                                        self.DIRS_NAMEPATTERN = self.__config.get(SETTING_Search, SETTING_DIRS_NAMEPATTERN)
                                 except:
                                         pass
                                 try:
-                                        DIRS_ISEMPTY = __config.get(SETTING_Search, SETTING_DIRS_ISEMPTY)
+                                        self.DIRS_ISLEAF = self.__config.get(SETTING_Search, SETTING_DIRS_ISLEAF)
+                                except:
+                                        pass
+                                try:
+                                        self.DIRS_ISEMPTY = self.__config.get(SETTING_Search, SETTING_DIRS_ISEMPTY)
                                 except:
                                         pass
 
                                 
                         try:
-                                LIST_LIMIT = __config.getint(SETTING_Search, SETTING_LIST_LIMIT)
+                                self.LIST_LIMIT = self.__config.getint(SETTING_Search, SETTING_LIST_LIMIT)
                         except:
                                 pass
                         try:
-                                LIST_STARTDATE = __config.get(SETTING_Search, SETTING_LIST_STARTDATE)
+                                self.LIST_STARTDATE = self.__config.get(SETTING_Search, SETTING_LIST_STARTDATE)
                         except:
                                 pass
                         try:
-                                LIST_STOPDATE = __config.get(SETTING_Search, SETTING_LIST_STOPDATE)
+                                self.LIST_STOPDATE = self.__config.get(SETTING_Search, SETTING_LIST_STOPDATE)
                         except:
                                 pass
 
                         try:
-                            OUTPUT_EO_SIP_PATTERN = __config.get(SETTING_Output, SETTING_OUTPUT_EO_SIP_PATTERN)
+                            self.OUTPUT_EO_SIP_PATTERN = self.__config.get(SETTING_Output, SETTING_OUTPUT_EO_SIP_PATTERN)
                         except:
                             pass
 
                         try:
-                            OUTPUT_RELATIVE_PATH_TREES = __config.get(SETTING_Output, SETTING_OUTPUT_RELATIVE_PATH_TREES)
+                            self.OUTPUT_RELATIVE_PATH_TREES = self.__config.get(SETTING_Output, SETTING_OUTPUT_RELATIVE_PATH_TREES)
                         except:
                             pass
 
 
                         # workflow
                         try:
-                            verify_product= __config.getboolean(SETTING_workflowp, SETTING_VERIFY_SRC_PRODUCT)
+                            self.verify_product= self.__config.getboolean(SETTING_workflowp, SETTING_VERIFY_SRC_PRODUCT)
                         except:
                             pass
                         try:
-                            max_product_done = __config.getint(SETTING_workflowp, SETTING_MAX_PRODUCTS_DONE)
+                            self.max_product_done = self.__config.getint(SETTING_workflowp, SETTING_MAX_PRODUCTS_DONE)
                         except:
                             pass
                         try:
-                            verify_xml = __config.getboolean(SETTING_workflowp, SETTING_VALIDATE_XML)
+                            self.verify_xml = self.__config.getboolean(SETTING_workflowp, SETTING_VALIDATE_XML)
                         except:
                             pass
                         try:
-                            create_index = __config.getboolean(SETTING_workflowp, SETTING_CREATE_INDEX)
+                            self.create_index = self.__config.getboolean(SETTING_workflowp, SETTING_CREATE_INDEX)
                         except:
                             pass
                         try:
-                            create_shopcart = __config.getboolean(SETTING_workflowp, SETTING_CREATE_SHOPCART)
+                            self.create_shopcart = self.__config.getboolean(SETTING_workflowp, SETTING_CREATE_SHOPCART)
                         except:
                             pass
                         try:
-                            create_thumbnail = __config.getboolean(SETTING_workflowp, SETTING_CREATE_THUMBNAIL)
+                            self.create_thumbnail = self.__config.getboolean(SETTING_workflowp, SETTING_CREATE_THUMBNAIL)
                         except:
                             pass
                         try:
-                            index_added = __config.get(SETTING_workflowp, SETTING_INDEX_ADDED_FIELD)
+                            self.index_added = self.__config.get(SETTING_workflowp, SETTING_INDEX_ADDED_FIELD)
                         except:
                             pass
                         try:
-                            fixed_batch_name = __config.get(SETTING_workflowp, SETTING_FIXED_BATCH_NAME)
+                            self.fixed_batch_name = self.__config.get(SETTING_workflowp, SETTING_FIXED_BATCH_NAME)
                         except:
                             pass
                         try:
-                            product_overwrite = __config.getboolean(SETTING_workflowp, SETTING_PRODUCT_OVERWRITE)
+                            self.product_overwrite = self.__config.getboolean(SETTING_workflowp, SETTING_PRODUCT_OVERWRITE)
                         except:
                             pass
                         try:
-                            create_browse_report= __config.getboolean(SETTING_workflowp, SETTING_CREATE_BROWSE_REPORT)
+                            self.create_browse_report= self.__config.getboolean(SETTING_workflowp, SETTING_CREATE_BROWSE_REPORT)
                         except:
                             pass
                         
                         try:
-                            test_dont_extract= __config.getboolean(SETTING_workflowp, SETTING_TEST_DONT_EXTRACT)
+                            self.test_dont_extract= self.__config.getboolean(SETTING_workflowp, SETTING_TEST_DONT_EXTRACT)
                         except:
                             pass
                         try:
-                            test_dont_write= __config.getboolean(SETTING_workflowp, SETTING_TEST_DONT_WRITE)
+                            self.test_dont_write= self.__config.getboolean(SETTING_workflowp, SETTING_TEST_DONT_WRITE)
                         except:
                             pass
                         try:
-                            test_dont_do_browse= __config.getboolean(SETTING_workflowp, SETTING_TEST_DONT_DO_BROWSE)
+                            self.test_dont_do_browse= self.__config.getboolean(SETTING_workflowp, SETTING_TEST_DONT_DO_BROWSE)
                         except:
                             pass
                         
                         # eoSip:
                         # mandatory block
                         try:
-                            TYPOLOGY = __config.get(SETTING_eosip, SETTING_EOSIP_TYPOLOGY)
+                            self.TYPOLOGY = self.__config.get(SETTING_eosip, SETTING_EOSIP_TYPOLOGY)
                             # is it supported
                             try:
-                                sipBuilder.TYPOLOGY_REPRESENTATION_SUFFIX.index(TYPOLOGY)
+                                sipBuilder.TYPOLOGY_REPRESENTATION_SUFFIX.index(self.TYPOLOGY)
                             except:
-                                raise Exception("typology not supported:'%s'" % TYPOLOGY)
+                                raise Exception("typology not supported:'%s'" % self.TYPOLOGY)
                         except Exception, e:
-                            if TYPOLOGY==None:
-                                TYPOLOGY = sipBuilder.TYPOLOGY_REPRESENTATION_SUFFIX[0]
+                            if self.TYPOLOGY==None:
+                                self.TYPOLOGY = sipBuilder.TYPOLOGY_REPRESENTATION_SUFFIX[0]
                             else:
                                 print " Error in reading configuration:"
                                 exc_type, exc_obj, exc_tb = sys.exc_info()
                                 traceback.print_exc(file=sys.stdout)
                                 raise e
-                                #TYPOLOGY = sipBuilder.TYPOLOGY_REPRESENTATION_SUFFIX[0]
-                                #pass
 
                         #optional
                         try:
-                            eoSip_store_type = __config.get(SETTING_eosip, SETTING_EOSIP_STORE_TYPE)
+                            self.eoSip_store_type = self.__config.get(SETTING_eosip, SETTING_EOSIP_STORE_TYPE)
                         except:
                             pass
 
                         try:
-                            eoSip_store_compression = __config.get(SETTING_eosip, SETTING_EOSIP_STORE_COMPRESSION)
+                            self.eoSip_store_compression = self.__config.getboolean(SETTING_eosip, SETTING_EOSIP_STORE_COMPRESSION)
                         except:
-                            eoSip_store_compression = True
+                            self.eoSip_store_compression = True
 
                         # dataProvider: optional
                         try:
-                            dataProvidersSrc=dict(__config.items(SETTING_Data))
+                            dataProvidersSrc=dict(self.__config.items(SETTING_Data))
                             n=0
                             for item in dataProvidersSrc:
                                 value=dataProvidersSrc[item]
@@ -474,7 +510,7 @@ class Ingester():
 
                         # servicesProvider: optional
                         try:
-                            serviceProvidersSrc=dict(__config.items(SETTING_Services))
+                            serviceProvidersSrc=dict(self.__config.items(SETTING_Services))
                             if len(serviceProvidersSrc)!=0:
                                 self.servicesProvider = serviceProvider.ServiceProvider(None)
                                 n=0
@@ -513,18 +549,6 @@ class Ingester():
         #
         # 
         def starts(self, args):
-            #global fixed_batch_name,OUTSPACE,TMPSPACE,max_product_done,daemon
-            #if len(argv) < 2:
-            #    raise Exception("not enough parameter passed, need at least 1, has %d" % (len(argv)-1))
-            #self.readConfig(sys.argv[1])
-            #self.makeFolders()
-            #self.getMissionDefaults()
-            #if len(sys.argv)==3:
-            #    self.setProductsList(sys.argv[2])
-            #else:
-            #    self.findProducts()
-
-
             # new: use optparse package
             from optparse import OptionParser
             parser = OptionParser()
@@ -536,67 +560,89 @@ class Ingester():
             parser.add_option("-t", "--tmpspace", dest="tmpbox", help="tmp folder")
             parser.add_option("-m", "--max", dest="max", help="max product to do")
             parser.add_option("-d", "--daemon", dest="daemon", default=False, help="run in daemon mode, remotely controled")
-            options, args = parser.parse_args(args)
+            self.options, args = parser.parse_args(args)
 
-            if options.configFile!=None:
-                print "options readed:\n configuration file:%s" % options.configFile
+            if self.options.configFile!=None:
+                print "options readed:\n configuration file:%s" % self.options.configFile
             else:
                 raise Exception("need at least a configuration file path as argument")
-            if options.productListFile!=None:
-                print " product list file:%s" % options.productListFile
-            if options.batchName!=None:
-                print " batch name:%s" % options.batchName
-            if options.batchId!=None:
-                print " batch id:%s" % options.batchId
+            if self.options.productListFile!=None:
+                print " product list file:%s" % self.options.productListFile
+            if self.options.batchName!=None:
+                print " batch name:%s" % self.options.batchName
+            if self.options.batchId!=None:
+                print " batch id:%s" % self.options.batchId
 
             #
-            self.readConfig(options.configFile)
-            if options.batchName!=None:
-                if options.batchId==None:
-                    fixed_batch_name=options.batchName
+            self.readConfig(self.options.configFile)
+            if self.options.batchName!=None:
+                if self.options.batchId==None:
+                    self.fixed_batch_name=self.options.batchName
                 else:
-                    fixed_batch_name="%s%d" % (options.batchName, options.batchId)
-                print " ==> batchName overwritten by passed parameter:%s" % fixed_batch_name
-                self.logger.info(" ==> batchName overwritten by passed parameter:%s" % fixed_batch_name)
+                    self.fixed_batch_name="%s%d" % (self.options.batchName, self.options.batchId)
+                print " ==> batchName overwritten by passed parameter:%s" % self.fixed_batch_name
+                self.logger.info(" ==> batchName overwritten by passed parameter:%s" % self.fixed_batch_name)
             else:
-                if options.batchId!=None:
-                    fixed_batch_name="%s%d" % (fixed_batch_name, options.batchId)
-                    print " ==> batchName overwritten by passed parameter:%s" % fixed_batch_name
-                    self.logger.info(" ==> batchName overwritten by passed parameter:%s" % fixed_batch_name)
+                if self.options.batchId!=None:
+                    self.fixed_batch_name="%s%d" % (self.fixed_batch_name, self.options.batchId)
+                    print " ==> batchName overwritten by passed parameter:%s" % self.fixed_batch_name
+                    self.logger.info(" ==> batchName overwritten by passed parameter:%s" % self.fixed_batch_name)
 
+            print " ####################################### fixed_batch_name=%s" % self.fixed_batch_name
+            if self.options.outbox!=None:
+                self.OUTSPACE=self.options.outbox
+                print " ==> OUTSPACE overwritten by passed parameter:%s" % self.OUTSPACE
+                self.logger.info(" ==> OUTSPACE overwritten by passed parameter:%s" % self.OUTSPACE)
 
-            if options.outbox!=None:
-                OUTSPACE=options.outbox
-                print " ==> OUTSPACE overwritten by passed parameter:%s" % OUTSPACE
-                self.logger.info(" ==> OUTSPACE overwritten by passed parameter:%s" % OUTSPACE)
+            if self.options.tmpbox!=None:
+                self.TMPSPACE=self.options.tmpbox
+                print " ==> TMPSPACE overwritten by passed parameter:%s" % self.TMPSPACE
+                self.logger.info(" ==> TMPSPACE overwritten by passed parameter:%s" % self.TMPSPACE)
 
-            if options.tmpbox!=None:
-                TMPSPACE=options.tmpbox
-                print " ==> TMPSPACE overwritten by passed parameter:%s" % TMPSPACE
-                self.logger.info(" ==> TMPSPACE overwritten by passed parameter:%s" % TMPSPACE)
+            if self.options.max!=None:
+                self.max_product_done=self.options.max
+                print " ==> max_product_done overwritten by passed parameter:%s" %  self.max_product_done
+                self.logger.info(" ==> max_product_done overwritten by passed parameter:%s" %  self.max_product_done)
 
-            if options.max!=None:
-                max_product_done=options.max
-                print " ==> max_product_done overwritten by passed parameter:%s" % max_product_done
-                self.logger.info(" ==> max_product_done overwritten by passed parameter:%s" % max_product_done)
-
-            if options.daemon!=None:
-                daemon=options.daemon
-                print " ==> run in daemon mode"
-                self.logger.info(" ==> run in daemon mode")
+            if self.options.daemon:
+                self.daemon=self.options.daemon
+                print " will run in daemon mode:%s" % self.daemon
+                self.logger.info(" will run in daemon mode:%s" % self.daemon)
 
             self.makeFolders()
             self.getMissionDefaults()
 
-            # find and process products if not in daemon mode
-            if daemon:
+            # MOVED FROM processproducts
+            if self.fixed_batch_name!=None:
+                self.batchName="batch_%s_%s" % (self.CONFIG_NAME, self.fixed_batch_name)
+            else:
+                self.batchName="batch_%s_%s" % (self.CONFIG_NAME, formatUtils.dateNow(pattern="%m%d-%H%M%S"))
+
+            # find and process products if not in daemon mode, of in  startJustreadConfig mode
+            if self.startJustReadConfig==True:
+                print " ==> run in justReadConfig mode"
+                self.logger.info(" ==> run in justReadConfig mode")
+                return
+        
+            if self.daemon:
                 print " ==> run in daemon mode"
                 self.logger.info(" ==> run in daemon mode")
             else:
-                if options.productListFile!=None:
-                    self.setProductsList(options.productListFile)
+                print " ==> run in findAndProcess mode"
+                self.logger.info(" ==> run in findAndProcess mode")
+                if self.options.productListFile!=None:
+                    self.setProductsList(self.options.productListFile)
                 else:
                     self.findProducts()
+
+                # MOVED FROM processproducts
+                # write file list of products
+                fd=open(self.file_toBeDoneList, "w")
+                fd.write("# total:%s\n" % len(self.productList))
+                for item in self.productList:
+                    fd.write("%s\n" % item)
+                fd.close
+                self.logger.info("\n\nlist of products to be done written in:%s\n\n" % (self.file_toBeDoneList))
                 
                 self.processProducts()
 
@@ -606,27 +652,27 @@ class Ingester():
         # make folder by the ingester
         #
         def makeFolders(self):
-                self.logger.info(" test TMPSPACE folder exists:%s" % TMPSPACE)
-                if not os.path.exists(TMPSPACE):
-                        self.logger.info("  will make TMPSPACE folder:%s" % TMPSPACE)
-                        os.makedirs(TMPSPACE)
+                self.logger.info(" test TMPSPACE folder exists:%s" % self.TMPSPACE)
+                if not os.path.exists(self.TMPSPACE):
+                        self.logger.info("  will make TMPSPACE folder:%s" % self.TMPSPACE)
+                        os.makedirs(self.TMPSPACE)
                         
-                self.logger.info(" test OUTSPACE folder exists:%s" % OUTSPACE)
-                if not os.path.exists(OUTSPACE):
-                        self.logger.info("  will make OUTSPACE folder:%s" % OUTSPACE)
-                        os.makedirs(OUTSPACE)
+                self.logger.info(" test OUTSPACE folder exists:%s" % self.OUTSPACE)
+                if not os.path.exists(self.OUTSPACE):
+                        self.logger.info("  will make OUTSPACE folder:%s" % self.OUTSPACE)
+                        os.makedirs(self.OUTSPACE)
 
-                self.logger.info(" test log folder exists:%s" % LOG_FOLDER)
-                if not os.path.exists(LOG_FOLDER):
-                        self.logger.info("  will make log folder:%s" % LOG_FOLDER)
-                        os.makedirs(LOG_FOLDER)
+                self.logger.info(" test log folder exists:%s" % self.LOG_FOLDER)
+                if not os.path.exists(self.LOG_FOLDER):
+                        self.logger.info("  will make log folder:%s" % self.LOG_FOLDER)
+                        os.makedirs(self.LOG_FOLDER)
 
 
         #
         # save info in file in working folder
         #
         def saveInfo(self, filename=None, data=None):
-            path="%s/%s" % (TMPSPACE, filename)
+            path="%s/%s" % (self.TMPSPACE, filename)
             fd=open(path, "a+")
             fd.write(data)
             fd.write("\n")
@@ -643,11 +689,11 @@ class Ingester():
                 created=[]
                 if basePath[-1]!='/':
                         basePath="%s/" % basePath
-                if len(FINAL_PATH_LIST)==0:
+                if len(self.FINAL_PATH_LIST)==0:
                         raise Exception("FINAL_PATH_LIST is empty")
                 i=0
-                for rule in FINAL_PATH_LIST:
-                        print "resolve path rule[%d/%d]:%s" % (i,len(FINAL_PATH_LIST), rule)
+                for rule in self.FINAL_PATH_LIST:
+                        print "resolve path rule[%d/%d]:%s" % (i,len(self.FINAL_PATH_LIST), rule)
                         toks=rule.split('/')
                         new_rulez = basePath
                         n=0
@@ -664,9 +710,8 @@ class Ingester():
         # make working folder
         #
         def makeWorkingFolders(self, processInfo):
-                #global TMPSPACE
                 # make working folder
-                tmpPath=TMPSPACE+"/%s_workfolder_%s" % (self.batchName, processInfo.num)
+                tmpPath=self.TMPSPACE+"/%s_workfolder_%s" % (self.batchName, processInfo.num)
                 processInfo.addLog("\n - create working folder if needed; working folder:%s" % (tmpPath))
                 if not os.path.exists(tmpPath): # create it
                     processInfo.addLog("  => don't exist, create it") 
@@ -706,27 +751,27 @@ class Ingester():
         #
         def findProducts(self):
                 aFileHelper=fileHelper.fileHelper()
-                if LIST_TYPE=='files':
+                if self.LIST_TYPE=='files':
                         # get list of files
                         reNamePattern = None
                         reExtPattern = None
-                        if FILES_NAMEPATTERN != None:
-                                reNamePattern = re.compile(FILES_NAMEPATTERN)
-                        if FILES_EXTPATTERN != None:
-                                reExtPattern = re.compile(FILES_EXTPATTERN)
+                        if self.FILES_NAMEPATTERN != None:
+                                reNamePattern = re.compile(self.FILES_NAMEPATTERN)
+                        if self.FILES_EXTPATTERN != None:
+                                reExtPattern = re.compile(self.FILES_EXTPATTERN)
                         self.logger.info(" reNamePattern:%s" % reNamePattern.pattern)
                         self.logger.info(" reExtPattern:%s" % reExtPattern.pattern)
-                        self.productList=aFileHelper.list_files(INBOX, reNamePattern, reExtPattern)
-                elif LIST_TYPE=='dirs':
+                        self.productList=aFileHelper.list_files(self.INBOX, reNamePattern, reExtPattern)
+                elif self.LIST_TYPE=='dirs':
                         reNamePattern = None
                         isLeaf=0
                         isEmpty=0
-                        if DIRS_NAMEPATTERN != None:
-                                reNamePattern = re.compile(DIRS_NAMEPATTERN)
+                        if self.DIRS_NAMEPATTERN != None:
+                                reNamePattern = re.compile(self.DIRS_NAMEPATTERN)
                         self.logger.info(" reNamePattern:%s" % reNamePattern.pattern)
-                        self.productList=aFileHelper.list_dirs(INBOX, reNamePattern, isLeaf, isEmpty)
+                        self.productList=aFileHelper.list_dirs(self.INBOX, reNamePattern, isLeaf, isEmpty)
                 else:
-                        raise "unreckognized LIST_TYPE:"+LIST_TYPE
+                        raise "unreckognized LIST_TYPE:"+self.LIST_TYPE
 
 
         #
@@ -734,39 +779,37 @@ class Ingester():
         # is defined in the configuration file
         #
         def getMissionDefaults(self):
-                #global __config, xmlMappingMetadata, xmlMappingBrowse, FINAL_PATH_LIST, mission_metadatas
-                global xmlMappingMetadata, xmlMappingBrowse, FINAL_PATH_LIST, mission_metadatas
                 # get mission specific metadata values, taken from configuration file
-                mission_metadatas={}
-                missionSpecificSrc=dict(__config.items(SETTING_MISSION_SPECIFIC))
+                self.mission_metadatas={}
+                missionSpecificSrc=dict(self.__config.items(SETTING_MISSION_SPECIFIC))
                 n=0
                 for key in missionSpecificSrc.keys():
                     value=missionSpecificSrc[key]
                     if self.debug!=0:
                             print "METADATA mission specific[%d]:%s=%s" % (n, key, value)
                     self.logger.debug("metadata fixed[%d]:%s=%s" % (n, key, value))
-                    mission_metadatas[key]=value
+                    self.mission_metadatas[key]=value
                     n=n+1
 
                 # get ouput folder tree path rules, taken from configuration file
-                destFolderRulesList = __config.get(SETTING_Output, SETTING_OUTPUT_RELATIVE_PATH_TREES)
+                destFolderRulesList = self.__config.get(SETTING_Output, SETTING_OUTPUT_RELATIVE_PATH_TREES)
                 n=0
                 for ruleName in destFolderRulesList.split(','):
-                    FINAL_PATH_LIST.append(ruleName)
+                    self.FINAL_PATH_LIST.append(ruleName)
 
 
                 # get report metadata used node map, taken from configuration file
                 # : is replaced replaced by _
                 try:
-                    xmlMappingMetadata={}
-                    xmlMappingMetadataSrc=dict(__config.items(SETTING_metadataReport_usedMap))
+                    self.xmlMappingMetadata={}
+                    xmlMappingMetadataSrc=dict(self.__config.items(SETTING_metadataReport_usedMap))
                     n=0
                     for key in xmlMappingMetadataSrc.keys():
                         value=xmlMappingMetadataSrc[key]
                         key=key.replace('_',':')
                         if self.debug!=0:
                                 print "METADATA node used[%d]:%s=%s" % (n, key, value)
-                        xmlMappingMetadata[key]=value
+                        self.xmlMappingMetadata[key]=value
                         n=n+1
                 except:
                     print " WARNING: something happend when reading report used node map:"
@@ -777,15 +820,15 @@ class Ingester():
                 # get report browse used node map, taken from configuration file
                 # : is replaced replaced by _
                 try:
-                    xmlMappingBrowse={}
-                    xmlMappingBrowseSrc=dict(__config.items(SETTING_browseReport_usedMap))
+                    self.xmlMappingBrowse={}
+                    xmlMappingBrowseSrc=dict(self.__config.items(SETTING_browseReport_usedMap))
                     n=0
                     for key in xmlMappingBrowseSrc.keys():
                         value=xmlMappingBrowseSrc[key]
                         key=key.replace('_',':')
                         if self.debug!=0:
                                 print "BROWSE METADATA node used[%d]:%s=%s" % (n, key, value)
-                        xmlMappingBrowse[key]=value
+                        self.xmlMappingBrowse[key]=value
                         n=n+1
                 except:
                     print " WARNING: something happend when reading report browse used node map:"
@@ -797,29 +840,14 @@ class Ingester():
         # process just one products
         #
         def processSingleProduct(self, productPath, jobId):
-                #global CONFIG_NAME,DEBUG,num,num_total,num_done,num_error,list_done,list_error,description_error,max_product_done,create_index,\
-                #create_thumbnail,create_shopcart,index_added,fixed_batch_name
-                global num,num_total,num_done,num_error,list_done,list_error
-                #
-                #
-                if fixed_batch_name!=None:
-                    self.batchName="batch_%s_%s" % (CONFIG_NAME, fixed_batch_name)
-                else:
-                    self.batchName="batch_%s_%s" % (CONFIG_NAME, formatUtils.dateNow(pattern="%m%d-%H%M%S"))
-
                 single_runStartTime=time.time()
 
                 aProcessInfo=processInfo.processInfo()
                 aProcessInfo.srcPath=productPath
                 aProcessInfo.num=jobId
-                # set some usefull flags
-                aProcessInfo.create_thumbnail=create_thumbnail
-                aProcessInfo.create_index=create_index
-                aProcessInfo.create_shopcart=create_shopcart
-                aProcessInfo.verify_xml=verify_xml
+                self.setProcessInfo(aProcessInfo)
                 
                 #try:
-
                 self.logger.info("")
                 self.logger.info("")
                 self.logger.info("")
@@ -841,13 +869,13 @@ class Ingester():
                             self.logger.error("Error:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc()))
                             aProcessInfo.addLog("Error:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc()))
                         except  Exception, ee:
-                            self.logger.error(" Error: adding log info into processInfo:%s" % aProcessInfo)
+                            self.logger.error(" Error 0: adding log info into processInfo=%s:%s" % (aProcessInfo, ee))
                             exc_type, exc_obj, exc_tb = sys.exc_info()
-                            print " ERROR adding error in log:%s  %s" %  (exc_type, exc_obj)
+                            print " ERROR 0 adding error in log:%s  %s" %  (exc_type, exc_obj)
 
                         # write log
                         try:
-                                prodLogPath="%s/bad_convertion_%d.log" % (aProcessInfo.workFolder, num_error)
+                                prodLogPath="%s/bad_convertion_%d.log" % (aProcessInfo.workFolder, self.num_error)
                                 fd=open(prodLogPath, 'w')
                                 fd.write(aProcessInfo.prodLog)
                                 fd.close()
@@ -874,49 +902,49 @@ class Ingester():
                             print " ERROR saving metadata files:%s  %s%s\n" %  (exc_type, exc_obj, traceback.format_exc())
 
                 return status
-                            
 
+                            
+        #
+        # set some usefull flags in processInfo
+        #
+        def setProcessInfo(self, aProcessInfo):
+            # 
+            aProcessInfo.create_thumbnail=self.create_thumbnail
+            aProcessInfo.create_index=self.create_index
+            aProcessInfo.create_shopcart=self.create_shopcart
+            aProcessInfo.verify_xml=self.verify_xml
+            aProcessInfo.test_dont_extract=self.test_dont_extract
+            aProcessInfo.test_dont_write=self.test_dont_write
+            aProcessInfo.test_dont_do_browse=self.test_dont_do_browse
+            aProcessInfo.infoKeeper=self.infoKeeper
+
+        
         #
         # process the list of products
         #
         def processProducts(self):
-                #global CONFIG_NAME, DEBUG, num,num_total,num_done,num_error,list_done,list_error,description_error,max_product_done,create_index,create_thumbnail,create_shopcart,index_added,fixed_batch_name
-                global num_total,num_done,num_error,list_done,list_error,description_error
                 #
-                if fixed_batch_name!=None:
-                    self.batchName="batch_%s_%s" % (CONFIG_NAME, fixed_batch_name)
-                else:
-                    self.batchName="batch_%s_%s" % (CONFIG_NAME, formatUtils.dateNow(pattern="%m%d-%H%M%S"))
-                #
-                num=0
-                num_total=0
-                num_done=0
-                num_error=0
-                list_done=[]
-                list_error=[]
+                self.num=0
+                self.num_total=0
+                self.num_done=0
+                self.num_error=0
+                self.list_done=[]
+                self.list_error=[]
                 self.runStartTime=time.time()
-                num_all=len(self.productList)
-    
-                # write file list of products
-                fd=open(file_doBeDoneList, "w")
-                fd.write("# total:%s\n" % len(self.productList))
-                for item in self.productList:
-                    fd.write("%s\n" % item)
-                fd.close
-                self.logger.info("\n\nlist of products to be done written in:%s\n\n" % (file_doBeDoneList))
+                self.num_all=len(self.productList)
 
                 # create index: use default header, + added if defined
-                if create_index:
-                    self.indexCreator=indexCreator.IndexCreator(None, index_added)
+                if self.create_index:
+                    self.indexCreator=indexCreator.IndexCreator(None, self.index_added)
                     self.logger.info("will create index")
 
                 # create shopcart:
-                if create_shopcart:
-                    self.shopcartCreator=shopcartCreator.ShopcartCreator(None, None)
+                if self.create_shopcart:
+                    self.shopcartCreator=shopcartCreator.ShopcartCreator(None, self.index_added)
                     self.logger.info("will create shopcart")
 
                 #  create thumbnail:
-                if create_thumbnail:
+                if self.create_thumbnail:
                     self.logger.info("will create thumbnail")
 
                 self.statsUtil.start(len(self.productList))
@@ -924,36 +952,28 @@ class Ingester():
                 for item in self.productList:
                         aProcessInfo=processInfo.processInfo()
                         aProcessInfo.srcPath=item
-                        aProcessInfo.num=num
+                        aProcessInfo.num=self.num
                         # set some usefull flags
-                        aProcessInfo.create_thumbnail=create_thumbnail
-                        aProcessInfo.create_index=create_index
-                        aProcessInfo.create_shopcart=create_shopcart
-                        aProcessInfo.verify_xml=verify_xml
-                        aProcessInfo.test_dont_extract=test_dont_extract
-                        aProcessInfo.test_dont_write=test_dont_write
-                        aProcessInfo.test_dont_do_browse=test_dont_do_browse
-                        aProcessInfo.infoKeeper=self.infoKeeper
+                        self.setProcessInfo(aProcessInfo)
                         
-                        #try:
-                        num=num+1
-                        num_total=num_total+1
+                        self.num=self.num+1
+                        self.num_total=self.num_total+1
                         self.logger.info("")
                         self.logger.info("")
                         self.logger.info("")
                         self.logger.info("")
-                        self.logger.info("doing product[%d/%d][%s/%s]:%s" % ( num, num_all, num_done, num_error, item))
-                        aProcessInfo.addLog("\n\nDoing product[%d/%d][%s/%s]:%s" % ( num, num_all, num_done, num_error, item))
+                        self.logger.info("doing product[%d/%d][%s/%s]:%s" % ( self.num, self.num_all, self.num_done, self.num_error, item))
+                        aProcessInfo.addLog("\n\nDoing product[%d/%d][%s/%s]:%s" % ( self.num, self.num_all, self.num_done, self.num_error, item))
                         try:
                                 self.doOneProduct(aProcessInfo)
 
-                                num_done=num_done+1
-                                list_done.append(item+"|"+aProcessInfo.workFolder)
+                                self.num_done=self.num_done+1
+                                self.list_done.append(item+"|"+aProcessInfo.workFolder)
 
                                 # apercu report
-                                self.reportToApercu(aProcessInfo, "NAME=EoSip-converter&BINDING=converter:ingester&all=%s&done=%s&total=%s&error=%s&endTime=%s" % (num_all, num_done, num_total, num_error, urllib.quote(self.statsUtil.getEndDate())))
+                                self.reportToApercu(aProcessInfo, "NAME=EoSip-converter&BINDING=converter:ingester&all=%s&done=%s&total=%s&error=%s&endTime=%s" % (self.num_all, self.num_done, self.num_total, self.num_error, urllib.quote(self.statsUtil.getEndDate())))
 
-                                if create_index:
+                                if self.create_index:
                                     try:
                                         if len(aProcessInfo.destProduct.browse_metadata_dict)>0: # there is at least one browse
                                             firstBrowsePath=aProcessInfo.destProduct.browse_metadata_dict.iterkeys().next()
@@ -967,7 +987,7 @@ class Ingester():
                                         self.logger.error("ERROR creating index: %s  %s" % (exc_type, exc_obj))
                                         pass
 
-                                if create_shopcart:
+                                if self.create_shopcart:
                                     try:
                                         #self.shopcartCreator.debug=1
                                         if len(aProcessInfo.destProduct.browse_metadata_dict)>0: # there is at least one browse
@@ -985,7 +1005,7 @@ class Ingester():
 
                                 # write log
                                 try:
-                                        prodLogPath="%s/conversion_%d.log" % (aProcessInfo.workFolder, num_error)
+                                        prodLogPath="%s/conversion_%d.log" % (aProcessInfo.workFolder, self.num_error)
                                         fd=open(prodLogPath, 'w')
                                         fd.write(aProcessInfo.prodLog)
                                         fd.close()
@@ -1014,25 +1034,32 @@ class Ingester():
 
                                 
                         except Exception, e:
-                                num_error=num_error+1
-                                list_error.append("%s|%s" % (item,aProcessInfo.workFolder))
+                                print "########################################## ERROR !!!!!!!!!!!!!!!!!!!!!!!!"
+                                self.num_error=self.num_error+1
+                                self.list_error.append("%s|%s" % (item,aProcessInfo.workFolder))
                                 exc_type, exc_obj, exc_tb = sys.exc_info()
 
                                 # apercu report
-                                self.reportToApercu(aProcessInfo, "NAME=EoSip-converter&BINDING=converter:ingester&done=%s&total=%s&error=%s&endTime=%s" % (num_done, num_total, num_error, urllib.quote(self.statsUtil.getEndDate())))
+                                self.reportToApercu(aProcessInfo, "NAME=EoSip-converter&BINDING=converter:ingester&done=%s&total=%s&error=%s&endTime=%s" % (self.num_done, self.num_total, self.num_error, urllib.quote(self.statsUtil.getEndDate())))
 
-                                
+                                # 
                                 try:
                                     self.logger.error("Error:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc()))
                                     aProcessInfo.addLog("Error:%s  %s\n%s\n" %  (exc_type, exc_obj, traceback.format_exc()))
+                                    #print " TODO 1: aProcessInfo=%s" % aProcessInfo
+                                    #print " TODO 2: aProcessInfo=%s" % dir(aProcessInfo)
+                                    #aProcessInfo.addInfo("HELLO", "wefasefwaefw")
+                                    #aProcessInfo.addLog("HELLO")
+                                    #print " TODO 3"
                                 except  Exception, ee:
-                                    self.logger.error(" Error: adding log info into processInfo:%s" % aProcessInfo)
-                                    exc_type, exc_obj, exc_tb = sys.exc_info()
-                                    print " ERROR adding error in log:%s  %s" %  (exc_type, exc_obj)
+                                    #self.logger.error(" Error 1: adding log info into processInfo=%s:%s" % (aProcessInfo, ee))
+                                    #exc_type, exc_obj, exc_tb = sys.exc_info()
+                                    #print " ERROR 1 adding error in log:%s  %s" %  (exc_type, exc_obj)
+                                    pass
 
                                 # write log
                                 try:
-                                        prodLogPath="%s/bad_convertion_%d.log" % (aProcessInfo.workFolder, num_error)
+                                        prodLogPath="%s/bad_convertion_%d.log" % (aProcessInfo.workFolder, self.num_error)
                                         fd=open(prodLogPath, 'w')
                                         fd.write(aProcessInfo.prodLog)
                                         fd.close()
@@ -1059,8 +1086,8 @@ class Ingester():
                                     print " ERROR saving metadata files:%s  %s%s\n" %  (exc_type, exc_obj, traceback.format_exc())
 
 
-                        if max_product_done!=-1 and num>=max_product_done:
-                                self.logger.info("max number of product to be done reached:%s; STOPPING" % max_product_done)
+                        if  self.max_product_done!=-1 and self.num>= self.max_product_done:
+                                self.logger.info("max number of product to be done reached:%s; STOPPING" %  self.max_product_done)
                                 break
 
 
@@ -1068,51 +1095,52 @@ class Ingester():
                 tmp=self.summary()
                 
                 # write convertion log
-                if not os.path.exists(LOG_FOLDER):
-                    os.makedirs(LOG_FOLDER)
-                path="%s/%s.log" % (LOG_FOLDER, self.batchName)
+                if not os.path.exists(self.LOG_FOLDER):
+                    os.makedirs(self.LOG_FOLDER)
+                path="%s/%s.log" % (self.LOG_FOLDER, self.batchName)
                 fd=open(path, "w")
                 fd.write(tmp)
                 fd.close()
                 print " batch done log '%s' written in:%s" % (self.batchName, path)
 
                 # write keeped info in any
-                path="%s/%s_KEEPED.txt" % (LOG_FOLDER, self.batchName)
+                path="%s/%s_KEEPED.txt" % (self.LOG_FOLDER, self.batchName)
                 fd=open(path, "w")
                 fd.write(self.infoKeeper.toString())
                 fd.close()
                 print " keeped information '%s' written in:%s" % (self.batchName, path)
                 
                 # write done list
-                path="%s/%s_DONE.log" % (LOG_FOLDER, self.batchName)
+                path="%s/%s_DONE.log" % (self.LOG_FOLDER, self.batchName)
                 fd=open(path, "w")
-                for item in list_done:
+                for item in self.list_done:
                     fd.write(item+"\n")
                 fd.close()
-                path="%s/%s_ERROR.log" % (LOG_FOLDER, self.batchName)
+                # write error list
+                path="%s/%s_ERROR.log" % (self.LOG_FOLDER, self.batchName)
                 fd=open(path, "w")
-                for item in list_error:
+                for item in self.list_error:
                     fd.write(item+"\n")
                 fd.close()
                 print " batch error log '%s' written in:%s" % (self.batchName, path)
                 
-                if create_index:
+                if self.create_index:
                     # index text:
                     tmp=self.indexCreator.getIndexesText()
                     if self.debug!=0:
                         print "\n\nINDEX:\n%s"  % tmp
-                    path="%s/%s" % (OUTSPACE, '%s_index.txt' % fixed_batch_name)
+                    path="%s/%s" % (self.OUTSPACE, '%s_index.txt' % self.fixed_batch_name)
                     fd=open(path, "w")
                     fd.write(tmp)
                     fd.close()
                     print "\n index written in:%s" % (path)
 
-                if create_shopcart!=0:
+                if self.create_shopcart:
                     # index text:
                     tmp=self.shopcartCreator.getIndexesText()
                     if self.debug!=0:
                         print "\n\nSHOPCART:\n%s"  % tmp
-                    path="%s/%s" % (OUTSPACE, '%s_shopcart.txt' % fixed_batch_name)
+                    path="%s/%s" % (self.OUTSPACE, '%s_shopcart.txt' % self.fixed_batch_name)
                     fd=open(path, "w")
                     fd.write("%d\n" % self.shopcartCreator.getSize())
                     #fd.write("\n")
@@ -1125,26 +1153,25 @@ class Ingester():
         #
         #
         def summary(self):
-            #global num,num_total,num_done,num_error,list_done,list_error,TMPSPACE,OUTSPACE
             res="Summary:\nbatch name:%s\n Started at: %s" % (self.batchName, formatUtils.dateFromSec((self.runStartTime)))
             res="%s\n Stoped at: %s\n" % (res, formatUtils.dateFromSec(self.runStopTime))
             res="%s Duration: %s sec\n" % (res, (self.runStopTime-self.runStartTime))
-            res="\n%s TMPSPACE:%s\n" % (res,TMPSPACE)
-            res="\n%s OUTSPACE:%s\n" % (res,OUTSPACE)
-            res="%s Total of products to be processed:%d\n" % (res,num_total)
-            res="%s  Number of product done:%d\n" % (res,num_done)
-            res="%s  Number of errors:%d\n\n" % (res,num_error)
+            res="\n%s TMPSPACE:%s\n" % (res,self.TMPSPACE)
+            res="\n%s OUTSPACE:%s\n" % (res,self.OUTSPACE)
+            res="%s Total of products to be processed:%d\n" % (res,self.num_total)
+            res="%s  Number of product done:%d\n" % (res,self.num_done)
+            res="%s  Number of errors:%d\n\n" % (res,self.num_error)
             n=0
-            for item in list_done:
+            for item in self.list_done:
                 res="%s done[%d]:%s\n" % (res, n, item)
                 n=n+1
             n=0
             res="%s\n" % res
-            for item in list_error:
+            for item in self.list_error:
                 res="%s errors[%d]:%s\n" % (res, n, item)
                 n=n+1
-            res="\n\n%s  Number of product done:%d\n" % (res,num_done)
-            res="%s  Number of errors:%d\n" % (res,num_error)
+            res="\n\n%s  Number of product done:%d\n" % (res,self.num_done)
+            res="%s  Number of errors:%d\n" % (res,self.num_error)
             res="\n%s Duration: %s sec\n" % (res, (self.runStopTime-self.runStartTime))
             print res
             return res
@@ -1154,13 +1181,12 @@ class Ingester():
         # do one product
         #
         def doOneProduct(self, pInfo):
-                #global product_overwrite,eoSip_store_type,eoSip_store_compression,OUTPUT_EO_SIP_PATTERN,OUTSPACE
 
                 startProcessing=time.time()
                 # create work folder
                 workfolder=self.makeWorkingFolders(pInfo)
                 #
-                if verify_product==1:
+                if self.verify_product==1:
                     self.verifySourceProduct(pInfo)
                 # instanciate source product
                 self.createSourceProduct(pInfo)
@@ -1169,7 +1195,7 @@ class Ingester():
                 # prepare it: move/decompress it in work folder
                 self.prepareProducts(pInfo)
                 # create empty metadata
-                met=metadata.Metadata(mission_metadatas)
+                met=metadata.Metadata(self.mission_metadatas)
                 met.setMetadataPair(metadata.METADATA_ORIGINAL_NAME, pInfo.srcProduct.origName)
                 if self.debug!=0:
                         print "\n###  initial metadata dump:\n%s" % met.toString()
@@ -1181,28 +1207,28 @@ class Ingester():
                 # instanciate destination product
                 self.createDestinationProduct(pInfo)
                 # set processInfo into destination product, to make it access things like the srcProduct or ingester
-                pInfo.destProduct.TYPOLOGY=TYPOLOGY
-                pInfo.destProduct.src_product_stored=eoSip_store_type
-                pInfo.destProduct.src_product_stored_compression=eoSip_store_compression
+                pInfo.destProduct.TYPOLOGY=self.TYPOLOGY
+                pInfo.destProduct.src_product_stored=self.eoSip_store_type
+                pInfo.destProduct.src_product_stored_compression=self.eoSip_store_compression
                 pInfo.destProduct.setProcessInfo(pInfo)
                 # set the EOP typology used
-                met.setOtherInfo("TYPOLOGY_SUFFIX", TYPOLOGY)
+                met.setOtherInfo("TYPOLOGY_SUFFIX", self.TYPOLOGY)
 
 
                 # set metadata
                 pInfo.destProduct.setMetadata(met)
-                pInfo.destProduct.setXmlMappingMetadata(xmlMappingMetadata, xmlMappingBrowse)
+                pInfo.destProduct.setXmlMappingMetadata(self.xmlMappingMetadata, self.xmlMappingBrowse)
 
                 # build product name
                 self.logger.info("  will build Eo-Sip package name" )
                 pInfo.addLog("\n - will build Eo-Sip package name")
-                patternName = OUTPUT_EO_SIP_PATTERN
+                patternName = self.OUTPUT_EO_SIP_PATTERN
                 # get eoSip extension (.ZIP normally)
                 tmpExt=definitions_EoSip.getDefinition('EOSIP_PRODUCT_EXT')
                 # take care of the zip in zip ==> .SIP.ZIP filename case
                 #print "EoSip class name:%s" % pInfo.destProduct.__class__.__name__
                 #sys.exit()
-                if pInfo.destProduct.__class__.__name__ =="EOSIP_Product" and eoSip_store_type==pInfo.destProduct.SRC_PRODUCT_AS_ZIP:
+                if pInfo.destProduct.__class__.__name__ =="EOSIP_Product" and self.eoSip_store_type==pInfo.destProduct.SRC_PRODUCT_AS_ZIP:
                     pInfo.destProduct.buildPackageNames(patternName, "%s.%s" % (definitions_EoSip.getDefinition('SIP'), tmpExt))
                     pInfo.destProduct.buildProductNames(patternName, tmpExt)
                 else:
@@ -1223,8 +1249,8 @@ class Ingester():
                 pInfo.destProduct.folder=pInfo.eosipTmpFolder
 
                 # CODE MOVED FROM specialized ingested
-                self.outputProductResolvedPaths = pInfo.destProduct.getOutputFolders(OUTSPACE, OUTPUT_RELATIVE_PATH_TREES)
-                relativePathPart=self.outputProductResolvedPaths[0][len(OUTSPACE):]
+                self.outputProductResolvedPaths = pInfo.destProduct.getOutputFolders(self.OUTSPACE, self.OUTPUT_RELATIVE_PATH_TREES)
+                relativePathPart=self.outputProductResolvedPaths[0][len(self.OUTSPACE):]
                 met.setMetadataPair(metadata.METADATA_PRODUCT_RELATIVE_PATH, relativePathPart)
 
                 # make browse file
@@ -1240,7 +1266,7 @@ class Ingester():
 
 
                 # browse reports
-                if create_browse_report == True:
+                if self.create_browse_report == True:
                     pInfo.addLog("\n - will build browse reports")
                     self.logger.info("  will build browse reports")
                     tmp=pInfo.destProduct.buildBrowsesReportFile()
@@ -1261,8 +1287,8 @@ class Ingester():
                 print pInfo.destProduct.info()
                 
                 # output Eo-Sip product
-                if test_dont_write!=True:
-                    self.output_eoSip(pInfo, OUTSPACE, OUTPUT_RELATIVE_PATH_TREES, product_overwrite)
+                if self.test_dont_write!=True:
+                    self.output_eoSip(pInfo, self.OUTSPACE, self.OUTPUT_RELATIVE_PATH_TREES, self.product_overwrite)
 
                 # save metadata in working folder
                 self.saveMetadata(pInfo)
@@ -1296,27 +1322,27 @@ class Ingester():
         # dump info
         #
         def dump(self):
-                self.logger.info("   INBOX: %s" % INBOX)
-                self.logger.info("   TMPSPACE: %s" % TMPSPACE)
-                self.logger.info("   OUTSPACE: %s" % OUTSPACE)
-                self.logger.info("   Max product done limit: %s" % max_product_done)
-                self.logger.info("   Verify product: %s" % verify_product)
-                self.logger.info("   Verify xml created: %s" % verify_xml)
-                self.logger.info("   Create thumbnail: %s" % create_thumbnail)
-                self.logger.info("   Create index: %s" % create_index)
-                self.logger.info("   Create shopcart: %s" % create_shopcart)
-                self.logger.info("   Create browse report: %s" % create_browse_report)
-                self.logger.info("   Index added: %s" % index_added)
-                self.logger.info("   Fixed batch name: %s" % fixed_batch_name)
-                self.logger.info("   Product overwrite: %s" % product_overwrite)
-                self.logger.info("   OUTPUT_EO_SIP_PATTERN: %s" % OUTPUT_EO_SIP_PATTERN)
-                self.logger.info("   OUTPUT_RELATIVE_PATH_TREES: %s" % OUTPUT_RELATIVE_PATH_TREES)
-                self.logger.info("   eoSip typology: %s" % TYPOLOGY)
-                self.logger.info("   eoSip store type: %s" % eoSip_store_type)
-                self.logger.info("   eoSip store compression: %s" % eoSip_store_compression)
-                self.logger.info("   TEST; don't extract source product: %s" % test_dont_extract)
-                self.logger.info("   TEST; don't write destination product: %s" % test_dont_write)
-                self.logger.info("   TEST; don't do browse: %s" % test_dont_do_browse)
+                self.logger.info("   INBOX: %s" % self.INBOX)
+                self.logger.info("   TMPSPACE: %s" % self.TMPSPACE)
+                self.logger.info("   OUTSPACE: %s" % self.OUTSPACE)
+                self.logger.info("   Max product done limit: %s" % self.max_product_done)
+                self.logger.info("   Verify product: %s" % self.verify_product)
+                self.logger.info("   Verify xml created: %s" % self.verify_xml)
+                self.logger.info("   Create thumbnail: %s" % self.create_thumbnail)
+                self.logger.info("   Create index: %s" % self.create_index)
+                self.logger.info("   Create shopcart: %s" % self.create_shopcart)
+                self.logger.info("   Create browse report: %s" % self.create_browse_report)
+                self.logger.info("   Index added: %s" % self.index_added)
+                self.logger.info("   Fixed batch name: %s" % self.fixed_batch_name)
+                self.logger.info("   Product overwrite: %s" % self.product_overwrite)
+                self.logger.info("   OUTPUT_EO_SIP_PATTERN: %s" % self.OUTPUT_EO_SIP_PATTERN)
+                self.logger.info("   OUTPUT_RELATIVE_PATH_TREES: %s" % self.OUTPUT_RELATIVE_PATH_TREES)
+                self.logger.info("   eoSip typology: %s" % self.TYPOLOGY)
+                self.logger.info("   eoSip store type: %s" % self.eoSip_store_type)
+                self.logger.info("   eoSip store compression: %s" % self.eoSip_store_compression)
+                self.logger.info("   TEST; don't extract source product: %s" % self.test_dont_extract)
+                self.logger.info("   TEST; don't write destination product: %s" % self.test_dont_write)
+                self.logger.info("   TEST; don't do browse: %s" % self.test_dont_do_browse)
                 #if len(dataProviders) > 0:
                 self.logger.info("   additional data providers:%s" % self.dataProviders)
                 #else:
@@ -1330,22 +1356,26 @@ class Ingester():
         #
         def toString(self):
             out=StringIO()
-            print >>out, ("   INBOX: %s" % INBOX)
-            print >>out, ("   TMPSPACE: %s" % TMPSPACE)
-            print >>out, ("   OUTSPACE: %s" % OUTSPACE)
-            print >>out, ("   Max product done limit: %s" % max_product_done)
-            print >>out, ("   Verify product: %s" % verify_product)
-            print >>out, ("   Verify xml created: %s" % verify_xml)
-            print >>out, ("   Create thumbnail: %s" % create_thumbnail)
-            print >>out, ("   Create index: %s" % create_index)
-            print >>out, ("   Create shopcart: %s" % create_shopcart)
-            print >>out, ("   Index added: %s" % index_added)
-            print >>out, ("   Fixed batch name: %s" % fixed_batch_name)
-            print >>out, ("   Product overwrite: %s" % product_overwrite)
-            print >>out, ("   OUTPUT_EO_SIP_PATTERN: %s" % OUTPUT_EO_SIP_PATTERN)
-            print >>out, ("   OUTPUT_RELATIVE_PATH_TREES: %s" % OUTPUT_RELATIVE_PATH_TREES)
-            print >>out, ("   eoSip typology: %s" % TYPOLOGY)
-            print >>out, ("   eoSip store type: %s" % eoSip_store_type)
+            print >>out, ("   INBOX: %s" % self.INBOX)
+            print >>out, ("   TMPSPACE: %s" % self.TMPSPACE)
+            print >>out, ("   OUTSPACE: %s" % self.OUTSPACE)
+            print >>out, ("   Max product done limit: %s" % self.max_product_done)
+            print >>out, ("   Verify product: %s" % self.verify_product)
+            print >>out, ("   Verify xml created: %s" % self.verify_xml)
+            print >>out, ("   Create thumbnail: %s" % self.create_thumbnail)
+            print >>out, ("   Create index: %s" % self.create_index)
+            print >>out, ("   Create shopcart: %s" % self.create_shopcart)
+            print >>out, ("   Index added: %s" % self.index_added)
+            print >>out, ("   Fixed batch name: %s" % self.fixed_batch_name)
+            print >>out, ("   Product overwrite: %s" % self.product_overwrite)
+            print >>out, ("   OUTPUT_EO_SIP_PATTERN: %s" % self.OUTPUT_EO_SIP_PATTERN)
+            print >>out, ("   OUTPUT_RELATIVE_PATH_TREES: %s" % self.OUTPUT_RELATIVE_PATH_TREES)
+            print >>out, ("   eoSip typology: %s" % self.TYPOLOGY)
+            print >>out, ("   eoSip store type: %s" % self.eoSip_store_type)
+            print >>out, ("   eoSip store compression: %s" % self.eoSip_store_compression)
+            print >>out, ("   TEST; don't extract source product: %s" % self.test_dont_extract)
+            print >>out, ("   TEST; don't write destination product: %s" % self.test_dont_write)
+            print >>out, ("   eoSip store type: %s" % self.eoSip_store_type)
             #if len(dataProviders) > 0:
             print >>out, ("   additional data providers:%s" % self.dataProviders)
             #else:

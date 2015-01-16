@@ -64,10 +64,16 @@ class StatsUtil():
 
     
     #
-    #
+    # get estimated convertion end time
     #
     def getEndDate(self):
         return self.endDate
+
+    #
+    # get current time
+    #
+    def getCurrentDate(self):
+        return formatUtils.dateFromSec(time.time()).replace("T", " ").replace("Z", "")
         
 if __name__ == '__main__':
     pass

@@ -105,8 +105,11 @@ class ingester_tropforest(ingester.Ingester):
             met.setMetadataPair(metadata.METADATA_PRODUCT_SIZE, size)
             met.setMetadataPair('METADATA_WRS_LONGITUDE_GRID', grid_lon)
             met.setMetadataPair('METADATA_WRS_LATITUDE_GRID', grid_lat)
-            met.setMetadataPair('METADATA_WRS_LONGITUDE_GRID_NORMALISED', grid_lon_norm)
-            met.setMetadataPair('METADATA_WRS_LATITUDE_GRID_NORMALISED', grid_lat_norm)                    
+            met.setMetadataPair(metadata.METADATA_WRS_LONGITUDE_GRID_NORMALISED, grid_lon_norm)
+            met.setMetadataPair(metadata.METADATA_WRS_LATITUDE_GRID_NORMALISED, grid_lat_norm)
+            met.addLocalAttribute('gridLongitude', grid_lon_norm)
+            met.addLocalAttribute('gridLatitude', grid_lat_norm)
+            # needed for the filename
             met.setMetadataPair(metadata.METADATA_FRAME, grid_lat_norm)
             met.setMetadataPair(metadata.METADATA_TRACK, grid_lon_norm)
             met.setMetadataPair(metadata.METADATA_GENERATION_TIME, time.strftime('%Y-%m-%dT%H:%M:%SZ'))
@@ -172,10 +175,11 @@ class ingester_tropforest(ingester.Ingester):
                     browseDestPath="%s/%s.%s" % (processInfo.eosipTmpFolder, processInfo.destProduct.packageName, browseExtension)
                     processInfo.addLog("  makeBrowse: ext=%s; src=%s;  dest=%s" % (browseExtension, browseSrcPath, browseDestPath))
                     if processInfo.test_dont_do_browse!=True:
-                            imageUtil.makeBrowse('JPG', browseSrcPath, browseDestPath, ratio )
+                            ok=imageUtil.makeBrowse('JPG', browseSrcPath, browseDestPath, ratio )
 
-                    #
-                    #imageUtil.externalMakeJpeg(browseSrcPath, browseDestPath)
+                    #if processInfo.test_dont_do_browse!=True:
+                    #	    ok=imageUtil.externalMakeBrowse('JPG', browseSrcPath, browseDestPath, ratio)
+                    	    
                     processInfo.destProduct.addSourceBrowse(browseDestPath, [])
 
                     # create browse choice for browse metadata report

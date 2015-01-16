@@ -8,6 +8,8 @@ import subprocess
 import traceback
 from subprocess import call,Popen, PIPE
 
+from esaProducts import definitions_EoSip
+
 # try to have PIL library
 PilReady=0
 try:
@@ -19,9 +21,10 @@ except:
 
 # 
 SUPPORTED_TYPE=["JPEG", "JPG","PNG"]
+a=[definitions_EoSip.getDefinition(definitions_EoSip.FIXED__JPEG_EXT)]
 
 # debug
-debug=1
+debug=False
 # command line used to build the browse, when PIL is not used
 externalConverterCommand="/bin/sh -c \"/usr/bin/gm convert -verbose "
 
@@ -82,63 +85,67 @@ def makeBrowse(type="JPEG", src=None, dest=None, resizePercent=-1, w=-1, h=-1, e
     #
     if type.lower()=="jpg":
         type="JPEG"
-    
+
+    ok=False
     if PilReady==1:
         try:
-            makeBrowsePil(type, src, dest, resizePercent, w, h, enhance, transparent)
+            ok=makeBrowsePil(type, src, dest, resizePercent, w, h, enhance, transparent, False)
         except Exception, e:
-            print " can not make browse using PIL:"
-            if debug!=0:
+            print " ######################################## 0 can not make browse using PIL:%s" % e
+            if debug:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 traceback.print_exc(file=sys.stdout)
             try:
-                externalMakeBrowse(type, src, dest, resizePercent, transparent)
+                ok=externalMakeBrowse(type, src, dest, resizePercent, transparent, False)
             except Exception, e:
-                print " Error making browse using external call:"
+                print " ######################################## 1 Error making browse using external call:%s" % e
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 traceback.print_exc(file=sys.stdout)
-                #raise e
-                pass
+                raise e
+                #pass
     else:
         try:
-            externalMakeBrowse(type, src, dest, resizePercent, transparent)
+            ok=externalMakeBrowse(type, src, dest, resizePercent, transparent, False)
         except Exception, e:
-            print " Error making browse using external call:"
+            print " ######################################## 2 Error making browse using external call:%s" % e
             exc_type, exc_obj, exc_tb = sys.exc_info()
             traceback.print_exc(file=sys.stdout)
             raise e
             #pass
 
-    # test image exists
+    return ok
     
         
 
 #
 # run external command to generate the browse
 #
-def externalMakeBrowse(type="JPEG", src=None, dest=None, scale=100, transparent=False):
+def externalMakeBrowse(type="JPEG", src=None, dest=None, resizePercent=100, transparent=False, showTraceback=False):
     try:
         src=src.replace("//","/")
         dest=dest.replace("//","/")
-        if debug!=0:
+        if debug:
             print " external resize image:%s into:%s" % (src, dest)
-        if scale==-1 or scale==100:
+        if resizePercent==-1 or resizePercent==100:
             command="%s %s %s\"" % (externalConverterCommand, src, dest)
         else:
-            command="%s -scale %s%s %s %s\"" % (externalConverterCommand, scale , '%', src, dest)
-        #if debug!=0:
+            command="%s -scale %s%s %s %s\"" % (externalConverterCommand, resizePercent , '%', src, dest)
+        #if debug:
         print "command:'%s'" % command
         retval = subprocess.call(command, shell=True)
-        if debug!=0:
+        print " ######################################## external make browse exit code:%s" % retval
+        if debug:
             print "  retval:%s" % retval
         if retval!=0:
-            raise Exception("Error externalMakeJpeg:")
-        if debug!=0:
+            raise Exception("Error externalMakeJpeg: subprocess exit code is not 0 but:%s" % retval)
+        if debug:
             print "  browse saved as:%s" % dest
+        return True
     except Exception, e:
-        print " externalMakeJpeg error:"
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        traceback.print_exc(file=sys.stdout)
+        print " ######################################## 3 externalMakeBrowse error:%s" % e
+        if showTraceback:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            traceback.print_exc(file=sys.stdout)
         raise e
     
 
@@ -150,12 +157,12 @@ def splitBands(img=None):
     newIm=None
     try:
         r, g, b, a = img.split()
-        if debug!=0:
+        if debug:
             print "  im splitted"
         newIm = Image.merge("RGB", (r, g, b))
     except:
         r, g, b = img.split()
-        if debug!=0:
+        if debug:
             print "  im splitted"
         newIm = Image.merge("RGB", (r, g, b))
     return newIm
@@ -164,13 +171,13 @@ def splitBands(img=None):
 # make a browse image using PIL
 # w and h parameter not used at this time
 #
-def makeBrowsePil(type="JPEG", src=None, dest=None, resizePercent=-1, w=-1, h=-1, enhance=None, transparent=False):
+def makeBrowsePil(type="JPEG", src=None, dest=None, resizePercent=-1, w=-1, h=-1, enhance=None, transparent=False, showTraceback=False):
     try:
-        if debug==0:
+        if debug:
             print " internal resize image:%s into:%s; percent:%s" % (src, dest, resizePercent)
         im = Image.open(src)
         im = im.convert('RGBA')
-        if debug==0:
+        if debug:
             print "  src image readed:%s" % im.info
 
         img=None
@@ -178,24 +185,24 @@ def makeBrowsePil(type="JPEG", src=None, dest=None, resizePercent=-1, w=-1, h=-1
             converter = ImageEnhance.Contrast(im)
             newIm = converter.enhance(1.5)
             #r, g, b, a = img.split()
-            #if debug!=0:
+            #if debug:
             #    print "  im splitted"
             #newIm = Image.merge("RGB", (r, g, b))
             #newIm = splitBands(img)
         else:
             #try:       
             #    r, g, b, a = im.split()
-            #    if debug!=0:
+            #    if debug:
             #        print "  im splitted rgba"
             #    newIm = Image.merge("RGB", (r, g, b))
             #except:
             #    r, g, b = im.split()
-            #    if debug!=0:
+            #    if debug:
             #        print "  im splitted rgb"
             #    newIm = Image.merge("RGB", (r, g, b))
             newIm = im.copy()
             
-        if debug!=0:
+        if debug:
             print "  newIm:%s" % newIm
 
         width, height = newIm.size
@@ -209,7 +216,7 @@ def makeBrowsePil(type="JPEG", src=None, dest=None, resizePercent=-1, w=-1, h=-1
 
         if newSize!=None:   
             newIm=newIm.resize(newSize, Image.BILINEAR )
-            if debug!=0:
+            if debug:
                 print "  newIm resized"
             if type=="PNG" and transparent==True:
                 source = newIm.split() 
@@ -227,12 +234,15 @@ def makeBrowsePil(type="JPEG", src=None, dest=None, resizePercent=-1, w=-1, h=-1
                 newIm = Image.merge(im.mode, source)  # build a new multiband image 
             newIm.save(dest, type)
             
-        if debug!=0:
+        if debug:
             print "  browse saved as:%s" % dest
+        return True
+    
     except Exception, e:
-        print " Error making browse:"
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        traceback.print_exc(file=sys.stdout)
+        print " ######################################## 4 Error making browse:%s" %e
+        if showTraceback:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            traceback.print_exc(file=sys.stdout)
         raise e
 
 
@@ -240,9 +250,10 @@ def makeBrowsePil(type="JPEG", src=None, dest=None, resizePercent=-1, w=-1, h=-1
 if __name__ == '__main__':
     #src="C:/Users/glavaux/Shared/LITE/tmp/unzipped/N00-E113_AVN_20090517_PRO_0.tif"
     #src="C:/Users/glavaux/Shared/LITE/tmp/unzipped/imagery.tif"
-    src="C:/Users/glavaux/Shared/LITE/tmp/imagery_pb.tif"
-    dest="C:/Users/glavaux/Shared/LITE/tmp/test.png"
-    ok=makeBrowse("PNG", src, dest, 50, transparent=True)
-    print "DONE?:%s" % ok
-    #dest="C:/Users/glavaux/Shared/LITE/tmp/unzipped/test.jpeg"
-    #ok=makeBrowse("JPG", src, dest, 50)
+    #src="C:/Users/glavaux/Shared/LITE/tmp/imagery_pb.tif"
+    #dest="C:/Users/glavaux/Shared/LITE/tmp/test.png"
+    #ok=makeBrowse("PNG", src, dest, 50, transparent=True)
+    #print "DONE?:%s" % ok
+
+    print a
+
