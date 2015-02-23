@@ -63,7 +63,7 @@ class Browse_Metadata(Base_Metadata):
         return res
 
 
-    def getMetadataNames(self):
+    def getMetadataNames_UNNEEDED(self):
         res=[]
         # copy defaults fieds
         for item in self.dict.iterkeys():

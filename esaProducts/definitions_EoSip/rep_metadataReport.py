@@ -50,10 +50,21 @@ class rep_metadataReport(SipMessageBuilder):
 
 
     def test(self):
+        # set minumum metadata classe
         meta=Metadata()
-        meta.setMetadataPair(meta.METADATA_START_DATE, '20021023')
+        meta.setOtherInfo("TYPOLOGY_SUFFIX", "EOP")
+        meta.setMetadataPair(metadata.METADATA_PRODUCTNAME, 'product_name')
+        meta.setMetadataPair(metadata.METADATA_PACKAGENAME, 'package_name')
+        #
+        #print "metadata dir:" % (dir(meta))
+        meta.setMetadataPair(metadata.METADATA_START_DATE, '20021023')
+        #meta.alterMetadataMaping('href', metadata.METADATA_PACKAGENAME)
+        #meta.alterMetadataMaping('111', metadata.METADATA_ORBIT)
         mess=self.buildMessage(meta, "rep.metadataReport")
         print "message:%s" % mess
+
+        print "metadata mapping altered?:%s" % (meta.isMetadataMapingAltered())
+        
         return mess
 
 

@@ -7,8 +7,9 @@ from abc import ABCMeta, abstractmethod
 import sys
 import traceback
 from cStringIO import StringIO
-#from definitions_EoSip import sipBuilder
-#from sipBuilder import SipBuilder
+import definitions_EoSip
+import sipBuilder
+
 
 # type of metadata:
 METADATATYPE_PRODUCT='METADATATYPE_PRODUCT'
@@ -19,12 +20,17 @@ class Base_Metadata:
     
     #
     counter=0
+    
     #
-    debug=0
+    debug=1
+    
     # the mapping of nodes used in xml report. keys is node path
     xmlNodeUsedMapping={}
 
-
+    # the mapping of nodes used in xml report. keys is node path
+    xmlVarnameMapping={}
+    
+    
     #
     #
     #
@@ -39,15 +45,54 @@ class Base_Metadata:
         self.otherInfo={}
         # the localAttibutes
         self.localAttributes=[]
-        print ' init Base_Metadata done'
+        self.label='no label'
+        self.defined=False
         
+        print ' init Base_Metadata done'
 
 
+    #
+    # tells if the metadata are defined. used to prevent to set everything to None
+    #
+    def isMetadataDefined(self):
+        return self.defined
+        
+    #
+    # set if the metadata are defined.
+    #
+    def setMetadataDefined(self, b):
+        self.defined = b
+
+    
+    #
+    #
+    #
+    def alterMetadataMaping(self, key, value):
+        #print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ will alterMetadataMaping for: key=%s  mapping=%s" % (key, value)
+        self.xmlVarnameMapping[key]=value
+    #
+    #
+    #
+    def isMetadataMapingAltered(self):
+        return len(self.xmlVarnameMapping.keys())>0
+    #
+    #
+    #
+    def getMetadataMaping(self, key, origMappingMap):
+        #print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ origMappingMap:%s" % (origMappingMap)
+        if self.xmlVarnameMapping.has_key(key):
+            return self.xmlVarnameMapping[key]
+        else:
+            if origMappingMap.has_key(key):
+                return origMappingMap[key]
+            else:
+                return None
     #
     #
     #
     def setOtherInfo(self, key, value):
         self.otherInfo[key]=value
+
 
     #
     #
@@ -64,6 +109,7 @@ class Base_Metadata:
         adict[name]=value
         self.localAttributes.append(adict)
 
+
     #
     # get the local attributes
     #
@@ -71,12 +117,18 @@ class Base_Metadata:
         return self.localAttributes
 
     
-
     #
     # set the dictionnary of node used in the xml reports
     #
     def setUsedInXmlMap(self, adict):
         self.xmlNodeUsedMapping=adict
+
+    #
+    # get the dictionnary of node used in the xml reports
+    #
+    def getUsedInXmlMap(self):
+        return self.xmlNodeUsedMapping
+
 
     #
     # test if a field is used in the xml report
@@ -107,13 +159,33 @@ class Base_Metadata:
                 print "  field with path:'%s' has no used map entry" % path
             return 1
             
+    #
+    #
+    #
+    def getMetadataNames(self):
+        return sorted(self.dict.keys())
+    
+    #
+    #
+    #
+    def setMetadataPair(self, name=None, value=None):
+        self.dict[name] = value
+
+    #
+    #
+    #
+    def getMetadataValue(self,name=None):
+        if self.dict.has_key(name):
+            return self.dict[name]
+        else:
+            return sipBuilder.VALUE_NOT_PRESENT
 
     #
     #
     #
     def toString(self):
         out=StringIO()
-        print >>out, '\n##################################\n#### START Metadata Info #########\n### Dict:'
+        print >>out, '\n##################################\n#### START Metadata Info #########\n### Label:%s\n### Dict:' % self.label
         for item in sorted(self.dict.keys()):
             print >>out, "%s=%s" % (item, self.dict[item])
         if len(self.xmlNodeUsedMapping.keys())>0:

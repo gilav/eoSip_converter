@@ -10,13 +10,7 @@ import logging
 
 class Product:
     debug=0
-    path='dummy_path'
-    size=0
-    origName=None
-    folder=None
-    contentList=None
     type=None
-    metadata=None
     TYPE_UNKNOWN=0
     TYPE_MPH=1
     TYPE_DIR=2
@@ -30,6 +24,7 @@ class Product:
         if self.debug!=0:
             print " init class Product, path=%s" % p
         self.path=p
+        self.metadata=None
         self.size=0
         self.type=self.TYPE_UNKNOWN
         self.contentList=[]
@@ -92,30 +87,55 @@ class Product:
     #
     #
     #
-    def extractMetadata(self):
+    @abstractmethod
+    def extractMetadata(self, processInfo):
         if self.debug!=0:
             print " will extract metadata"
         return None
+
     
     #
-    #
+    # set product metadata
     #
     def setMetadata(self, m=None):
-        if self.debug!=0:
-            print " set metadata to:%s" % m
-        self.metadata=m
+        if self.debug==0:
+            print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ set metadata to:%s" % m
+            print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ set metadata to values:%s" % m.toString()
+            if self.metadata==None:
+                print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ current metadata :None"
+            else:
+                print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ current metadata :%s" % self.metadata
+
+        
+        if self.metadata==None:
+            self.metadata=m
+        else:
+            # add to existing one
+            # dict name/values
+            for key in m.getMetadataNames():
+                print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ set metadata name:%s" % key
+                self.metadata.setMetadataPair(key, m.getMetadataValue(key))
+                print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@            values:%s" % m.getMetadataValue(key)
+            # other info
+                self.metadata.otherInfo = m.otherInfo
+            # local attributes
+                self.metadata.localAttributes = m.localAttributes
+            # xml mapping
+                
 
     #
     #
     #
+    @abstractmethod
     def buildTypeCode(self):
         return None
 
+
     #
+    # set debug flag
     #
-    #
-    def dumpMetadata(self):
-        self.metadata.dump()
+    def setDebug(self, b):
+        self.debug=b
     
 
 if __name__ == '__main__':

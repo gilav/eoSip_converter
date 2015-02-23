@@ -1,6 +1,6 @@
 # -*- coding: cp1252 -*-
 #
-# this class is a base class for Service
+# this class implement access to an http apercu service
 #
 #
 from abc import ABCMeta, abstractmethod
@@ -27,7 +27,7 @@ class ApercuServiceClient:
             print " init class ApercuServiceClient"
         self.service = processInfo.ingester.getService(SERVICE_APERCU)
         if self.debug:
-            print "@@@@@@@@@@@@@@@@ ApercuServiceClient: got service xmlValidate:%s" % self.service
+            print "@@@@@@@@@@@@@@@@ ApercuServiceClient: got service apercu:%s" % self.service
         self.urlPattern=self.service.getProperty(SETTING_URL_PATTERN)
         if self.debug:
             print "@@@@@@@@@@@@@@@@ ApercuServiceClient: got urlPattern:%s" % self.urlPattern
@@ -36,8 +36,8 @@ class ApercuServiceClient:
     #
     # send report using http
     #
-    def useHttp(self, processInfo, params):
-        self.reportToApercuService(processInfo, params)
+    #def useHttp(self, processInfo, params):
+    #    self.reportToApercuService(processInfo, params)
         
 
     #

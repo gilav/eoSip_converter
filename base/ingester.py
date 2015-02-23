@@ -59,6 +59,7 @@ import indexCreator, shopcartCreator
 import statsUtil
 from data import dataProvider
 from services import serviceProvider
+from ressources import ressourceProvider
 from serviceClients import ApercuServiceClient
 import sipBuilder
 import infoKeeper
@@ -70,11 +71,13 @@ import infoKeeper
 #
 # folders stuff
 SETTING_CONFIG_NAME='CONFIG_NAME'
+SETTING_CONFIG_VERSION='CONFIG_VERSION'
 SETTING_INBOX='INBOX'
 SETTING_OUTSPACE='OUTSPACE'
 SETTING_TMPSPACE='TMPSPACE'
-# config name
+# config name and version
 CONFIG_NAME=None
+CONFIG_VERSION=None
 # file find stuff
 LIST_TYPE=None
 SETTING_LIST_TYPE='LIST_TYPE'
@@ -112,16 +115,19 @@ SETTING_Output='Output'
 SETTING_workflowp='Workflow'
 SETTING_eosip='eoSip'
 SETTING_Data='Data'
+SETTING_Ressources='Ressources'
 SETTING_Services='Services'
 # setting name in configuration file
 SETTING_metadataReport_usedMap='metadataReport-xml-map'
 SETTING_browseReport_usedMap='browseReport-xml-map'
 SETTING_MISSION_SPECIFIC='Mission-specific-values'
 SETTING_OUTPUT_RELATIVE_PATH_TREES='OUTPUT_RELATIVE_PATH_TREES'
-SETTING_OUTPUT_EO_SIP_PATTERN='OUTPUT_EO_SIP_PATTERN'
+SETTING_OUTPUT_SIP_PATTERN='OUTPUT_SIP_PATTERN'
+SETTING_OUTPUT_EO_PATTERN='OUTPUT_EO_PATTERN'
 # output stuff
 OUTPUT_RELATIVE_PATH_TREES=None
-OUTPUT_EO_SIP_PATTERN=None
+OUTPUT_SIP_PATTERN=None
+OUTPUT_EO_PATTERN=None
 # workflow
 SETTING_VERIFY_SRC_PRODUCT='VERIFY_SRC_PRODUCT'
 SETTING_MAX_PRODUCTS_DONE='MAX_PRODUCTS_DONE'
@@ -133,6 +139,7 @@ SETTING_INDEX_ADDED_FIELD='INDEX_ADDED_FIELD'
 SETTING_FIXED_BATCH_NAME='FIXED_BATCH_NAME'
 SETTING_PRODUCT_OVERWRITE='PRODUCT_OVERWRITE'
 SETTING_CREATE_BROWSE_REPORT='CREATE_BROWSE_REPORT'
+SETTING_CREATE_SIP_REPORT='CREATE_SIP_REPORT'
 # workflow, test stuff
 SETTING_TEST_DONT_EXTRACT='TEST_DONT_EXTRACT'
 SETTING_TEST_DONT_WRITE='TEST_DONT_WRITE'
@@ -140,6 +147,7 @@ SETTING_TEST_DONT_DO_BROWSE='TEST_DONT_DO_BROWSE'
 # eoSip
 SETTING_EOSIP_TYPOLOGY='TYPOLOGY'
 SETTING_EOSIP_STORE_TYPE='STORE_TYPE'
+SETTING_EOSIP_STORE_EO_COMPRESSION='STORE_EO_COMPRESSION'
 SETTING_EOSIP_STORE_COMPRESSION='STORE_COMPRESSION'
 
 
@@ -159,6 +167,7 @@ FINAL_PATH_LIST=[]
 
 # mission stuff
 mission_metadatas={}
+
 # workflow stuff
 verify_product=True
 max_product_done=-1
@@ -167,6 +176,7 @@ create_index=False
 create_thumbnail=False
 create_shopcart=False
 create_browse_report=True
+create_sip_report=True
 index_added=None
 fixed_batch_name=None
 product_overwrite=False
@@ -178,9 +188,14 @@ startJustReadConfig=False
 # daemon
 daemon=False
 
-# eoSip
+
+# eoSip, defaults
+# eo product stored as zip
 eoSip_store_type=eosip_product.SRC_PRODUCT_AS_ZIP
-eoSip_store_compression=True
+# don't compress eoSip zip
+eoSip_store_compression=False
+# but compress eo product
+eoSip_store_eo_compression=True
 
 # data provider stuff
 dataProviders={}
@@ -228,15 +243,19 @@ class Ingester():
             self.TYPOLOGY=TYPOLOGY
             # output stuff
             self.OUTPUT_RELATIVE_PATH_TREES=OUTPUT_RELATIVE_PATH_TREES
-            self.OUTPUT_EO_SIP_PATTERN=OUTPUT_EO_SIP_PATTERN
+            self.OUTPUT_SIP_PATTERN=OUTPUT_SIP_PATTERN
+            self.OUTPUT_EO_PATTERN=OUTPUT_EO_PATTERN
             # eoSip
             self.eoSip_store_type=eoSip_store_type
+            self.eoSip_store_eo_compression = eoSip_store_eo_compression
+            self.eoSip_store_compression = eoSip_store_compression
             self.FINAL_PATH_LIST=FINAL_PATH_LIST
             # workflow stuff
             self.create_index=create_index
             self.create_shopcart=create_shopcart
             self.create_thumbnail=create_thumbnail
             self.create_browse_report=create_browse_report
+            self.create_sip_report=create_sip_report
             self.index_added=index_added
             self.fixed_batch_name=fixed_batch_name
             self.verify_product=verify_product
@@ -288,12 +307,20 @@ class Ingester():
             # data/service providers
             self.dataProviders={}
             self.servicesProvider=None
-            self.apercuReporter = None
+            self.apercuReporter=None
+            self.ressourcesProvider=None
             # 
             self.infoKeeper = infoKeeper.infoKeeper()
             #
             self.mission_metadatas=mission_metadatas
             #
+
+
+        #
+        # set debug flag
+        #
+        def setDebug(self, b):
+            self.debug=b
 
 
         #
@@ -355,6 +382,7 @@ class Ingester():
                         self.__config.read(path)
                         #
                         self.CONFIG_NAME = self.__config.get(SETTING_Main, SETTING_CONFIG_NAME)
+                        self.CONFIG_VERSION = self.__config.get(SETTING_Main, SETTING_CONFIG_VERSION)
                         self.INBOX = self.__config.get(SETTING_Main, SETTING_INBOX)
                         self.TMPSPACE = self.__config.get(SETTING_Main, SETTING_TMPSPACE)
                         self.OUTSPACE = self.__config.get(SETTING_Main, SETTING_OUTSPACE)
@@ -398,14 +426,28 @@ class Ingester():
                                 pass
 
                         try:
-                            self.OUTPUT_EO_SIP_PATTERN = self.__config.get(SETTING_Output, SETTING_OUTPUT_EO_SIP_PATTERN)
+                            self.OUTPUT_SIP_PATTERN = self.__config.get(SETTING_Output, SETTING_OUTPUT_SIP_PATTERN)
                         except:
                             pass
+
+                        try:
+                            self.OUTPUT_EO_PATTERN = self.__config.get(SETTING_Output, SETTING_OUTPUT_EO_PATTERN)
+                        except:
+                            pass
+
+                        # if EO pattern not specified, set to SIP pattern
+                        if self.OUTPUT_EO_PATTERN==None:
+                            self.OUTPUT_EO_PATTERN=self.OUTPUT_SIP_PATTERN
+                        # idem reverse
+                        if self.OUTPUT_SIP_PATTERN==None:
+                            self.OUTPUT_SIP_PATTERN=self.OUTPUT_EO_PATTERN
 
                         try:
                             self.OUTPUT_RELATIVE_PATH_TREES = self.__config.get(SETTING_Output, SETTING_OUTPUT_RELATIVE_PATH_TREES)
                         except:
                             pass
+
+
 
 
                         # workflow
@@ -446,7 +488,12 @@ class Ingester():
                         except:
                             pass
                         try:
-                            self.create_browse_report= self.__config.getboolean(SETTING_workflowp, SETTING_CREATE_BROWSE_REPORT)
+                            self.create_browse_report = self.__config.getboolean(SETTING_workflowp, SETTING_CREATE_BROWSE_REPORT)
+                        except:
+                            pass
+                        
+                        try:
+                            self.create_sip_report= self.__config.getboolean(SETTING_workflowp, SETTING_CREATE_SIP_REPORT)
                         except:
                             pass
                         
@@ -490,7 +537,16 @@ class Ingester():
                         try:
                             self.eoSip_store_compression = self.__config.getboolean(SETTING_eosip, SETTING_EOSIP_STORE_COMPRESSION)
                         except:
-                            self.eoSip_store_compression = True
+                            #self.eoSip_store_compression = false
+                            pass
+
+                        try:
+                            self.eoSip_store_eo_compression = self.__config.getboolean(SETTING_eosip, SETTING_EOSIP_STORE_EO_COMPRESSION)
+                        except:
+                            #self.eoSip_store_eo_compression = True
+                            pass
+
+
 
                         # dataProvider: optional
                         try:
@@ -506,7 +562,23 @@ class Ingester():
                             exc_type, exc_obj, exc_tb = sys.exc_info()
                             print " Error  dataProvider:%s %s" % (exc_type, exc_obj)
                             traceback.print_exc(file=sys.stdout)
-                            
+
+
+                        # Ressources: optional
+                        try:
+                            ressources=dict(self.__config.items(SETTING_Ressources))
+                            n=0
+                            self.ressourcesProvider=ressourceProvider.RessourceProvider()
+                            for item in ressources:
+                                value=ressources[item]
+                                if self.debug!=0:
+                                    print " ressource provider[%d]:%s==>%s" % (n,item,value)
+                                self.ressourcesProvider.addRessourcePath(item, value)
+                        except Exception, e:
+                            exc_type, exc_obj, exc_tb = sys.exc_info()
+                            print " Error  ressourcesProvider:%s %s" % (exc_type, exc_obj)
+                            traceback.print_exc(file=sys.stdout)
+
 
                         # servicesProvider: optional
                         try:
@@ -534,6 +606,8 @@ class Ingester():
                             
                         
                         self.dump()
+
+                        self.checkConfigurationVersion()
 
                 except Exception, e:
                         print " Error in reading configuration:"
@@ -641,6 +715,7 @@ class Ingester():
                 fd.write("# total:%s\n" % len(self.productList))
                 for item in self.productList:
                     fd.write("%s\n" % item)
+                fd.write("# end of file")
                 fd.close
                 self.logger.info("\n\nlist of products to be done written in:%s\n\n" % (self.file_toBeDoneList))
                 
@@ -740,7 +815,8 @@ class Ingester():
                 if line[0]!="#":
                     path=line.replace("\\","/").replace('\n','')
                     list.append(path)
-                    self.logger.info(" product[%d]:%s" % (n,path))
+                    if self.debug!=0:
+                        self.logger.info(" product[%d]:%s" % (n,path))
                     n=n+1
             self.logger.info(" there are:%s products in list" % (len(lines)))
             self.productList=list
@@ -917,6 +993,7 @@ class Ingester():
             aProcessInfo.test_dont_write=self.test_dont_write
             aProcessInfo.test_dont_do_browse=self.test_dont_do_browse
             aProcessInfo.infoKeeper=self.infoKeeper
+            aProcessInfo.ingester=self
 
         
         #
@@ -1034,10 +1111,10 @@ class Ingester():
 
                                 
                         except Exception, e:
-                                print "########################################## ERROR !!!!!!!!!!!!!!!!!!!!!!!!"
                                 self.num_error=self.num_error+1
                                 self.list_error.append("%s|%s" % (item,aProcessInfo.workFolder))
                                 exc_type, exc_obj, exc_tb = sys.exc_info()
+                                print " ERROR:%s  %s%s\n" %  (exc_type, exc_obj, traceback.format_exc())
 
                                 # apercu report
                                 self.reportToApercu(aProcessInfo, "NAME=EoSip-converter&BINDING=converter:ingester&done=%s&total=%s&error=%s&endTime=%s" % (self.num_done, self.num_total, self.num_error, urllib.quote(self.statsUtil.getEndDate())))
@@ -1208,39 +1285,58 @@ class Ingester():
                 self.createDestinationProduct(pInfo)
                 # set processInfo into destination product, to make it access things like the srcProduct or ingester
                 pInfo.destProduct.TYPOLOGY=self.TYPOLOGY
-                pInfo.destProduct.src_product_stored=self.eoSip_store_type
-                pInfo.destProduct.src_product_stored_compression=self.eoSip_store_compression
+                pInfo.destProduct.setSrcProductStoreType(self.eoSip_store_type)
+                pInfo.destProduct.setSrcProductStoreCompression(self.eoSip_store_compression)
+                pInfo.destProduct.setSrcProductStoreEoCompression(self.eoSip_store_eo_compression)
                 pInfo.destProduct.setProcessInfo(pInfo)
                 # set the EOP typology used
                 met.setOtherInfo("TYPOLOGY_SUFFIX", self.TYPOLOGY)
 
 
-                # set metadata
-                pInfo.destProduct.setMetadata(met)
+                # set metadata if not already defined
+                if pInfo.destProduct.metadata==None: #.isMetadataDefined():
+                    pInfo.destProduct.setMetadata(met)
                 pInfo.destProduct.setXmlMappingMetadata(self.xmlMappingMetadata, self.xmlMappingBrowse)
 
                 # build product name
                 self.logger.info("  will build Eo-Sip package name" )
                 pInfo.addLog("\n - will build Eo-Sip package name")
-                patternName = self.OUTPUT_EO_SIP_PATTERN
-                # get eoSip extension (.ZIP normally)
-                tmpExt=definitions_EoSip.getDefinition('EOSIP_PRODUCT_EXT')
-                # take care of the zip in zip ==> .SIP.ZIP filename case
-                #print "EoSip class name:%s" % pInfo.destProduct.__class__.__name__
-                #sys.exit()
-                if pInfo.destProduct.__class__.__name__ =="EOSIP_Product" and self.eoSip_store_type==pInfo.destProduct.SRC_PRODUCT_AS_ZIP:
-                    pInfo.destProduct.buildPackageNames(patternName, "%s.%s" % (definitions_EoSip.getDefinition('SIP'), tmpExt))
-                    pInfo.destProduct.buildProductNames(patternName, tmpExt)
-                else:
-                    pInfo.destProduct.buildPackageNames(patternName, tmpExt)
+
+                #if self.eoSip_store_type==eosip_product.SRC_PRODUCT_AS_ZIP:
+                #    pInfo.destProduct.buildEoNames(definitions_EoSip.getDefinition('EOSIP_PRODUCT_EXT'))
+                #elif self.eoSip_store_type==eosip_product.SRC_PRODUCT_AS_TAR:
+                #    pInfo.destProduct.buildEoNames(definitions_EoSip.getDefinition('TAR_EXT'))
+                #elif self.eoSip_store_type==eosip_product.SRC_PRODUCT_AS_TGZ:
+                #    pInfo.destProduct.buildEoNames(definitions_EoSip.getDefinition('TGZ_EXT'))
+                #elif self.eoSip_store_type==eosip_product.SRC_PRODUCT_AS_DIR:
+                #    pInfo.destProduct.buildEoNames()
+
+                if self.eoSip_store_type==eosip_product.SRC_PRODUCT_AS_ZIP:
+                    pInfo.destProduct.setEoExtension(definitions_EoSip.getDefinition('EOSIP_PRODUCT_EXT'))
+                elif self.eoSip_store_type==eosip_product.SRC_PRODUCT_AS_TAR:
+                    pInfo.destProduct.setEoExtension(definitions_EoSip.getDefinition('TAR_EXT'))
+                elif self.eoSip_store_type==eosip_product.SRC_PRODUCT_AS_TGZ:
+                    pInfo.destProduct.setEoExtension(definitions_EoSip.getDefinition('TGZ_EXT'))
+                elif self.eoSip_store_type==eosip_product.SRC_PRODUCT_AS_DIR:
+                    pInfo.destProduct.setEoExtension(None)
+                elif self.eoSip_store_type==eosip_product.SRC_PRODUCT_AS_FILE:
+                    pInfo.destProduct.setEoExtension(None)
+
+                    
+                pInfo.destProduct.buildEoNames()
+
+                self.logger.info("  Sip product name (no ext):%s"  % pInfo.destProduct.sipProductName)
+                pInfo.addLog("  => Sip product name (no ext):%s"  % pInfo.destProduct.sipProductName)
+                self.logger.info("  Sip package name (with ext):%s"  % pInfo.destProduct.sipPackageName)
+                pInfo.addLog("  => Sip package name (with ext):%s"  % pInfo.destProduct.sipPackageName)
                 
-                self.logger.info("  Eo-Sip package name:%s"  % pInfo.destProduct.packageName)
-                pInfo.addLog("  => Eo-Sip package name:%s"  % pInfo.destProduct.packageName)
-                self.logger.info("  Eo-Sip product name:%s"  % pInfo.destProduct.productName)
-                pInfo.addLog("  => Eo-Sip product name:%s"  % pInfo.destProduct.productName)
+                self.logger.info("  Eo product name (no ext):%s"  % pInfo.destProduct.eoProductName)
+                pInfo.addLog("  => Eo product name (no ext):%s"  % pInfo.destProduct.eoProductName)
+                self.logger.info("  Eo package name (with ext):%s"  % pInfo.destProduct.eoPackageName)
+                pInfo.addLog("  => Eo package name (with ext):%s"  % pInfo.destProduct.eoPackageName)
 
                 # make Eo-Sip tmp folder
-                pInfo.eosipTmpFolder = pInfo.workFolder + "/" + pInfo.destProduct.packageName
+                pInfo.eosipTmpFolder = pInfo.workFolder + "/" + pInfo.destProduct.sipProductName
                 if not os.path.exists(pInfo.eosipTmpFolder):
                         self.logger.info("  will make tmpEosipFolder:%s" % pInfo.eosipTmpFolder)
                         pInfo.addLog("  will make tmpEosipFolder:%s" % pInfo.eosipTmpFolder)
@@ -1253,16 +1349,21 @@ class Ingester():
                 relativePathPart=self.outputProductResolvedPaths[0][len(self.OUTSPACE):]
                 met.setMetadataPair(metadata.METADATA_PRODUCT_RELATIVE_PATH, relativePathPart)
 
+
                 # make browse file
                 self.makeBrowses(pInfo)
 
+                # 
+                self.beforeReportsDone(pInfo)
+
                 # make report files
                 # SIP report
-                pInfo.addLog("\n - will build SIP file")
-                self.logger.info("  will build SIP file")
-                tmp=pInfo.destProduct.buildSipReportFile()
-                pInfo.addLog("  => Sip report file built well:%s" %  (tmp))
-                self.logger.info("  Sip report file built well:%s" %  (tmp))
+                if self.create_sip_report == True:
+                    pInfo.addLog("\n - will build SIP file")
+                    self.logger.info("  will build SIP file")
+                    tmp=pInfo.destProduct.buildSipReportFile()
+                    pInfo.addLog("  => Sip report file built well:%s" %  (tmp))
+                    self.logger.info("  Sip report file built well:%s" %  (tmp))
 
 
                 # browse reports
@@ -1282,6 +1383,9 @@ class Ingester():
                 tmp=pInfo.destProduct.buildProductReportFile()
                 pInfo.addLog("  => Product report file built well: %s" % tmp)
                 self.logger.info("  Product report file built well: %s" % tmp)
+
+                # 
+                self.afterReportsDone(pInfo)
 
                 # display some info
                 print pInfo.destProduct.info()
@@ -1321,7 +1425,7 @@ class Ingester():
         #
         # dump info
         #
-        def dump(self):
+        def dump__(self):
                 self.logger.info("   INBOX: %s" % self.INBOX)
                 self.logger.info("   TMPSPACE: %s" % self.TMPSPACE)
                 self.logger.info("   OUTSPACE: %s" % self.OUTSPACE)
@@ -1332,14 +1436,17 @@ class Ingester():
                 self.logger.info("   Create index: %s" % self.create_index)
                 self.logger.info("   Create shopcart: %s" % self.create_shopcart)
                 self.logger.info("   Create browse report: %s" % self.create_browse_report)
+                self.logger.info("   Create sip report: %s" % self.create_sip_report)
                 self.logger.info("   Index added: %s" % self.index_added)
                 self.logger.info("   Fixed batch name: %s" % self.fixed_batch_name)
                 self.logger.info("   Product overwrite: %s" % self.product_overwrite)
-                self.logger.info("   OUTPUT_EO_SIP_PATTERN: %s" % self.OUTPUT_EO_SIP_PATTERN)
+                self.logger.info("   OUTPUT_SIP_PATTERN: %s" % self.OUTPUT_SIP_PATTERN)
+                self.logger.info("   OUTPUT_EO_PATTERN: %s" % self.OUTPUT_EO_PATTERN)
                 self.logger.info("   OUTPUT_RELATIVE_PATH_TREES: %s" % self.OUTPUT_RELATIVE_PATH_TREES)
                 self.logger.info("   eoSip typology: %s" % self.TYPOLOGY)
                 self.logger.info("   eoSip store type: %s" % self.eoSip_store_type)
                 self.logger.info("   eoSip store compression: %s" % self.eoSip_store_compression)
+                self.logger.info("   eoSip store Eo productt compression: %s" % self.eoSip_store_eo_compression)
                 self.logger.info("   TEST; don't extract source product: %s" % self.test_dont_extract)
                 self.logger.info("   TEST; don't write destination product: %s" % self.test_dont_write)
                 self.logger.info("   TEST; don't do browse: %s" % self.test_dont_do_browse)
@@ -1349,13 +1456,23 @@ class Ingester():
                 #    print "   no dataprovider"
                 self.logger.info("   additional service providers:%s" % self.servicesProvider)
                 #raise Exception("STOP")
-
                 
+
+        #
+        # dump info
+        #
+        def dump(self):
+            print self.toString()
+
+
+            
         #
         # return info
         #
         def toString(self):
             out=StringIO()
+            print >>out, ("   CONFIGURATION: %s" % self.CONFIG_NAME)
+            print >>out, ("   CONFIG VERSION: %s" % self.CONFIG_VERSION)
             print >>out, ("   INBOX: %s" % self.INBOX)
             print >>out, ("   TMPSPACE: %s" % self.TMPSPACE)
             print >>out, ("   OUTSPACE: %s" % self.OUTSPACE)
@@ -1365,14 +1482,20 @@ class Ingester():
             print >>out, ("   Create thumbnail: %s" % self.create_thumbnail)
             print >>out, ("   Create index: %s" % self.create_index)
             print >>out, ("   Create shopcart: %s" % self.create_shopcart)
+            
+            print >>out, ("   Create browse repor: %s" % self.create_browse_report)
+            print >>out, ("   Create sip repor: %s" % self.create_sip_report)
+            
             print >>out, ("   Index added: %s" % self.index_added)
             print >>out, ("   Fixed batch name: %s" % self.fixed_batch_name)
             print >>out, ("   Product overwrite: %s" % self.product_overwrite)
-            print >>out, ("   OUTPUT_EO_SIP_PATTERN: %s" % self.OUTPUT_EO_SIP_PATTERN)
+            print >>out, ("   OUTPUT_SIP_PATTERN: %s" % self.OUTPUT_SIP_PATTERN)
+            print >>out, ("   OUTPUT_EO_PATTERN: %s" % self.OUTPUT_EO_PATTERN)
             print >>out, ("   OUTPUT_RELATIVE_PATH_TREES: %s" % self.OUTPUT_RELATIVE_PATH_TREES)
             print >>out, ("   eoSip typology: %s" % self.TYPOLOGY)
             print >>out, ("   eoSip store type: %s" % self.eoSip_store_type)
             print >>out, ("   eoSip store compression: %s" % self.eoSip_store_compression)
+            print >>out, ("   eoSip store Eo productt compression: %s" % self.eoSip_store_eo_compression)
             print >>out, ("   TEST; don't extract source product: %s" % self.test_dont_extract)
             print >>out, ("   TEST; don't write destination product: %s" % self.test_dont_write)
             print >>out, ("   eoSip store type: %s" % self.eoSip_store_type)
@@ -1381,6 +1504,8 @@ class Ingester():
             #else:
             #    print "   no dataprovider"
             print >>out, ("   additional service providers:%s" % self.servicesProvider)
+            #
+            print >>out, ("   additional ressource providers:%s" % self.ressourcesProvider)
             return out.getvalue()
 
                 
@@ -1449,6 +1574,30 @@ class Ingester():
             except:
                 pass
 
+
+        #
+        # check that configuration floatVersion is >= minimum
+        # config version is like: 'name_floatVersion' or 'floatVersion'
+        #
+        # should be abstract
+        #
+        #@abstractmethod
+        @abstractmethod
+        def checkConfigurationVersion(self, processInfo):
+            raise Exception("abstractmethod")
+
+        # implement the config version test
+        def _checkConfigurationVersion(self, version, minVersion):
+                pos = version.find('_')
+                if pos>0:
+                        version=float(version[pos+1:])
+                else:
+                        version=float(version)
+                print "@@@@@@@@@@@@@@@@@@@@@ check version: %s %s" %  (version, minVersion)
+                if version < minVersion:
+                        raise Exception("Configuration version is too old; config:%s < minimum required:%s" % (version, minVersion))
+                #raise Exception("abstractmethod")
+
         #
         # should be abstract
         #
@@ -1456,6 +1605,20 @@ class Ingester():
         def afterProductDone(self, processInfo):
                 raise Exception("abstractmethod")
 
+        #
+        # should be abstract
+        #
+        @abstractmethod
+        def beforeReportsDone(self, processInfo):
+                raise Exception("abstractmethod")
+
+
+        #
+        # should be abstract
+        #
+        @abstractmethod
+        def afterReportsDone(self, processInfo):
+                raise Exception("abstractmethod")
                 
         #
         # should be abstract

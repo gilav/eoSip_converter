@@ -36,6 +36,7 @@ class processInfo():
         self.test_dont_write=False
         self.test_dont_do_browse=False
         self.infoKeeper=None
+        self.ingester=None
         print "init processInfo"
 
 
@@ -63,6 +64,7 @@ class processInfo():
         print >>out, 'num:%s' % (self.num)
         print >>out, 'srcProduct:%s' % (self.srcProduct)
         print >>out, 'destProduct:%s' % (self.destProduct)
+        print >>out, 'ingester:%s' % (self.ingester)
         print >>out, 'eosipTmpFolder:%s' % (self.eosipTmpFolder)
         
         print >>out, '!! test_dont_extract:%s' % (self.test_dont_extract)

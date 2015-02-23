@@ -23,15 +23,38 @@ from definitions_EoSip import rep_rectifiedBrowse
 import imageUtil
 
 
-
+# minumunm config version that can be use
+MIN_CONFIG_VERSION=1.0
 
 class ingester_tropforest(ingester.Ingester):
 
         #
-        # propare metadata from a browse report generation
+        # config version is like: name_floatVersion
+        #
+        def checkConfigurationVersion(self):
+                global MIN_CONFIG_VERSION
+                self._checkConfigurationVersion(self.CONFIG_VERSION, MIN_CONFIG_VERSION)
+
+        #
+        # prepare metadata from a browse report generation
         #
         def prepareBrowseMetadata(self, processInfo):
                 pass
+
+
+        #
+        # called before doing the various reports
+        #
+        def beforeReportsDone(self, processInfo):
+                pass
+
+
+        #
+        # called after having done the various reports
+        #
+        def afterReportsDone(self, processInfo):
+                pass
+        
 
         #
         # called at the end of the doOneProduct, before the index/shopcart creation
@@ -46,7 +69,7 @@ class ingester_tropforest(ingester.Ingester):
         def createSourceProduct(self, processInfo):
             global debug,logger
             # set ingester in processInfo for later use
-            processInfo.ingester=self
+            #processInfo.ingester=self
             dimapP = dimap_tropforest_product.Dimap_Tropforest_Product(processInfo.srcPath)
             processInfo.srcProduct = dimapP
 
@@ -58,6 +81,13 @@ class ingester_tropforest(ingester.Ingester):
             eosipP=eosip_product.EOSIP_Product()
             eosipP.sourceProductPath = processInfo.srcPath
             processInfo.destProduct = eosipP
+
+            # set naming convention instance
+            namingConventionSip = NamingConvention(self.OUTPUT_SIP_PATTERN)
+            processInfo.destProduct.setNamingConventionSipInstance(namingConventionSip)
+
+            processInfo.destProduct.setNamingConventionEoInstance(namingConventionSip)
+            
             self.logger.info(" Eo-Sip product created")
             processInfo.addLog(" Eo-Sip product created")
                     
@@ -179,7 +209,8 @@ class ingester_tropforest(ingester.Ingester):
 
                     #if processInfo.test_dont_do_browse!=True:
                     #	    ok=imageUtil.externalMakeBrowse('JPG', browseSrcPath, browseDestPath, ratio)
-                    	    
+
+                    # add browse to dest product, this create the browse metadata    
                     processInfo.destProduct.addSourceBrowse(browseDestPath, [])
 
                     # create browse choice for browse metadata report

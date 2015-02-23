@@ -124,6 +124,7 @@ class SipMessageBuilder(SipBuilder):
                 print "### getRepresentationUsed: WARNING: typology '%s' not available in %s; use:'%s'" % (representation_name, self, sipBuilder.TYPOLOGY_DEFAULT_REPRESENTATION)
 
         return res
+
     
     #
     #
@@ -237,7 +238,7 @@ class SipMessageBuilder(SipBuilder):
                             key=conditions.keys().index(field)
                             condOk=False
                             cond=conditions[field]
-                            condOk=self.checkConditions(metadata,cond)
+                            condOk=self.checkConditions(metadata, cond)
                             if self.debug==0:
                                 print "######################################### CONDITION:'%s'" % cond
                         except Exception, e:
@@ -323,21 +324,3 @@ class SipMessageBuilder(SipBuilder):
         return sipMessage
 
 
-
-if __name__ == '__main__':
-    print "start"
-    logging.basicConfig(level=logging.WARNING)
-    log = logging.getLogger('example')
-    try:
-        p=SipMessageBuilder()
-        mess=p.buildMessage()
-        print "message:%s" % mess
-
-        fd=open("./sipProductReport.xml", "w")
-        fd.write(mess)
-        fd.close()
-        print "message written in file:%s" % fd
-
-        
-    except Exception, err:
-        log.exception('Error from throws():')

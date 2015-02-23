@@ -22,6 +22,31 @@ DEFAULT_DATE_PATTERN_MSEC="%Y-%m-%dT%H:%M:%S.000Z"
 
 debug=0
 
+
+#
+# return the basename of a file (remove the path)
+#
+def basename(path):
+        p=path.replace('\\','/')
+        print "####:%s" % p
+        pos = p.rfind('/')
+        if pos > 0:
+            return p[pos+1:]
+        else:
+            return None
+
+
+#
+# return the dirname of a file (the path)
+#
+def dirname(path):
+        p=path.replace('\\','/')
+        pos = p.rfind('/', -1)
+        if pos > 0:
+            return path[0:pos]
+        else:
+            return None
+
 #
 #
 #
@@ -47,6 +72,7 @@ def removeFileExtension(path):
 #
 def absoluteLongitude(lon):
         return 180+lon
+
 #
 # wrs for latitude (L Festa suggestion): colatitude: 90 - latitude
 #
@@ -160,6 +186,13 @@ def utmToLatLon(easting, northing, zone, northernHemisphere=True):
 
 
 #
+# return a dateString from time + pattern
+#
+def dateStringFromTime(t, pattern=DEFAULT_DATE_PATTERN):
+        return "%s" % (t.strftime(pattern))
+
+
+#
 # return a dateTime string
 #
 def dateFromSec(t, pattern=DEFAULT_DATE_PATTERN):
@@ -195,12 +228,18 @@ def datePlusMsec(s, deltaMsec, pattern=DEFAULT_DATE_PATTERN):
         return tmp.replace(".000Z", ".%sZ" % msec)
 
 #
-# return a time
+# return a time from a time + msec_offset
 #
 def timePlusMsec(t, deltaMsec):
         d=datetime.fromtimestamp(t)
         res=d+timedelta(milliseconds=deltaMsec)
         return res
+
+#
+# return time from a dateTime string
+#
+def timeFromDatePatterm(s, pattern=DEFAULT_DATE_PATTERN):
+        return datetime.strptime(s, pattern)
 
 
 #

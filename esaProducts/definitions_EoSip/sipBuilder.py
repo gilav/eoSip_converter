@@ -25,21 +25,18 @@ import metadata, browse_metadata
 #    import metadata, browse_metadata
 
 
+#
 VALUE_OPTIONAL="OPTIONAL"
 VALUE_CONDITIONS="CONDITIONS"
 VALUE_UNKNOWN="UNKNOWN"
 VALUE_NONE="None"
 VALUE_NOT_PRESENT="NOT-PRESENT"
 
-# default xml node mapping
-#print "module metadata:%s" % metadata
-#print "module browse_metadata:%s" % browse_metadata
-
-#print "dir module metadata:%s" % dir(metadata)
-#print "dir module browse_metadata:%s" % dir(browse_metadata)
-
-
+#
+# mapping as used to construct the xml node representation
+#
 EOSIP_METADATA_MAPPING={'acquisitionStation':metadata.METADATA_ACQUISITION_CENTER,
+                        'acquisitionDate':metadata.METADATA_ACQUISITION_DATE,
                         'responsible':metadata.METADATA_RESPONSIBLE,
                         'SIPCreator':metadata.METADATA_CREATOR,
                         'reportType':metadata.METADATA_REPORT_TYPE,
@@ -57,17 +54,43 @@ EOSIP_METADATA_MAPPING={'acquisitionStation':metadata.METADATA_ACQUISITION_CENTE
                         'instrumentDescription':metadata.METADATA_INSTRUMENT_DESCRIPTION,
                         'sensorType':metadata.METADATA_SENSOR_TYPE,
                         'operationalMode':metadata.METADATA_SENSOR_OPERATIONAL_MODE,
+                        'resolution':metadata.METADATA_RESOLUTION,
+                        'resolutionUomAttr':metadata.METADATA_RESOLUTION_UNIT,
+
+                        'nativeProductFormat':metadata.METADATA_NATIVE_PRODUCT_FORMAT,
+                        
                         'orbitNumber':metadata.METADATA_ORBIT,
+                        'lastOrbitNumber':metadata.METADATA_LAST_ORBIT,
                         'orbitDirection':metadata.METADATA_ORBIT_DIRECTION,
                         'wrsLongitudeGrid':metadata.METADATA_WRS_LONGITUDE_GRID_NORMALISED,
+                        'codeSpace_wrsLongitudeGrid':metadata.METADATA_CODESPACE_WRS_LONGITUDE_GRID_NORMALISED,
                         'wrsLatitudeGrid':metadata.METADATA_WRS_LATITUDE_GRID_NORMALISED,
-                        'illuminationAzimuthAngle':metadata.METADATA_SUN_AZIMUTH,
-                        'instrumentElevationAngle':metadata.METADATA_INSTRUMENT_ZENITH_ANGLE,
+                        'codeSpace_wrsLatitudeGrid':metadata.METADATA_CODESPACE_WRS_LATITUDE_GRID_NORMALISED,
+                        'ascendingNodedate':metadata.METADATA_ASCENDING_NODE_DATE,
+                        'ascendingNodeLongitude':metadata.METADATA_ASCENDING_NODE_LONGITUDE,
+                        'startTimeFromAscendingNode':metadata.METADATA_START_TIME_FROM_ASCENDING_NODE,
+                        'completionTimeFromAscendingNode':metadata.METADATA_START_TIME_FROM_ASCENDING_NODE,
+                        
+                        
                         'illuminationElevationAngle':metadata.METADATA_SUN_ELEVATION,
+                        'illuminationAzimuthAngle':metadata.METADATA_SUN_AZIMUTH,
+                        'illuminationZenithAngle':metadata.METADATA_SUN_ZENITH,
+                        'instrumentElevationAngle':metadata.METADATA_INSTRUMENT_ELEVATION_ANGLE,
+                        'instrumentZenithAngle':metadata.METADATA_INSTRUMENT_ZENITH_ANGLE,
+                        'instrumentAzimuthAngle':metadata.METADATA_INSTRUMENT_AZIMUTH_ANGLE,
+
+                        'pitch':metadata.METADATA_PITCH,
+                        'yaw':metadata.METADATA_YAW,
+                        'roll':metadata.METADATA_ROLL,
+                        
                         'incidenceAngle':metadata.METADATA_INSTRUMENT_INCIDENCE_ANGLE,
 
                         'alongTrackIncidenceAngle':metadata.METADATA_INSTRUMENT_ALONG_TRACK_INCIDENCE_ANGLE,
                         'acrossTrackIncidenceAngle':metadata.METADATA_INSTRUMENT_ACROSS_TRACK_INCIDENCE_ANGLE,
+
+                        'productQualityStatus':metadata.METADATA_QUALITY_STATUS,
+                        'productQualityDegradationTag':metadata.METADATA_QUALITY_DEGRADATION_TAG,
+                        
                         
                         'instrumentZenithAngle':metadata.METADATA_INSTRUMENT_ZENITH_ANGLE,
                         'instrumentElevationAngle':metadata.METADATA_INSTRUMENT_ELEVATION_ANGLE,
@@ -91,6 +114,7 @@ EOSIP_METADATA_MAPPING={'acquisitionStation':metadata.METADATA_ACQUISITION_CENTE
                         'BrowseRectCoordList':browse_metadata.BROWSE_METADATA_RECT_COORDLIST,
                         'colRowList':metadata.METADATA_FOOTPRINT_IMAGE_ROWCOL,
                         'parentIdentifier':metadata.METADATA_PARENT_IDENTIFIER,
+                        'processingMode':metadata.METADATA_PROCESSING_MODE,
                         'processingDate':metadata.METADATA_PROCESSING_TIME,
                         'processingCenter':metadata.METADATA_PROCESSING_CENTER,
                         'processorName':metadata.METADATA_SOFTWARE_NAME,
@@ -104,6 +128,7 @@ EOSIP_METADATA_MAPPING={'acquisitionStation':metadata.METADATA_ACQUISITION_CENTE
                         }
 
 
+# the various eo typology supported. i.e. the namespace used in xml report files
 TYPOLOGY_EOP=0
 TYPOLOGY_SAR=1
 TYPOLOGY_OPT=2
@@ -111,30 +136,35 @@ TYPOLOGY_LMB=3
 TYPOLOGY_ALT=4
 TYPOLOGY_LIST=[TYPOLOGY_EOP, TYPOLOGY_SAR, TYPOLOGY_OPT, TYPOLOGY_LMB, TYPOLOGY_ALT]
 TYPOLOGY_REPRESENTATION_SUFFIX=['EOP', 'SAR', 'OPT', 'LMB', 'ALT']
+TYPOLOGY_REPRESENTATION=['eop', 'sar', 'opt', 'lmb', 'alt']
 TYPOLOGY_DEFAULT_REPRESENTATION='REPRESENTATION'
+
 
 class SipBuilder:
     __metaclass__=ABCMeta
 
+    # various debug flag
     debug=0
-    debugUnused=0
+    debugUnused=False
     debugCondition=0
-    # the matadata to xml node mapping in use
-    USED_METADATA_MAPPING=EOSIP_METADATA_MAPPING
+
 
 
     def __init__(self):
-        pass
+        # the matadata to xml node mapping in use
+        self.USED_METADATA_MAPPING=EOSIP_METADATA_MAPPING
 
     @abstractmethod
     def buildMessage(self, representation, metadata, currentTreePath):
         raise Exception("abstractmethod")
 
-
+    
     #
     # condition value is like:"FILLED__acquisitionStation"
     # where FILLED is the OPERATOR
     # and acquisitionStation is the mappiing name (present in the EOSIP_METADATA_MAPPING)
+    #
+    # TODO: change EOSIP_METADATA_MAPPING to self.USED_METADATA_MAPPING ??
     #
     def checkConditions(self, metadata=None, condition=None):
         try:
@@ -149,6 +179,9 @@ class SipBuilder:
                 print "################################## checkConditions: operator:'%s'  varname='%s'" % (operator, metaName)
             if metadata.dict.has_key(metaName):
                 resolved=metadata.getMetadataValue(metaName)
+                if self.debug!=0 or self.debugCondition!=0:
+                    print "################################## checkConditions: resolved==None: '%s'" % (resolved==None)
+                    print "################################## checkConditions: resolved='%s'" % resolved
                 if operator=="FILLED":
                     if resolved!=None and resolved!=VALUE_NONE and resolved!=VALUE_UNKNOWN and resolved!=VALUE_NOT_PRESENT:
                         result=True
@@ -194,13 +227,13 @@ class SipBuilder:
     # 
     #
     def isFieldUsed(self, rep=None, metadata=None, path=None):
-        if self.debug!=0 or self.debugUnused!=0:
+        if self.debug!=0 or self.debugUnused:
             print "### isFieldUsed: test rep:'%s' at path:'%s'" % (rep, path)
         if path[0]!='/':
             path="/%s" % (path)
         # is closing node:
         #if rep[0:2]=='</':
-        #    if self.debug!=0 or self.debugUnused!=0:
+        #    if self.debug!=0 or self.debugUnused:
         #        print "### isFieldUsed: CLOSING NODE: USED"
         #    return 1
         
@@ -212,12 +245,12 @@ class SipBuilder:
         while pos>0:
             #raise Exception("TEST @ in path")
             pathOk=pathOk+path[0:pos]
-            if self.debug!=0 or self.debugUnused!=0:
+            if self.debug!=0 or self.debugUnused:
                 print "### isFieldUsed: pathOk:'%s'" % pathOk
             endPos=path.find('/')
             if endPos>0:
                 pos = path.find('@', endPos+1)
-                if self.debug!=0 or self.debugUnused!=0:
+                if self.debug!=0 or self.debugUnused:
                     print "### isFieldUsed: pathOk remain from pos:'%d'" % pos
             else:
                 pos=-1
@@ -229,14 +262,14 @@ class SipBuilder:
 
         # replace 
 
-        if self.debug!=0 or self.debugUnused!=0:
+        if self.debug!=0 or self.debugUnused:
             print "### isFieldUsed: pathOk:'%s'" % pathOk
         name=self.getFieldName(rep)
         #metDebug=metadata.debug
-        if self.debug!=0 or self.debugUnused!=0:
+        if self.debug!=0 or self.debugUnused:
             print "### isFieldUsed: name:'%s'" % name
         res=metadata.isFieldUsed("%s/%s" % (pathOk, name), self.debugUnused)
-        if self.debug!=0 or self.debugUnused!=0:
+        if self.debug!=0 or self.debugUnused:
             print "### isFieldUsed: returns:'%s'" % res
         return res
 
@@ -246,8 +279,11 @@ class SipBuilder:
     #
     #
     def resolveField(self, name, metadata=None):
-        if self.USED_METADATA_MAPPING.has_key(name):
-            metaName=self.USED_METADATA_MAPPING[name]
+        # get normal mapping or altered one if any
+        metaName = metadata.getMetadataMaping(name, self.USED_METADATA_MAPPING)
+        #if self.USED_METADATA_MAPPING.has_key(name):
+        if metaName != None:
+            #metaName=self.USED_METADATA_MAPPING[name]
             if self.debug!=0:
                 print " resolveField: '%s' in metadata name:%s"% (name, metaName)
             try:
@@ -259,8 +295,7 @@ class SipBuilder:
                 resolved='ERROR! %s; %s' % (exc_type, exc_obj)
             return resolved
         else:
-            if self.debug==2:
-                print "resolveField: metadata dump:\n%s" % metadata.toString()
+            print "resolveField: no mapping for name:%s" % name
             return VALUE_UNKNOWN
 
 

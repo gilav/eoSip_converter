@@ -25,6 +25,8 @@ __JPEG_EXT='JPEG'
 __JPG_EXT='JPG'
 __PNG_EXT='PNG'
 __XML_EXT='XML'
+__TAR_EXT='TAR'
+__TGZ_EXT='TGZ'
 __SIP='SIP'
 
 # composed:

@@ -13,6 +13,6 @@ class eop_product(SipMessageBuilder):
         "</ows:ServiceReference>",
         "</eop:fileName>",
         "<eop:version>@productVersion@</eop:version>",
-        "<eop:size uom='Bytes'>@productSize@</eop:size>",
+        "<eop:size uom='bytes'>@productSize@</eop:size>",
         "</eop:ProductInformation>"]
 

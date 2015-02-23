@@ -55,7 +55,7 @@ class netCDF_Product(Product):
 if __name__ == '__main__':
     print "start"
     try:
-        p=netCDF_Product("C:/Users/glavaux/Shared/LITE/testData/Reaper/E2_TEST_ERS_ALT_2S_20010218T212551_20010218T225535_COM5.NC")
+        p=netCDF_Product("C:/Users/glavaux/Shared/LITE/reaper/a.NC")
         p.getMetadataInfo()
         
     except Exception, e:

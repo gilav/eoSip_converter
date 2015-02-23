@@ -35,8 +35,9 @@ import imghdr
 
 #
 # get image dimenssion without external library
+# work only for PNG, JPEG, GIF
 #
-def get_image_size(fname):
+def __get_image_size(fname):
     '''Determine the image type of fhandle and return its size.
     from draco'''
     fhandle = open(fname, 'rb')
@@ -71,6 +72,39 @@ def get_image_size(fname):
         return
     return width, height
 
+
+
+#
+# get tif image size
+#
+def __get_tif_size(fname):
+    im = Image.open(fname)
+    return im.size
+
+    
+#
+#
+#
+def get_image_size(fname):
+    pos=fname.rfind('.')
+    ext=''
+    if pos>0:
+        ext=fname[pos+1:]
+    if debug:
+        print  "get_image_size '%s' extension:%s" % (fname, ext)
+
+    ext=ext.upper()
+    if ext=='PNG' or ext=='GIF' or ext=='JPEG' or ext=='JPG':
+        return __get_image_size(fname)
+    elif ext=='TIF':
+        if PilReady==1:
+            return __get_tif_size(fname)
+        else:
+            return
+    else:
+        return
+        
+    
 
 #
 # make a browse image

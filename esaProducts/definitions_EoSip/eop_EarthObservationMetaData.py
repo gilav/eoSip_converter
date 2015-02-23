@@ -11,8 +11,13 @@ class eop_EarthObservationMetaData(SipMessageBuilder):
                       "<eop:productType>@productType@</eop:productType>",
                       "<eop:status>@status@</eop:status>",
                       "eop_downlinkedTo",
+                      "<eop:productQualityStatus>@productQualityStatus@</eop:productQualityStatus>",
+                      "<eop:productQualityDegradationTag>@productQualityDegradationTag@</eop:productQualityDegradationTag>",
                       "eop_processing",
                       "<LOCAL_ATTR></LOCAL_ATTR>"]
 
 
     #CONDITIONS = {"eop_downlinkedTo":"FILLED__acquisitionStation"}
+    
+    OPTIONAL = ["<eop:productQualityStatus>@productQualityStatus@</eop:productQualityStatus>",
+                      "<eop:productQualityDegradationTag>@productQualityDegradationTag@</eop:productQualityDegradationTag>"]

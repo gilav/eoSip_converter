@@ -19,15 +19,38 @@ from base import ingester
 from esaProducts import dimap_spot_product, eosip_product
 from esaProducts import metadata, browse_metadata
 from esaProducts import definitions_EoSip,formatUtils
-#from definitions_EoSip import rep_rectifiedBrowse
 from definitions_EoSip import rep_footprint, sipBuilder
+from namingConvention import NamingConvention
 import imageUtil
 
 
-
+# minumunm config version that can be use
+MIN_CONFIG_VERSION=1.0
 
 class ingester_spot(ingester.Ingester):
 
+        #
+        # config version is like: name_floatVersion
+        #
+        def checkConfigurationVersion(self):
+                global MIN_CONFIG_VERSION
+                self._checkConfigurationVersion(self.CONFIG_VERSION, MIN_CONFIG_VERSION)
+                
+                
+        #
+        # called before doing the various reports
+        #
+        def beforeReportsDone(self, processInfo):
+                processInfo.destProduct.metadata.alterMetadataMaping('href', metadata.METADATA_FULL_PACKAGENAME)
+                #processInfo.destProduct.metadata.alterMetadataMaping('identifier', metadata.METADATA_PARENT_IDENTIFIER)
+                pass
+
+        #
+        # called after having done the various reports
+        #
+        def afterReportsDone(self, processInfo):
+                pass
+        
         #
         # called at the end of the doOneProduct, before the index/shopcart creation
         # set the METADATA_BOUNDING_BOX_CW_CLOSED into FOOTPRINT to hace 'correct' browse display in EoliSa
@@ -42,7 +65,6 @@ class ingester_spot(ingester.Ingester):
         #
         def createSourceProduct(self, processInfo):
             global debug,logger
-            processInfo.ingester=self
             dimapP = dimap_spot_product.Dimap_Spot_Product(processInfo.srcPath)
             processInfo.srcProduct = dimapP
 
@@ -54,10 +76,15 @@ class ingester_spot(ingester.Ingester):
             eosipP=eosip_product.EOSIP_Product()
             eosipP.sourceProductPath = processInfo.srcPath
             processInfo.destProduct = eosipP
+
+            # set naming convention instance
+            namingConventionSip = NamingConvention(self.OUTPUT_SIP_PATTERN)
+            processInfo.destProduct.setNamingConventionSipInstance(namingConventionSip)
+
+            processInfo.destProduct.setNamingConventionEoInstance(namingConventionSip)
+            
             self.logger.info(" Eo-Sip class created")
             processInfo.addLog("\n - Eo-Sip class created")
-            self.logger.info(" src product will be stored as:%s" % eosipP.src_product_stored)
-            processInfo.addLog("  => src product will be stored as:%s" % eosipP.src_product_stored)
                     
         #
         # Override
@@ -88,6 +115,7 @@ class ingester_spot(ingester.Ingester):
                 processInfo.srcProduct.extractToPath(processInfo.workFolder, processInfo.test_dont_extract)
                 processInfo.addLog("  => extracted inside:%s" % (processInfo.workFolder))
                 self.logger.info("  extracted inside:%s" % (processInfo.workFolder))
+
 
         #
         # Override
@@ -165,10 +193,10 @@ class ingester_spot(ingester.Ingester):
                                     if tmp==None or tmp==sipBuilder.VALUE_NOT_PRESENT:
                                             #print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ current TRACK is:%s" % tmp
                                             adataProvider=self.dataProviders[item]
-                                            #print "@@@@@@@@@@@@@@@@@@@@ dataProviders match TRACK:%s" % adataProvider
+                                            print "@@@@@@@@@@@@@@@@@@@@ dataProviders match TRACK:%s" % adataProvider
                                             # need to query using the product original filename like:N00-W075_AVN_20090804_PRO_0
                                             track=adataProvider.getRowValue(met.getMetadataValue(metadata.METADATA_ORIGINAL_NAME))
-                                            #print "@@@@@@@@@@@@@@@@@@@@ track:%s" % track
+                                            print "@@@@@@@@@@@@@@@@@@@@ track:%s" % track
                                             if track != None and len(track.strip())==0:
                                                     track='0000'
                                             met.setMetadataPair(metadata.METADATA_TRACK, track)
@@ -180,15 +208,15 @@ class ingester_spot(ingester.Ingester):
                                     if tmp==None or tmp==sipBuilder.VALUE_NOT_PRESENT:
                                             print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ current FRAME is:%s" % tmp
                                             adataProvider=self.dataProviders[item]
-                                            #print "@@@@@@@@@@@@@@@@@@@@ dataProviders match FRAME:%s" % adataProvider
+                                            print "@@@@@@@@@@@@@@@@@@@@ dataProviders match FRAME:%s" % adataProvider
                                             # need to query using the product original filename like:N00-W075_AVN_20090804_PRO_0
                                             frame=adataProvider.getRowValue(met.getMetadataValue(metadata.METADATA_ORIGINAL_NAME))
-                                            #print "@@@@@@@@@@@@@@@@@@@@ frame:%s" % frame
+                                            print "@@@@@@@@@@@@@@@@@@@@ frame:%s" % frame
                                             if frame != None and len(frame.strip())==0:
                                                     frame='0000'
                                             met.setMetadataPair(metadata.METADATA_FRAME, frame)
 
-                            elif item == metadata.METADATA_PRODUCT_ID: # this is just a test
+                            elif 1==2 and item == metadata.METADATA_PRODUCT_ID: # this is just a test, disabled now
                                     # what value do we have?
                                     tmp = met.getMetadataValue(metadata.METADATA_PRODUCT_ID)
                                     #print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ current PRODUCT_ID:%s" % tmp
@@ -196,11 +224,11 @@ class ingester_spot(ingester.Ingester):
                                             try:
                                                     #print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ current PRODUCT_ID is:%s" % tmp
                                                     adataProvider=self.dataProviders[item]
-                                                    #print "@@@@@@@@@@@@@@@@@@@@ dataProviders match PRODUCT_ID:%s" % adataProvider
+                                                    print "@@@@@@@@@@@@@@@@@@@@ dataProviders match PRODUCT_ID:%s" % adataProvider
                                                     # need to query using the product original filename like:N00-W075_AVN_20090804_PRO_0
                                                     # productId is like: SP4-070526113337-9.HRI1_X__1P
                                                     productId=adataProvider.getRowValue(met.getMetadataValue(metadata.METADATA_ORIGINAL_NAME))
-                                                    #print "@@@@@@@@@@@@@@@@@@@@ productId:%s" % productId
+                                                    print "@@@@@@@@@@@@@@@@@@@@ productId:%s" % productId
                                                     if productId==None:
                                                             raise Exception("%s has no PRODUCT_ID in csv file" % met.getMetadataValue(metadata.METADATA_ORIGINAL_NAME))
                                                     if productId != None and len(productId.strip())==0:
@@ -239,39 +267,73 @@ class ingester_spot(ingester.Ingester):
                     previewSrcPath=processInfo.srcProduct.preview_path
                     browseSrcPath=processInfo.srcProduct.imagery_path
                     browseExtension=definitions_EoSip.getBrowseExtension(0, definitions_EoSip.getDefinition('BROWSE_PNG_EXT'))
-                    browseDestPath="%s/%s.%s" % (processInfo.eosipTmpFolder, processInfo.destProduct.packageName, browseExtension)
+                    browseDestPath="%s/%s.%s" % (processInfo.eosipTmpFolder, processInfo.destProduct.eoProductName, browseExtension)
                     
                     # what we do depends of ptoduct processing level and platform id:
                     platformId=processInfo.srcProduct.metadata.getMetadataValue(metadata.METADATA_PLATFORM_ID)
                     procLevel=processInfo.srcProduct.metadata.getMetadataValue(metadata.METADATA_PROCESSING_LEVEL)
 
+                    # determine reduce ratio if we read from the product image (big tiff file)
+                    ratio=-1
+                    try:
+                            w,h = imageUtil.get_image_size(browseSrcPath)
+                            print "##############@@@@@@@@@@@@@@@@@@@################### product image dimension: w=%s h=%s" % (w,h)
+                            if w>1000 or h>1000:
+                                    if h>w:
+                                            w=h
+                                    ratio=int(100.0/(w/1000.0))
+                                    print "##############@@@@@@@@@@@@@@@@@@@################### reduce ratio:%s" % (ratio)
+                            else:
+                                    print "##############@@@@@@@@@@@@@@@@@@@################### no reduce ratio because too small"
+                    except:
+                            print "##############@@@@@@@@@@@@@@@@@@@################### warning: can not get product image dimension !!"
+                            ratio=33
+
+                    # transparent not needed for level 1A
                     if processInfo.test_dont_do_browse!=True:
                             processInfo.addInfo("PLATFORM", platformId)
                             if platformId=='5':
-                                    # copy source JPEG
+                                    # copy source preview JPEG
                                     #shutil.copyfile(previewSrcPath, browseDestPath)
                                     # convert tp PNG
-                                    ok=imageUtil.makeBrowse("PNG", previewSrcPath, browseDestPath, -1, transparent=True)
+                                    if procLevel=='1A':
+                                            print "##############@@@@@@@@@@@@@@@@@@@################### create browse image from:%s" % previewSrcPath
+                                            ok=imageUtil.makeBrowse("PNG", previewSrcPath, browseDestPath, -1, transparent=False)
+                                    else:
+                                            print "##############@@@@@@@@@@@@@@@@@@@################### create browse image from:%s" % browseSrcPath
+                                            ok=imageUtil.makeBrowse("PNG", browseSrcPath, browseDestPath, ratio, transparent=True)
                                     print "##############@@@@@@@@@@@@@@@@@@@################### ok:%s" % ok
                                     if not ok:
                                             raise Exception("Error creating browse image")
                                     processInfo.addLog("  => preview image converted:%s" %  (browseDestPath))
                                     self.logger.info("  browse image copied:%s" % browseDestPath)
+                                    
                             elif platformId=='4':
                                     #raise Exception("skip SPOT4")
-                                    # copy source JPEG
+                                    # copy source  preview JPEG
                                     #shutil.copyfile(previewSrcPath, browseDestPath)
-                                     # convert tp PNG
-                                    ok=imageUtil.makeBrowse("PNG", previewSrcPath, browseDestPath, -1, transparent=True)
+                                    # convert tp PNG
+                                    if procLevel=='1A':
+                                            print "##############@@@@@@@@@@@@@@@@@@@################### create browse image from:%s" % previewSrcPath
+                                            ok=imageUtil.makeBrowse("PNG", previewSrcPath, browseDestPath, -1, transparent=False)
+                                    else:
+                                            print "##############@@@@@@@@@@@@@@@@@@@################### create browse image from:%s" % browseSrcPath
+                                            ok=imageUtil.makeBrowse("PNG", browseSrcPath, browseDestPath, ratio, transparent=True)
                                     print "##############@@@@@@@@@@@@@@@@@@@################### ok:%s" % ok
                                     if not ok:
                                             raise Exception("Error creating browse image")
                                     processInfo.addLog("  => preview image converted:%s" %  (browseDestPath))
                                     self.logger.info("  browse image copied:%s" % browseDestPath)
+                                    
                             else:  
                                     #raise Exception("skip SPOT1-3")
                                     # NEW: make a transparent jpeg, resize to 33% -> 1000*1000
-                                    ok=imageUtil.makeBrowse("PNG", previewSrcPath, browseDestPath, 35, transparent=True)
+                                    if procLevel=='1A':
+                                            print "##############@@@@@@@@@@@@@@@@@@@################### create browse image from:%s" % previewSrcPath
+                                            ok=imageUtil.makeBrowse("PNG", previewSrcPath, browseDestPath, -1, transparent=False)
+                                    else:
+                                            print "##############@@@@@@@@@@@@@@@@@@@################### create browse image from:%s" % browseSrcPath
+                                            ok=imageUtil.makeBrowse("PNG", browseSrcPath, browseDestPath, ratio, transparent=True)
                                     print "##############@@@@@@@@@@@@@@@@@@@################### ok:%s" % ok
                                     print "####@@@@#### MAKE BROWSE RETURNS:%s" % ok
                                     if not ok:
@@ -340,8 +402,8 @@ class ingester_spot(ingester.Ingester):
                         processInfo.addLog("  Eo-Sip product will be writen in folder:%s" %  (firstPath))
                         self.logger.info("  Eo-Sip product will be writen in folder:%s" %  (firstPath))
                         processInfo.destProduct.writeToFolder(firstPath, overwrite)
-                        processInfo.addLog("  ok, writen well")
-                        self.logger.info(" ok, writen well")
+                        processInfo.addLog("  ok, writen well\n%s" % processInfo.destProduct.info())
+                        self.logger.info(" ok, writen well\n%s" % processInfo.destProduct.info())
 
                         # make a thumbnail FOR TEST
                         if processInfo.create_thumbnail==1:

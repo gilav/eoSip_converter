@@ -11,7 +11,8 @@ class eop_EarthObservationResult(SipMessageBuilder):
 
     #this_OPT = ["<eop:EarthObservationResult gml:id=\"@gmlId@_$$getNextCounter()$$\">", "</eop:EarthObservationResult>"]
 
-    REPRESENTATION = ["eop_product"]
+    REPRESENTATION = ["<BROWSES></BROWSES>",
+                      "eop_product"]
 
     #REPRESENTATION_SAR = ["eop_product"]
 

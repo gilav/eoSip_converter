@@ -8,31 +8,83 @@ import logging
 from product import Product
 import metadata
 import formatUtils
+from cStringIO import StringIO
 
 
 
 class NamingConvention(Product):
+    
+    #
+    # following used at start in NGEO branch
     PATTERN='<SSS>_<CCCC>_<TTTTTTTTTT>_<instance ID>.<extension>'
-    PATTERN_GENERIC='<yyyymmddThhmmss>_<YYYYMMDDTHHMMSS>_<vvvv>'
-    PATTERN_WRS_SCENE='<yyyymmddThhmmss>_<YYYYMMDDTHHMMSS>_<oooooo>_<tttt>_<ffff>_<vvvv>'
-    PATTERN_WRS_STRIPLINE='<yyyymmddThhmmss>_<YYYYMMDDTHHMMSS>_<oooooo>_<tttt>_<vvvv>'
+    PATTERN_INSTANCE_GENERIC_DDV='<yyyymmddThhmmss>_<YYYYMMDDTHHMMSS>_<vvvv>'
+    PATTERN_INSTANCE_WRS_SCENE_DDOTFV='<yyyymmddThhmmss>_<YYYYMMDDTHHMMSS>_<oooooo>_<tttt>_<ffff>_<vvvv>'
+    PATTERN_INSTANCE_WRS_STRIPLINE_DDOTV='<yyyymmddThhmmss>_<YYYYMMDDTHHMMSS>_<oooooo>_<tttt>_<vvvv>'
     #
     # following used in OGC branch:
+    PATTERN_INSTANCE_OGC_DDOTF='<yyyymmddThhmmss>_<YYYYMMDDTHHMMSS>_<oooooo>_<tttt>_<ffff>'
     #
-    PATTERN_OGC='<yyyymmddThhmmss>_<YYYYMMDDTHHMMSS>_<oooooo>_<tttt>_<ffff>'
     #
+    POSSIBLE_PATTERN=[PATTERN_INSTANCE_GENERIC_DDV, PATTERN_INSTANCE_WRS_SCENE_DDOTFV, PATTERN_INSTANCE_WRS_STRIPLINE_DDOTV, PATTERN_INSTANCE_OGC_DDOTF]
+    
+    #
+    #
+    usedBase=None
     usedPattern=None
+
+
+
 
     debug=0
 
     #
+    # init
+    # build list of possible instance pattern than can be used
     #
-    #
-    def __init__(self, p=PATTERN_GENERIC):
+    def __init__(self, p=PATTERN_INSTANCE_GENERIC_DDV, fromSuper=False):
+        #
+        self.possible_pattern=[]
+
+        # the possible pattern used
+        for item in self.POSSIBLE_PATTERN:
+            self.possible_pattern.append(item)
+
+        if self.debug!=0:
+            print "#### NamingConvention p=%s\n#### possible length:%s\n#### possible=%s" % (p, len(self.possible_pattern), self.possible_pattern)
+            
+        self.usedBase=NamingConvention.PATTERN
         if p[0]!='<':
-            self.usedPattern=eval("NamingConvention.%s" % p)
+            if self.debug!=0:
+                print " NamingConvention init case 0: pattern=%s" % p
+            try:
+                self.usedPattern=eval("NamingConvention.%s" % p)
+            except:
+                if fromSuper==True:
+                    pass
+                else:
+                    raise Exception("pattern not found:%s" % p)
+            #if self.debug!=0:
+            print " NamingConvention usedPattern=%s" % self.usedPattern
         else:
+            #
             self.usedPattern=p
+            #if self.debug!=0:
+            print " NamingConvention init case 1: usedPattern=%s" % self.usedPattern
+
+    #
+    # use a instance pattern, provide the string value like '<yyyymmddThhmmss>_<YYYYMMDDTHHMMSS>_<vvvv>'
+    #
+    def usePatternvalue(self, value):
+        res=[]
+        for item in self.possible_pattern:
+            if value==item:
+                res.append(item)
+        if len(res)==1:
+            return res[0]
+        elif len(res)==0:
+            raise Exception("can not find instance pattern with value:%s" % value)
+        elif len(res)>1:
+            raise Exception("several instance pattern match:%s" % res)
 
     #
     #
@@ -41,7 +93,7 @@ class NamingConvention(Product):
         self.debug=d
 
     #
-    #
+    # build the product name based on the metadata values
     #
     def buildProductName(self, met=None, ext=None):
         if self.debug!=0:
@@ -98,7 +150,7 @@ class NamingConvention(Product):
                 if self.debug!=0:
                     print "res5 is now:%s"% res
             if tok=='<vvvv>':
-                tmp=formatUtils.normaliseNumber(met.getMetadataValue(metadata.METADATA_VERSION), len(tok)-2)
+                tmp=formatUtils.normaliseNumber(met.getMetadataValue(metadata.METADATA_SIP_VERSION), len(tok)-2)
                 res="%s_%s" % (res, tmp)
                 if self.debug!=0:
                     print "resV is now:%s"% res
@@ -121,31 +173,94 @@ class NamingConvention(Product):
 
 
     #
+    # return the length of the fileName. not including the extension
     #
+    def getFilenameLength(self):
+        return self.usedPattern.replace('<','').replace('>','')
+
+
     #
-    def normaliseTime_NOT_USED(self, s=None, max=-1, pad='0'):
-        if s != None:
-            return s.replace(':', '')
+    # test if file has the correct length. extension should not be given
+    #
+    def isFileLengthOk(self, name):
+        n=self.getFilenameLength()
+        if len(name)==n:
+            print "filename:%s has corect length:%d" % (name, len(name))
+            return True
         else:
-            s=''
-            while len(s)<max:
-             s="%s%s" % (s, pad)
-            return s
+            print "filename:%s has incorect length:%d vs %s" % (name, len(name),n)
+            return False
+
+    
     #
+    # get the filename length, as the used base and pattern define it
     #
+    def getFilenameLength(self):
+        base=len(self.usedBase.replace('<instance ID>.<extension>','').replace('<','').replace('>',''))
+        instance=len(self.usedPattern.replace('<','').replace('>',''))
+        return base + instance
+
+
     #
-    def normaliseNumber_NOT_USED(self, s=None, max=-1, pad=' '):
-        if self.debug==1:
-            print "normaliseNumber:%s"% s
-        if s==None:
-            s="#"
-            pad='#'
-        if len(s) > max:
-            return s[0:max]
-        while len(s)<max:
-            s="%s%s" % (s, pad)
-        return s
+    # try to identify the (instance) pattern used
+    #
+    def guessPatternUsed(self, filename, possiblePattern):
+        # cut out the base
+        print " guessPatternUsed of:%s" % filename
+        if self.debug!=0:
+            print " self.usedBase:%s" % self.usedBase
+        strippedBase=self.usedBase.replace('<instance ID>.<extension>','').replace('<','').replace('>','')
+        if self.debug!=0:
+            print " strippedBase:%s" % strippedBase
+        tmp = filename[len(strippedBase):]
+        print " instance part:%s" % tmp
+        # look how many _ we have
+        numSepFilename=tmp.count('_')
+        res=[]
+        n=0
+        for item in possiblePattern:
+            if item.count('_')==numSepFilename:
+                if self.debug!=0:
+                    print "   possible pattern[%s]:%s" % (n,item)
+                res.append(item)
+                n=n+1
+
+        return res
         
+
+    #
+    # get an element of the filename, giving the pattern block
+    #
+    def getFilenameElement(self, fileName, patterm, patternBlock):
+        tmp=patterm.replace('<','').replace('>','')
+        print "##### get patternBlock %s on fileName=%s; pattern=%s" % (patternBlock,fileName,tmp) 
+        pos=tmp.find(patternBlock)
+        print "##### POS=%s" % pos
+        if pos<0:
+            raise Exception("pattern block not found:%s in pattern:%s" % (patternBlock, patterm))
+        pos2=pos+len(patternBlock)
+        print "##### POS2=%s" % pos2
+        return fileName[pos:pos2]
+
+
+    #
+    #
+    #
+    def toString(self):
+        out=StringIO()
+        print >>out, "NamingConvention\n"
+        print >>out, " usedBase:%s\n" % self.usedBase
+        print >>out, " usedPattern:%s\n" % self.usedPattern
+        print >>out, " possible instance pattern:\n"
+        n=0
+        for item in self.possible_pattern:
+            print >>out, "   %s\n" % item
+            n=n+1
+        return out.getvalue()
+
+    #
+    #
+    #
 
 if __name__ == '__main__':
     print "start"
@@ -153,20 +268,29 @@ if __name__ == '__main__':
     log = logging.getLogger('example')
     try:
         n=NamingConvention()
-        met=Metadata()
-        met.setMetadataPair(met.METADATA_PLATFORM,"AL")
-        met.setMetadataPair(met.METADATA_PLATFORM_ID,"1")
-        met.setMetadataPair(met.METADATA_FILECLASS,"OPER")
-        met.setMetadataPair(met.METADATA_START_DATE,"20140302")
-        met.setMetadataPair(met.METADATA_START_TIME,"01:02:03")
-        met.setMetadataPair(met.METADATA_STOP_DATE,"20150302")
-        met.setMetadataPair(met.METADATA_STOP_TIME,"21:02:03")
-        met.setMetadataPair(met.METADATA_FILECLASS,"OPER")
-        met.setMetadataPair(met.METADATA_ORBIT,"1000")
-        met.setMetadataPair(met.METADATA_TRACK,"273")
-        met.setMetadataPair(met.METADATA_FRAME,"34")
-        met.setMetadataPair(met.METADATA_VERSION,"00001")
+
+        print "namingConvention dump:%s" % n.toString()
+        sys.exit(0)
+        met=metadata.Metadata()
+        met.setMetadataPair(metadata.METADATA_PLATFORM,"AL")
+        met.setMetadataPair(metadata.METADATA_PLATFORM_ID,"1")
+        met.setMetadataPair(metadata.METADATA_FILECLASS,"OPER")
+        met.setMetadataPair(metadata.METADATA_START_DATE,"20140302")
+        met.setMetadataPair(metadata.METADATA_START_TIME,"01:02:03")
+        met.setMetadataPair(metadata.METADATA_STOP_DATE,"20150302")
+        met.setMetadataPair(metadata.METADATA_STOP_TIME,"21:02:03")
+        met.setMetadataPair(metadata.METADATA_FILECLASS,"OPER")
+        met.setMetadataPair(metadata.METADATA_ORBIT,"1000")
+        met.setMetadataPair(metadata.METADATA_TRACK,"273")
+        met.setMetadataPair(metadata.METADATA_FRAME,"34")
+        met.setMetadataPair(metadata.METADATA_SIP_VERSION,"00001")
+        met.setMetadataPair(metadata.METADATA_TYPECODE,"HRV__X__1A")
         print n.buildProductName(met)
+
+
+        if not isinstance(n, NamingConvention):
+            print "instance not recognized"
+            
     except Exception, err:
         log.exception('Error from throws():')
 

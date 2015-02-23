@@ -95,7 +95,7 @@ class XmlHelper:
         if d!=None:
             self.data=d
         if self.data == None or len(self.data) == 0:
-            raise exception("nothing to be parsed")
+            raise Exception("nothing to be parsed")
         self.domDoc = xml.dom.minidom.parseString(self.data)
         if self.DEBUG!=0:
             print "  data parsed"

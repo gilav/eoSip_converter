@@ -17,7 +17,7 @@ from netCDF_product import netCDF_Product
 
 
 
-class netCDF_reaper_Product(netCDF_Product):
+class NetCDF_Reaper_Product(netCDF_Product):
     
     #
     # reaper product global attributes
@@ -247,10 +247,13 @@ class netCDF_reaper_Product(netCDF_Product):
         # is like: GDR: E2_TEST_ERS_ALT_2__20010212T060425_20010212T080124_COM5.NC
         # is like: SGDR: E2_TEST_ERS_ALT_2S_20010212T105332_20010212T115740_COM5.NC
         toks=met.getMetadataValue(metadata.METADATA_PRODUCTNAME).split('_')
-        if len(toks[4])==1:
-            met.setMetadataPair(metadata.METADATA_TYPECODE, "%s_%s__%s" % (toks[2],toks[3],toks[4]))
+        if len(toks)>4:
+            if len(toks[4])==1:
+                met.setMetadataPair(metadata.METADATA_TYPECODE, "%s_%s__%s" % (toks[2],toks[3],toks[4]))
+            else:
+                met.setMetadataPair(metadata.METADATA_TYPECODE, "%s_%s_%s" % (toks[2],toks[3],toks[4]))
         else:
-            met.setMetadataPair(metadata.METADATA_TYPECODE, "%s_%s_%s" % (toks[2],toks[3],toks[4]))
+            print "WARNING: can not get 5 tokens from product name:%s" % toks
         met.setMetadataPair(metadata.METADATA_PLATFORM_ID,toks[0][1])
         
         
@@ -316,6 +319,9 @@ class netCDF_reaper_Product(netCDF_Product):
         tmp = self.metadata.getMetadataValue(metadata.METADATA_TRACK)
         self.metadata.setMetadataPair(metadata.METADATA_TRACK, "%s" % tmp)
 
+        # relative orbit is track
+        self.metadata.setMetadataPair(metadata.METADATA_TRACK, "%s" % self.metadata.getMetadataValue(metadata.METADATA_RELATIVE_ORBIT))
+
         
     #
     # ERS_ALT_2_ lat variable: lat, in
@@ -375,7 +381,7 @@ class netCDF_reaper_Product(netCDF_Product):
 if __name__ == '__main__':
     print "start1"
     try:
-        p=netCDF_reaper_Product("C:/Users/glavaux/Shared/LITE/reaper/a.NC")
+        p=NetCDF_Reaper_Product("C:/Users/glavaux/Shared/LITE/reaper/a.NC")
         p.getMetadataInfo()
         met=metadata.Metadata()
         p.extractMetadata(met)

@@ -163,30 +163,67 @@ class fileHelper:
         return selected_dir
 
     #
+    # return the basename of a file (remove the path)
     #
+    def basename(self, path):
+        pos = path.rfind('/')
+        if pos > 0:
+            return path[pos+1:]
+        else:
+            return path
+
+    #
+    # return the dirname of a file (the path)
+    #
+    def dirname(self, path):
+        pos = path.rfind('/')
+        if pos > 0:
+            return path[0:pos]
+        else:
+            return None
+        
+    #
+    # return the extension for a filename/fullPath
     #
     def getFileExtension(self, path):
-        pos = path.find('.')
+        pos = path.rfind('.')
         if pos > 0:
             return path[(pos+1):]
         else:
             return None
 
     #
-    #
+    # remove the extension for a filename/fullPath
     #
     def removeFileExtension(self, path):
-        pos = path.find('.')
+        pos = path.rfind('.')
         if pos > 0:
             return path[0:pos]
         else:
             return path
 
 
+    #
+    # set debug flag
+    #
+    def setDebug(self, b):
+        self.DEBUG=b
+
+
 def main():
     """Main funcion"""
 
     helper=fileHelper()
+
+
+    a='C:/Users/glavaux/Shared/LITE/testData/Aeolus/ADM/1B/AE_TEST_ALD_U_N_1B_20101002T000000059_000936000_017071_0001.DBL'
+    print "basename of:%s" % a
+    print " ==>%s" % helper.basename(a)
+    print "dirname of:%s" % a
+    print " ==>%s" % helper.dirname(a)
+    sys.exit(1)
+
+    
     if len(sys.argv) > 1:
         print "use fileHelper on path:%s" % sys.argv[1]
     #

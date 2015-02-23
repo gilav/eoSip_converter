@@ -15,7 +15,7 @@ class eop_Acquisition(SipMessageBuilder):
         "eop_wrsLongitudeGrid",
         "eop_wrsLatitudeGrid",
         "<eop:ascendingNodedate>@ascendingNodedate@</eop:ascendingNodedate>",
-        "<eop:ascendingNodeLongitude>@ascendingNodeLongitude@</eop:ascendingNodeLongitude>",
+        "<eop:ascendingNodeLongitude uom=\"degree\">@ascendingNodeLongitude@</eop:ascendingNodeLongitude>",
         "<eop:startTimeFromAscendingNode>@startTimeFromAscendingNode@</eop:startTimeFromAscendingNode>",
         "<eop:completionTimeFromAscendingNode>@completionTimeFromAscendingNode@</eop:completionTimeFromAscendingNode>",
         "<eop:illuminationAzimuthAngle uom=\"degrees\">@illuminationAzimuthAngle@</eop:illuminationAzimuthAngle>",

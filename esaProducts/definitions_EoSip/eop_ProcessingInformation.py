@@ -6,7 +6,7 @@ class eop_ProcessingInformation(SipMessageBuilder):
     this = ["<eop:ProcessingInformation>"]
 
 
-    REPRESENTATION = ["<eop:processingCenter codeSpace=\"\">@processingCenter@</eop:processingCenter>",
+    REPRESENTATION = ["<eop:processingCenter>@processingCenter@</eop:processingCenter>",
                       "<eop:processingDate>@processingDate@</eop:processingDate>",
                       "<eop:processorName>@processorName@</eop:processorName>",
                       "<eop:processorVersion>@processorVersion@</eop:processorVersion>",

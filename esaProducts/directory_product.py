@@ -2,6 +2,10 @@
 #
 # this class is a base class for directory product
 #
+# can represent a folder
+# or a zip file
+# or a bunch of various files/link
+#
 #
 import os, sys
 import re
@@ -15,14 +19,46 @@ class Directory_Product(Product):
     #
     #
     #
-    def __init__(self, path):
+    def __init__(self, path, isAFolder=True):
         Product.__init__(self, path)
         print " init class Directory_Product"
         self.type=Product.TYPE_DIR
+
+        # the content. path
         self.contentList=[]
+
+        #the size of the contained files
+        self.size=0
+
+
+
+    #
+    # add a file to the product content list
+    #
+    def addFile(self, path):
+        self.contentList.append(path)
+
+        if os.path.exists(path):
+            self.size=self.size + os.stat(path).st_size
+
         
     #
-    # write some source file in a zipStream
+    #
+    #
+    def getSize(self):
+        return self.size
+    
+        
+    #
+    #
+    #
+    def getMetadataInfo(self):
+        return None
+
+
+        
+    #
+    # utility: write some source file in a zipStream
     #
     def writeInZip(self, zipStream=None, sourcePaths=None, sourceNames=None, compression=False):
         if isinstance(sourcePaths, list):
@@ -38,18 +74,6 @@ class Directory_Product(Product):
                 zipStream.write(sourcePaths, sourceNames, zipfile.ZIP_DEFLATED)
             else:
                 zipStream.write(sourcePaths, sourceNames, zipfile.ZIP_STORED) 
-
-    def getContentFilename(self, path=None, regex=None):
-        for file in os.listdir(path):
-            print "  test file:%s" % file
-        return os.listdir(path)
-        
-        
-    def getMetadataInfo(self):
-        data=self.read(4*1024)
-        print " extract metadata from:%s" % data
-        return None
-
     
 
 if __name__ == '__main__':

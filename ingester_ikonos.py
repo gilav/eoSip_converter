@@ -20,12 +20,33 @@ from esaProducts import ikonos_product, eosip_product
 from esaProducts import metadata, browse_metadata
 from esaProducts import definitions_EoSip
 from definitions_EoSip import rep_footprint
+from namingConvention import NamingConvention
 import imageUtil
 
 
-
+# minumunm config version that can be use
+MIN_CONFIG_VERSION=1.0
 
 class ingester_ikonos(ingester.Ingester):
+
+        #
+        # config version is like: name_floatVersion
+        #
+        def checkConfigurationVersion(self):
+                global MIN_CONFIG_VERSION
+                self._checkConfigurationVersion(self.CONFIG_VERSION, MIN_CONFIG_VERSION)
+                
+        #
+        # called before doing the various reports
+        #
+        def beforeReportsDone(self, processInfo):
+                pass
+
+        #
+        # called after having done the various reports
+        #
+        def afterReportsDone(self, processInfo):
+                pass
 
         #
         # called at the end of the doOneProduct, before the index/shopcart creation
@@ -38,7 +59,7 @@ class ingester_ikonos(ingester.Ingester):
         #
         def createSourceProduct(self, processInfo):
             global debug,logger
-            processInfo.ingester=self
+            #processInfo.ingester=self
             processInfo.srcProduct = ikonos_product.Ikonos_Product(processInfo.srcPath)
 
         #
@@ -49,6 +70,13 @@ class ingester_ikonos(ingester.Ingester):
             eosipP=eosip_product.EOSIP_Product()
             eosipP.sourceProductPath = processInfo.srcPath
             processInfo.destProduct = eosipP
+
+            # set naming convention instance
+            namingConventionSip = NamingConvention(self.OUTPUT_SIP_PATTERN)
+            processInfo.destProduct.setNamingConventionSipInstance(namingConventionSip)
+
+            processInfo.destProduct.setNamingConventionEoInstance(namingConventionSip)
+            
             self.logger.info(" Eo-Sip product created")
             processInfo.addLog(" Eo-Sip product created")
                     
@@ -109,7 +137,7 @@ class ingester_ikonos(ingester.Ingester):
                     #browseSrcPath="%s/%s" % (processInfo.workFolder , processInfo.srcProduct.PREVIEW_NAME)
                     browseSrcPath=processInfo.srcProduct.preview_path
                     browseExtension=definitions_EoSip.getBrowseExtension(0, definitions_EoSip.getDefinition('BROWSE_JPEG_EXT'))
-                    browseDestPath="%s/%s.%s" % (processInfo.eosipTmpFolder, processInfo.destProduct.packageName, browseExtension)
+                    browseDestPath="%s/%s.%s" % (processInfo.eosipTmpFolder, processInfo.destProduct.eoProductName, browseExtension)
                     shutil.copyfile(browseSrcPath, browseDestPath)
                     processInfo.destProduct.addSourceBrowse(browseDestPath, [])
                     processInfo.addLog("  browse image created:%s" %  (browseDestPath))

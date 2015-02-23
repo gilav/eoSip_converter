@@ -1,0 +1,14 @@
+
+
+[GLOBAL]
+#
+# the pattern using to build the http call to apercu
+#
+# is like: URL_PATTERN=http://127.0.0.1:7002/report?NAME=client&BINDING=converter:client&failure=4&done=13&total=20
+URL_PATTERN=http://127.0.0.1:7905/wfs?VERSION=1.1.1&SERVICE=WMS&REQUEST=GetFeatureInfo&FORMAT=image%2Fpng&STYLES=default&SRS=EPSG%3A4326&WIDTH=200&HEIGHT=200&TRANSPARENT=TRUE&BGCOLOR=0xffffff&
+#SHAPEFILE=C:/Users/glavaux/LITE/GIS/ne_10m_admin_0_countries.shp
+LAYER=countries
+
+#
+DEBUG=true
+TIMEOUT=1

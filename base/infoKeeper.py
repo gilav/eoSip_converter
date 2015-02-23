@@ -22,7 +22,7 @@ class infoKeeper():
 
 
     #
-    #
+    # add info pair: name=value
     #
     def addInfo(self, info, value):
         # info already there?
@@ -43,17 +43,35 @@ class infoKeeper():
                 valueList.append(value)
 
     #
-    #
+    # clear content
     #
     def clear(self):
             self.dictionnary={}
 
 
     #
-    #
+    # return the key number
     #
     def size(self):
             return len(self.dictionnary.keys())
+
+
+    #
+    # return list of keys
+    #
+    def getKeys(self):
+        keys=self.dictionnary.keys()
+        keys.sort()
+        return keys
+
+
+    #
+    # return list of values for a given key
+    #
+    def getKeyValues(self, key):
+        if not self.dictionnary.has_key(key):
+            raise Exception("unknown key:%s" % key)
+        return self.dictionnary[key]
 
     #
     #

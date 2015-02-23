@@ -30,7 +30,7 @@ class IndexCreator():
                       'END_DATE':metadata.METADATA_STOP_TIME,
                       'AVAILABILITY_TIME':metadata.METADATA_GENERATION_TIME,
                       'PRODUCT_URI':metadata.METADATA_PRODUCTNAME,
-                      'PRODUCT_VERSION':metadata.METADATA_VERSION,
+                      'PRODUCT_VERSION':metadata.METADATA_SIP_VERSION,
                       'PRODUCT_SIZE':metadata.METADATA_PRODUCT_SIZE,
                       'FOOTPRINT':metadata.METADATA_FOOTPRINT,
                       'SENSOR_TYPE':metadata.METADATA_REPORT_TYPE,

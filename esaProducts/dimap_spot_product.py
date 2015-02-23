@@ -337,12 +337,17 @@ class Dimap_Spot_Product(Directory_Product):
         # new:
         start=formatUtils.datePlusMsec(tmp, -4512)
         stop=formatUtils.datePlusMsec(tmp, 4512)
+        # set metadata, keep 2 decimal after second
         toks=start.split('T')
         self.metadata.setMetadataPair(metadata.METADATA_START_DATE, toks[0])
-        self.metadata.setMetadataPair(metadata.METADATA_START_TIME, toks[1][0:-1])
+        self.metadata.setMetadataPair(metadata.METADATA_START_TIME, toks[1][0:-2])
         toks=stop.split('T')
         self.metadata.setMetadataPair(metadata.METADATA_STOP_DATE, toks[0])
-        self.metadata.setMetadataPair(metadata.METADATA_STOP_TIME, toks[1][0:-1])
+        self.metadata.setMetadataPair(metadata.METADATA_STOP_TIME, toks[1][0:-2])
+
+        # time position == stop date + time
+        self.metadata.setMetadataPair(metadata.METADATA_TIME_POSITION, "%sT%sZ" % (self.metadata.getMetadataValue(metadata.METADATA_STOP_DATE), self.metadata.getMetadataValue(metadata.METADATA_STOP_TIME)))
+
 
         # verify that the WRS grid is ok: vs the scene id
         # BUT there is also this info in the parent identifier: Dataset_Sources/Source_Information/SOURCE_ID like: 10223228810091145361X
@@ -394,9 +399,49 @@ class Dimap_Spot_Product(Directory_Product):
         self.buildTypeCode()
 
         # then fix processing level for 2A that is not allowed in the EOP schema
+        # empty METADATA_REFERENCE_SYSTEM_IDENTIFIER and METADATA_REFERENCE_SYSTEM_IDENTIFIER_NAME for processingLevel != 2A
         procLevel=self.metadata.getMetadataValue(metadata.METADATA_PROCESSING_LEVEL)
         if procLevel=="2A":
-            self.metadata.setMetadataPair(metadata.METADATA_PROCESSING_LEVEL, "2")
+            self.metadata.setMetadataPair(metadata.METADATA_PROCESSING_LEVEL, "other: 2A")
+        else:
+            self.metadata.setMetadataPair(metadata.METADATA_REFERENCE_SYSTEM_IDENTIFIER, "")
+            self.metadata.setMetadataPair(metadata.METADATA_CODESPACE_REFERENCE_SYSTEM, "")
+
+
+        # set sensor METADATA_SENSOR_OPERATIONAL_MODE == METADATA_SENSOR_CODE
+        self.metadata.setMetadataPair(metadata.METADATA_SENSOR_OPERATIONAL_MODE, self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE))
+
+        # set sensor resolution
+        sensorName=self.metadata.getMetadataValue(metadata.METADATA_SENSOR_NAME)
+        sensorCode=self.metadata.getMetadataValue(metadata.METADATA_SENSOR_CODE)
+        #resolution=self.metadata.getMetadataValue(metadata.METADATA_RESOLUTION)
+        if sensorName=='HRV':
+            if sensorCode=='P':
+                resolution='10'
+            elif sensorCode=='X':
+                resolution='20'
+            else:
+                raise Exception("for HRV resolution: unexpected sensorCode:%s" % sensorCode)
+        elif sensorName=='HRVIR':
+            if sensorCode=='M':
+                resolution='10'
+            elif sensorCode=='X':
+                resolution='20'  
+            elif sensorCode=='I':
+                resolution='20'
+            else:
+                raise Exception("for HRVIR resolution: unexpected sensorCode:%s" % sensorCode)
+        elif sensorName=='HRG':
+            if sensorCode=='A':
+                resolution='5'
+            elif sensorCode=='B':
+                resolution='5'  
+            elif sensorCode=='J':
+                resolution='20'
+            else:
+                raise Exception("for HRG resolution: unexpected sensorCode:%s" % sensorCode)
+
+        self.metadata.setMetadataPair(metadata.METADATA_RESOLUTION, resolution)
 
 
     #
@@ -414,7 +459,7 @@ class Dimap_Spot_Product(Directory_Product):
     def extractFootprint(self, helper, met):
         # get preview resolution
         try:
-            imw, imh=imageUtil.get_image_size(self.preview_path)
+            imw,imh=imageUtil.get_image_size(self.preview_path)
             if self.debug!=0:
                 print "  ############# preview image size: w=%s; h=%s" % (imw, imh)
         except:
