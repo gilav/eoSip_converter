@@ -1,3 +1,18 @@
+========
+Overview
+========
+
+.. start-badges
+
+.. list-table::
+    :stub-columns: 1
+
+.. [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/gilav/eoSip_converter/badges/quality-score.png?b=OGC-Branch)](https://scrutinizer-ci.com/g/gilav/eoSip_converter/?branch=OGC-Branch)
+
+.. end-badges
+
+
+
 eoSip_converter
 ===============
 
