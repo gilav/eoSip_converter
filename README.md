@@ -1,4 +1,14 @@
 
+!!!! 
+!!!!
+!!!!
+NOTE: THIS REPOSITORT CONTAIN CODE OF AN OBSOLETE PROTOTYPE. 
+(the actual tool is not public)
+!!!! 
+!!!!
+!!!!
+
+
 
 eoSip_converter
 ===============
